@@ -1,0 +1,9 @@
+toml
+[build]
+  publish = "public"
+  command = "echo 'No build needed'"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
