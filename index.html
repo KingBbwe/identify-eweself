@@ -479,53 +479,14 @@
         function generateName() {
             return "Tonaborath"; // Placeholder for actual name generation logic
         }
-
         document.getElementById("forge-identity").addEventListener("click", forgeIdentity);
-        
-        
-function forgeIdentity() {
-    // Generate character data using the current heritageData
-    generateCharacter(heritageData); // Pass heritageData to character generation
+        function forgeIdentity() {
+            let name = generateName(); // Ensure name is generated
 
-    // Deduct surplus point, now using the correct data structure
-    deductSurplusPoint();
-
-    // Update the UI to reflect the changes
-    updateHeritageDisplay();
+// If no name is generated (undefined case), provide a fallback
+if (!name || name.trim() === "") {
+    name = "Unnamed One"; // Optional fallback, adjust as desired
 }
-
-unction deductSurplusPoint() {
-    // Decrement surplus if it's greater than 0
-    if (heritageData.surplus > 0) {
-        heritageData.surplus -= 1;
-        console.log(`Surplus decreased to: ${heritageData.surplus}`); // For debugging
-    } else {
-        console.log("Surplus is already at zero.");
-        // Optionally, disable reroll button or provide feedback
-    }
-}
-
-function updateHeritageDisplay() {
-    const heritageResult = document.getElementById('heritage-result');
-    if (heritageResult) {
-        heritageResult.innerHTML = `
-            <h2>${heritageData.name}</h2>
-            <p>Type: ${heritageData.type}</p>
-            <p>Description: ${heritageData.description}</p>
-            <p>Traits: ${heritageData.traits.join(', ')}</p>
-            <p>Role: ${heritageData.role}</p>
-            <p>Base Attributes: ${JSON.stringify(heritageData.baseAttributes)}</p>
-            <p>Surplus: ${heritageData.surplus}</p>`;  // Display surplus
-    }
-}
-
-// Forge Identity Button Event Listener
-document.getElementById('forge-identity').addEventListener('click', forgeIdentity);
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
-    forgeIdentity(); // Initial character generation and display
-});
 
 document.getElementById("result").innerHTML = ` 
     <div class="name-reveal"> 
@@ -1804,6 +1765,7 @@ function generateName(hexagramOverride) {
     
     pushToTelegram(`Name: ${fullName} (From Hex ${hexagram}: ${hexName})`);
 }
+
 function pushFullIdentityToTelegram() {
     const message = `
 FULL IDENTITY PROFILE
