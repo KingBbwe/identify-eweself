@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>The Chronicles of Auld Ewe - Identity Forge</title>
     <link
@@ -93,8 +94,11 @@
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(107, 70, 193, 0.4);
       }
-      /* Surplus and attribute allocation styles */
+      /* Plus-pill style with centered plus sign */
       .plus-pill {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         background: var(--primary);
         border: none;
         color: white;
@@ -102,14 +106,13 @@
         width: 2rem;
         height: 2rem;
         font-size: 1.2rem;
-        line-height: 1.8rem;
         cursor: pointer;
         margin-left: 0.5rem;
       }
       .plus-pill:hover {
         background: var(--primary-hover);
       }
-      /* Heritage and inner-world styling */
+      /* Heritage & Inner World styles */
       #result {
         margin-top: 1.5rem;
         padding: 1rem;
@@ -136,62 +139,12 @@
         color: var(--heritage-primary);
         margin-bottom: 1rem;
       }
-      .heritage-card {
-        display: grid;
-        gap: 2rem;
-        margin-top: 1.5rem;
-      }
       .tribe-section,
       .lineage-section {
         padding: 1.5rem;
         background: rgba(13, 13, 46, 0.9);
         border-radius: 8px;
         border: 1px solid var(--primary);
-      }
-      .bloodline-divider {
-        text-align: center;
-        margin: 2rem 0;
-        position: relative;
-        font-size: 1.2rem;
-        color: var(--heritage-primary);
-      }
-      .bloodline-divider::before,
-      .bloodline-divider::after {
-        content: '⋆⋅☆⋅⋆';
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        opacity: 0.6;
-      }
-      .bloodline-divider::before {
-        left: 0;
-      }
-      .bloodline-divider::after {
-        right: 0;
-      }
-      .sacred-tongue {
-        font-size: 1.5rem;
-        font-weight: bold;
-      }
-      .badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 15px;
-        font-size: 0.8rem;
-        margin: 0.5rem 0;
-      }
-      .virtuous {
-        background: #4a752c;
-      }
-      .challenging {
-        background: #8b0000;
-      }
-      .neutral {
-        background: #5a5a5a;
-      }
-      .lineage-description {
-        font-style: italic;
-        margin: 1rem 0;
       }
       .base-attributes {
         list-style: none;
@@ -363,7 +316,8 @@
     </main>
     <footer class="container">
       <small>
-        <a href="#">Privacy Policy</a> • <a href="#">Terms of Service</a>
+        <a href="#">Privacy Policy</a> •
+        <a href="#">Terms of Service</a>
       </small>
     </footer>
     <script>
@@ -376,7 +330,7 @@
       let shakeToRollEnabled = false;
       let lastShake = 0;
       const SHAKE_THRESHOLD = 15;
-      // Unified motion handler for shake-to-roll
+      // Unified motion handler for shake-to-roll (with distinct visual cues possible)
       function handleMotion(event) {
         if (!shakeToRollEnabled) return;
         const acceleration =
@@ -388,7 +342,8 @@
         if (accelerationMagnitude > SHAKE_THRESHOLD) {
           const now = Date.now();
           if (now - lastShake > 1000) {
-            forgeIdentity(); // call unified function for shake stream
+            // For the shake stream, you can add visual cues here if desired.
+            forgeIdentity();
             vibrate(200);
             lastShake = now;
           }
@@ -485,17 +440,15 @@
               alert("Telegram send error. Please try again.");
             });
         });
-      // Unified forgeIdentity function (called by both shake and button press)
+      // Unified forgeIdentity function – used by both shake and button streams.
       function forgeIdentity() {
-        // Increment roll count and calculate penalty
+        // Increment roll count and (for a fresh generation) use the default surplus.
         const rollCount = updateRollSession();
-        const penalty = rollCount > 2 ? rollCount - 2 : 0;
-        // Generate name
         let name = generateName();
         if (!name || name.trim() === "") {
           name = "Unnamed One";
         }
-        // Update the result area with name and hexagram info
+        // Update the result area with name and hexagram info.
         document.getElementById("result").innerHTML = `
           <div class="name-reveal">
             <div class="hex-source">
@@ -504,40 +457,34 @@
             </div>
             <p><strong>Given Name:</strong> <span class="generated-name">${name}</span></p>
           </div>`;
-        // Select random lineage and calculate effective surplus
+        // Select a random lineage.
         const lineage = randomElement(lineages);
-        const effectiveSurplus = lineage.surplus - penalty;
-        // Initialize attribute distribution
+        // Always start with the default surplus.
+        const effectiveSurplus = lineage.surplus;
+        // Initialize attribute distribution.
         userSession.currentAttributes = Object.assign({}, lineage.baseAttributes);
         userSession.remainingSurplus = effectiveSurplus;
-        // Build the heritage HTML including the attribute allocation list
+        // Build the heritage HTML with base attributes and plus buttons.
         let heritageHTML = `
-          <h2>${lineage.name} <span class="badge ${lineage.type.toLowerCase().replace(
-            " ",
-            "-"
-          )}">${lineage.type}</span></h2>
+          <h2>${lineage.name} <span class="badge ${lineage.type.toLowerCase().replace(" ", "-")}">${lineage.type}</span></h2>
           <div class="lineage-description">${lineage.description}</div>
           <h3>Native Skills</h3>
           <ul class="lineage-skills">
-            ${lineage.traits.map((t) => `<li class="trait-pill">${t}</li>`).join("")}
+            ${lineage.traits.map(t => `<li class="trait-pill">${t}</li>`).join("")}
           </ul>
           <p><strong>Role:</strong> ${lineage.role}</p>
           <h3>Base Attributes</h3>
           <ul class="base-attributes">
-            ${Object.keys(userSession.currentAttributes)
-              .map(
-                (attr) => `
+            ${Object.keys(userSession.currentAttributes).map(attr => `
               <li>
                 <strong>${attr}:</strong>
                 <span class="attr-value" data-attr="${attr}">${userSession.currentAttributes[attr]}</span>
                 <button class="plus-pill" data-attr="${attr}">+</button>
               </li>
-            `
-              )
-              .join("")}
+            `).join("")}
           </ul>
           <p><strong>Surplus:</strong> <span id="surplus-points">${userSession.remainingSurplus}</span></p>`;
-        // Append tribal affiliation details
+        // Append tribal affiliation details.
         const tribe = randomElement(tribes);
         heritageHTML += `
           <h3>Tribal Affiliation</h3>
@@ -553,14 +500,14 @@
           </div>`;
         document.getElementById("heritage-result").innerHTML = heritageHTML;
         document.getElementById("heritage-result").style.display = "block";
-        // Attach event listeners to plus pills for attribute allocation
-        document.querySelectorAll(".plus-pill").forEach((button) => {
+        // Attach event listeners to plus-pill buttons.
+        document.querySelectorAll(".plus-pill").forEach(button => {
           button.addEventListener("click", function () {
             const attr = this.getAttribute("data-attr");
             allocatePoint(attr);
           });
         });
-        // Display inner world details (soul pattern, core traits, journey, hexagram matrix)
+        // Display inner world details.
         const soulPattern = randomElement(soulPatterns);
         document.getElementById("soul-pattern").innerHTML = `
           <div style="color: var(--near-white);">${soulPattern.pattern}</div>
@@ -573,11 +520,9 @@
         document.querySelector(".core-traits .unconscious").innerHTML = `
           <h4 class="orbitron-bold-blue">Unconscious</h4>
           <p><strong>${unconsciousTrait.trait}</strong>: ${unconsciousTrait.description} (Hexagram ${unconsciousTrait.hexagram})</p>`;
-        // Character Journey and Hexagram Matrix
+        // Character Journey and Hexagram Matrix Population.
         const selectedAgeBand = Math.random() < 0.5 ? "0-50" : "50+";
-        const availableTrajectories = trajectories.filter(
-          (t) => t.ageBand === selectedAgeBand
-        );
+        const availableTrajectories = trajectories.filter(t => t.ageBand === selectedAgeBand);
         const selectedTrajectory = randomElement(availableTrajectories);
         let trajectoryHTML = `<p><strong>Age Band:</strong> ${selectedTrajectory.ageBand}</p>`;
         if (selectedAgeBand === "0-50") {
@@ -595,14 +540,8 @@
         document.getElementById("trajectory").innerHTML = trajectoryHTML;
         const intellectualDC = consciousTrait.hexagram;
         const physicalDC = unconsciousTrait.hexagram;
-        const emotionalDC =
-          selectedAgeBand === "0-50"
-            ? selectedTrajectory.fromHex
-            : selectedTrajectory.currentHex;
-        const spiritualDC =
-          selectedAgeBand === "0-50"
-            ? selectedTrajectory.toHex
-            : selectedTrajectory.reflectingHex;
+        const emotionalDC = selectedAgeBand === "0-50" ? selectedTrajectory.fromHex : selectedTrajectory.currentHex;
+        const spiritualDC = selectedAgeBand === "0-50" ? selectedTrajectory.toHex : selectedTrajectory.reflectingHex;
         document.getElementById("intellectual-dc").textContent = intellectualDC;
         document.getElementById("physical-dc").textContent = physicalDC;
         document.getElementById("emotional-dc").textContent = emotionalDC;
@@ -613,27 +552,28 @@
         document.getElementById("fourth-dc").textContent = spiritualDC;
         document.getElementById("inner-world").style.display = "block";
       }
-      // allocatePoint: Called when a plus-pill is clicked
+      // allocatePoint: Called when a plus-pill is clicked.
       function allocatePoint(attribute) {
-        if (userSession.remainingSurplus > 0) {
-          userSession.currentAttributes[attribute] =
-            (userSession.currentAttributes[attribute] || 0) + 1;
-          userSession.remainingSurplus--;
-          // Update the attribute value display
-          const span = document.querySelector(
-            `.attr-value[data-attr="${attribute}"]`
-          );
-          if (span) {
-            span.textContent = userSession.currentAttributes[attribute];
+        // Enforce an upper limit of 5 for any attribute.
+        if (userSession.currentAttributes[attribute] < 5) {
+          if (userSession.remainingSurplus > 0) {
+            userSession.currentAttributes[attribute]++;
+            userSession.remainingSurplus--;
+            // Update the attribute display.
+            const span = document.querySelector(`.attr-value[data-attr="${attribute}"]`);
+            if (span) {
+              span.textContent = userSession.currentAttributes[attribute];
+            }
+            // Update surplus display.
+            document.getElementById("surplus-points").textContent = userSession.remainingSurplus;
+          } else {
+            alert("No surplus points remaining");
           }
-          // Update the surplus display
-          document.getElementById("surplus-points").textContent =
-            userSession.remainingSurplus;
         } else {
-          alert("No surplus points remaining");
+          alert("Maximum points for this attribute reached (5)");
         }
       }
-      // Unified generateName function that returns the generated name
+      // Unified generateName function that returns the generated name.
       function generateName(hexagramOverride) {
         const gender =
           document.querySelector('input[name="gender"]:checked')?.value || "ewe";
@@ -661,7 +601,7 @@
         nameParts.push(suffixPool[Math.floor(Math.random() * suffixPool.length)]);
         const fullName = nameParts.join("");
         userSession.name = fullName;
-        // Update the result area with the new name (this update may be overwritten later by forgeIdentity)
+        // Update result area with new name (this may be overwritten by forgeIdentity later).
         document.getElementById("result").innerHTML = `
           <div class="name-reveal">
             <div class="hex-source">
@@ -670,11 +610,11 @@
             </div>
             <div class="generated-name">${fullName}</div>
           </div>`;
-        // Optionally, push to Telegram
+        // Optionally, push to Telegram.
         pushToTelegram(`Name: ${fullName} (From Hex ${hexagram}: ${hexName})`);
         return fullName;
       }
-      // Rename function for "Rename" button
+      // Rename function for the "Rename" button.
       function renameCharacter() {
         if (!userSession.originalHexagram || userSession.renames <= 0) {
           alert(
@@ -687,7 +627,7 @@
         userSession.renames--;
         generateName(userSession.originalHexagram);
       }
-      // Session handling functions
+      // Session handling: updateRollSession.
       function updateRollSession() {
         const now = Date.now();
         let sessionData = localStorage.getItem("idForgeSession");
@@ -699,6 +639,7 @@
         localStorage.setItem("idForgeSession", JSON.stringify(sessionData));
         return sessionData.rollCount;
       }
+      // Utility: randomElement.
       function randomElement(arr) {
         return arr[Math.floor(Math.random() * arr.length)];
       }
@@ -1574,16 +1515,12 @@ const trajectories = [
 ];
 
 
-      // Global user session object
+      // Global user session object.
       let userSession = {};
-      // Event listeners for buttons
-      document
-        .getElementById("forge-identity")
-        .addEventListener("click", forgeIdentity);
-      document
-        .getElementById("rename-character")
-        .addEventListener("click", renameCharacter);
-      // pushToTelegram helper function
+      // Event listeners for buttons.
+      document.getElementById("forge-identity").addEventListener("click", forgeIdentity);
+      document.getElementById("rename-character").addEventListener("click", renameCharacter);
+      // pushToTelegram helper function.
       function pushToTelegram(message) {
         const telegramBotToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
         const telegramChatId = "-1002185533073";
@@ -1602,6 +1539,3 @@ const trajectories = [
     </script>
   </body>
 </html>
-
-
-
