@@ -1105,9 +1105,7 @@ userSession.coreTraits = [
             ? ["ia", "elle", "ora", "yn", "ala"]
             : ["on", "ath", "orn", "rak", "thos"];
         nameParts.push(suffixPool[Math.floor(Math.random() * suffixPool.length)]);
-
         const fullName = nameParts.join("");
-
         userSession.name = fullName;
 
         // Update result area with new name (this may be overwritten by forgeIdentity later).
