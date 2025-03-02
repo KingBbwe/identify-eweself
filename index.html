@@ -769,9 +769,29 @@ ${journeyDetails}
 
         });
 
+// --- SURPLUS TRACKING FUNCTIONS ---
+function updateRollSession() {
+    const now = Date.now();
+    let sessionData = localStorage.getItem('idForgeSession');
+    sessionData = sessionData ? JSON.parse(sessionData) : null;
+    
+    if (!sessionData || (now - sessionData.firstRollTime) > 86400000) {
+        sessionData = { firstRollTime: now, rollCount: 0 };
+    }
+    
+    sessionData.rollCount++;
+    localStorage.setItem('idForgeSession', JSON.stringify(sessionData));
+    return sessionData.rollCount;
+}
+
+function resetRollSession() {
+    localStorage.removeItem('idForgeSession');
+}
+
+
       // Unified forgeIdentity function – used by both shake and button streams.
 
- function forgeIdentity() {
+function forgeIdentity() {
     // Session tracking and penalty calculation
     const rollCount = updateRollSession();
     const penalty = rollCount > 2 ? rollCount - 2 : 0; 
@@ -781,7 +801,6 @@ ${journeyDetails}
     if (!name || name.trim() === "") {
         name = "Unnamed One";
     }
-
 
 
         // Update the result area with name and hexagram info.
@@ -806,11 +825,11 @@ ${journeyDetails}
 
   // Select a random lineage.
 
-          const lineage = randomElement(lineages);
-const effectiveSurplus = lineage.surplus - penalty; 
-userSession.lineage = lineage;
+// Add penalty display to heritage section
+    const lineage = randomElement(lineages);
+    const effectiveSurplus = lineage.surplus - penalty; // Penalty application
 
-        // Always start with the default surplus.
+userSession.lineage = lineage;
 
 
         // Initialize attribute distribution.
@@ -819,19 +838,92 @@ userSession.lineage = lineage;
 
         userSession.remainingSurplus = effectiveSurplus;
 
-// Build the heritage HTML with base attributes and plus buttons. 
+        // Build the heritage HTML with base attributes and plus buttons.
 
-let heritageHTML = ` 
-<h2>${lineage.name} <span class="badge ${lineage.type.toLowerCase().replace(" ", "-")}">${lineage.type}</span></h2> <div class="lineage-description">${lineage.description}</div> <h3>Native Skills</h3> <ul class="lineage-skills"> ${lineage.traits.map(t => `<li class="trait-pill">${t}</li>`).join("")} </ul> <p><strong>Role:</strong> ${lineage.role}</p> <h3>Base Attributes</h3> <ul class="base-attributes"> ${Object.keys(userSession.currentAttributes).map(attr => ` <li> <strong>${attr}:</strong> <span class="attr-value" data-attr="${attr}">${userSession.currentAttributes[attr]}</span> <button class="plus-pill" data-attr="${attr}">+</button> </li> `).join("")} </ul> <p><strong>Surplus:</strong> <span id="surplus-points">${userSession.remainingSurplus}</span></p>`; 
+        let heritageHTML = `
 
-// Append tribal affiliation details. 
+          <h2>${lineage.name} <span class="badge ${lineage.type.toLowerCase().replace(" ", "-")}">${lineage.type}</span></h2>
 
-const tribe = randomElement(tribes); userSession.tribe = tribe; heritageHTML += ` <h2>${lineage.name} <span class="badge ${lineage.type.toLowerCase().replace(' ', '-')}">${lineage.type}</span></h2> 
+          <div class="lineage-description">${lineage.description}</div>
 
-<!-- ... existing lineage display ... --> <p><strong>Surplus:</strong> ${effectiveSurplus}</p> <h3>Tribal Affiliation</h3> <div class="tribe-section"> <h4><i class="fa fa-users"></i> ${tribe.name}</h4> <p><i class="fa fa-language"></i> <strong>Tongue:</strong> ${tribe.tongue}</p> <p><i class="fa fa-balance-scale"></i> <strong>Resonance:</strong> ${tribe.resonance}</p> <p><i class="fa fa-magic"></i> <strong>Effect:</strong> ${tribe.effect}</p> <p><i class="fa fa-scroll"></i> <strong>Ethos:</strong> ${tribe.ethos}</p> <p><i class="fa fa-coins"></i> <strong>Power Cost:</strong> ${tribe.powerCost}</p> <p><i class="fa fa-bolt"></i> <strong>Critical Effect:</strong> ${tribe.criticalEffect}</p> <p><i class="fa fa-fire"></i> <strong>Burn:</strong> ${tribe.burn}</p> </div>`; document.getElementById("heritage-result").innerHTML = heritageHTML; document.getElementById("heritage-result").style.display = "block"; // Attach event listeners to plus-pill buttons. document.querySelectorAll(".plus-pill").forEach(button => { button.addEventListener("click", function () { const attr = this.getAttribute("data-attr"); allocatePoint(attr); }); });
+          <h3>Native Skills</h3>
 
+          <ul class="lineage-skills">
 
+            ${lineage.traits.map(t => `<li class="trait-pill">${t}</li>`).join("")}
 
+          </ul>
+
+          <p><strong>Role:</strong> ${lineage.role}</p>
+
+          <h3>Base Attributes</h3>
+
+          <ul class="base-attributes">
+
+            ${Object.keys(userSession.currentAttributes).map(attr => `
+
+              <li>
+
+                <strong>${attr}:</strong>
+
+                <span class="attr-value" data-attr="${attr}">${userSession.currentAttributes[attr]}</span>
+
+                <button class="plus-pill" data-attr="${attr}">+</button>
+
+              </li>
+
+            `).join("")}
+
+          </ul>
+
+          <p><strong>Surplus:</strong> <span id="surplus-points">${userSession.remainingSurplus}</span></p>`;
+
+        // Append tribal affiliation details.
+
+        const tribe = randomElement(tribes);
+userSession.tribe = tribe;
+
+        heritageHTML += `
+
+          <h3>Tribal Affiliation</h3>
+
+          <div class="tribe-section">
+
+            <h4><i class="fa fa-users"></i> ${tribe.name}</h4>
+
+            <p><i class="fa fa-language"></i> <strong>Tongue:</strong> ${tribe.tongue}</p>
+
+            <p><i class="fa fa-balance-scale"></i> <strong>Resonance:</strong> ${tribe.resonance}</p>
+
+            <p><i class="fa fa-magic"></i> <strong>Effect:</strong> ${tribe.effect}</p>
+
+            <p><i class="fa fa-scroll"></i> <strong>Ethos:</strong> ${tribe.ethos}</p>
+
+            <p><i class="fa fa-coins"></i> <strong>Power Cost:</strong> ${tribe.powerCost}</p>
+
+            <p><i class="fa fa-bolt"></i> <strong>Critical Effect:</strong> ${tribe.criticalEffect}</p>
+
+            <p><i class="fa fa-fire"></i> <strong>Burn:</strong> ${tribe.burn}</p>
+
+          </div>`;
+
+        document.getElementById("heritage-result").innerHTML = heritageHTML;
+
+        document.getElementById("heritage-result").style.display = "block";
+
+        // Attach event listeners to plus-pill buttons.
+
+        document.querySelectorAll(".plus-pill").forEach(button => {
+
+          button.addEventListener("click", function () {
+
+            const attr = this.getAttribute("data-attr");
+
+            allocatePoint(attr);
+
+          });
+
+        });
 
         // Display inner world details.
 
@@ -1105,27 +1197,7 @@ userSession.coreTraits = [
         return arr[Math.floor(Math.random() * arr.length)];
 
       }
-      
-// --- SURPLUS TRACKING FUNCTIONS ---
-function updateRollSession() {
-    const now = Date.now();
-    let sessionData = localStorage.getItem('idForgeSession');
-    sessionData = sessionData ? JSON.parse(sessionData) : null;
-    
-    if (!sessionData || (now - sessionData.firstRollTime) > 86400000) {
-        sessionData = { firstRollTime: now, rollCount: 0 };
-    }
-    
-    sessionData.rollCount++;
-    localStorage.setItem('idForgeSession', JSON.stringify(sessionData));
-    return sessionData.rollCount;
-}
 
-function resetRollSession() {
-    localStorage.removeItem('idForgeSession');
-}
-
-  
 // Data arrays (hexagramData, tribes, lineages, soulPatterns, coreTraits, trajectories)
       // are included here as in the original file.
       const hexagramData = {
@@ -1567,7 +1639,7 @@ const lineages = [
     surplus: 10 
   },
   { 
-    name: "Lamoling Seafleeces", 
+    name: "Lampling Seafleeces", 
     type: "Hybrid", 
     description: "Aquatic nurturers with iridescent patterns and fin-ears", 
     traits: ["Calm Waters", "Aquatic Herb Lore", "Harmonious Navigation"], 
@@ -1603,8 +1675,8 @@ const soulPatterns = [
   { pattern: "Gathering Light", profile: "Networker Exemplar (4/6)" },
   { pattern: "Questioning Thread", profile: "Networker Investigator (4/1)" },
   { pattern: "Storm-Bringer Seeker", profile: "Heretic Investigator (5/1)" },
-  { pattern: "Secluded Storm", profile: "Heretic Hermit (5/2)" },
-  { pattern: "Hermit's Lantern", profile: "Exemplar Hermit (6/2)" },
+  { pattern: "Seduced Storm", profile: "Heretic Hermit (5/2)" },
+  { pattern: "Hermon's Lantern", profile: "Exemplar Hermit (6/2)" },
   { pattern: "Crucible of Wisdom", profile: "Exemplar Catalyst (6/3)" }
 ];
 const coreTraits = [
