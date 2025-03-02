@@ -386,330 +386,802 @@
     <script>
 
       // Haptic feedback function
-      function vibrate(duration) {
+        function vibrate(duration) {
+
         if ("vibrate" in navigator) {
+
           navigator.vibrate(duration);
+
         }
+
       }
+
       let shakeToRollEnabled = false;
+
       let lastShake = 0;
+
       const SHAKE_THRESHOLD = 15;
+
       // Unified motion handler for shake-to-roll (with distinct visual cues possible)
+
       function handleMotion(event) {
+
         if (!shakeToRollEnabled) return;
+
         const acceleration =
+
           event.accelerationIncludingGravity || event.acceleration;
+
         if (!acceleration) return;
+
         const { x, y, z } = acceleration;
+
         const accelerationMagnitude =
+
           Math.sqrt(x * x + y * y + z * z) - 9.81;
+
         if (accelerationMagnitude > SHAKE_THRESHOLD) {
+
           const now = Date.now();
+
           if (now - lastShake > 1000) {
+
             // For the shake stream, you can add visual cues here if desired.
+
             forgeIdentity();
+
             vibrate(200);
+
             lastShake = now;
+
           }
+
         }
+
       }
+
       // iOS permission handling for device motion events
+
       if (
+
         typeof DeviceMotionEvent !== "undefined" &&
+
         typeof DeviceMotionEvent.requestPermission === "function"
+
       ) {
+
         const shakeToggle = document.getElementById("shake-toggle");
+
         const shakeStatus = document.getElementById("shake-status");
+
         shakeToggle.addEventListener("click", async function (e) {
+
           if (this.checked && !shakeToRollEnabled) {
+
             try {
+
               const permission = await DeviceMotionEvent.requestPermission();
+
               if (permission === "granted") {
+
                 window.addEventListener("devicemotion", handleMotion);
+
                 shakeToRollEnabled = true;
+
                 shakeStatus.innerText = "Enabled";
+
                 vibrate(100);
+
               } else {
+
                 this.checked = false;
+
                 shakeStatus.innerText = "Permission Denied";
+
               }
+
             } catch (error) {
+
               console.error("Permission error:", error);
+
               this.checked = false;
+
               shakeStatus.innerText = "Enable in Settings";
+
             }
+
           } else {
+
             window.removeEventListener("devicemotion", handleMotion);
+
             shakeToRollEnabled = false;
+
             this.checked = false;
+
             shakeStatus.innerText = "Disabled";
+
           }
-        });
-      } else {
-        // Standard (non-iOS) implementation
-        const shakeToggle = document.getElementById("shake-toggle");
-        shakeToggle.addEventListener("change", function () {
-          shakeToRollEnabled = this.checked;
-          document.getElementById("shake-status").innerText = this.checked
-            ? "Enabled"
-            : "Disabled";
-          if (this.checked) {
-            window.addEventListener("devicemotion", handleMotion);
-          } else {
-            window.removeEventListener("devicemotion", handleMotion);
-          }
-        });
-      }
-      // Telegram button event
-      document
-        .getElementById("telegram-button")
-        .addEventListener("click", function () {
-          const characterName =
-            document.querySelector("#result .generated-name")?.innerText ||
-            "No Name Generated";
-          const lineageInfo =
-            document.querySelector("#heritage-result")?.innerText ||
-            "No Heritage Info";
-          const soulPatternInfo =
-            document.querySelector("#inner-world .soul-pattern")?.innerText ||
-            "No Soul Pattern Info";
-          const coreTraitsInfo =
-            document.querySelector("#inner-world .core-traits")?.innerText ||
-            "No Core Traits Info";
-          const journeyPathInfo =
-            document.querySelector("#inner-world .journey-path")?.innerText ||
-            "No Journey Path Info";
-          const hexagramMatrixInfo =
-            document.querySelector("#inner-world .hexagram-matrix")?.innerText ||
-            "No Hexagram Matrix Info";
-          let message = `*Character Details:*\n\n*Name:* ${characterName}\n\n*Heritage:*\n${lineageInfo}\n\n*Soul Pattern:*\n${soulPatternInfo}\n\n*Core Traits:*\n${coreTraitsInfo}\n\n*Character Journey:*\n${journeyPathInfo}\n\n*Hexagram Matrix:*\n${hexagramMatrixInfo}`;
-          const botToken =
-            "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
-          const chatId = "-1002185533073";
-          const telegramURL = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&text=${encodeURIComponent(message)}`;
-          fetch(telegramURL)
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.ok) {
-                alert("Message sent to Telegram!");
-              } else {
-                alert(
-                  "Failed to send message to Telegram.  Check the console for errors."
-                );
-                console.error("Telegram API Error:", data);
-              }
-            })
-            .catch((error) => {
-              console.error("Telegram API Error:", error);
-              alert("Error sending message to Telegram.");
-            });
+
         });
 
+      } else {
+
+        // Standard (non-iOS) implementation
+
+        const shakeToggle = document.getElementById("shake-toggle");
+
+        shakeToggle.addEventListener("change", function () {
+
+          shakeToRollEnabled = this.checked;
+
+          document.getElementById("shake-status").innerText = this.checked
+
+            ? "Enabled"
+
+            : "Disabled";
+
+          if (this.checked) {
+
+            window.addEventListener("devicemotion", handleMotion);
+
+          } else {
+
+            window.removeEventListener("devicemotion", handleMotion);
+
+          }
+
+        });
+
+      }
+
+
+function getTelegramMessage() {
+    // Ensure userSession and its properties exist
+    if (!userSession) return "Error: User session not found";
+
+    // Safely access attributes
+    const attributes = Object.entries(userSession.currentAttributes || {})
+        .map(([attr, val]) => `➤ ${attr}: ${val}`)
+        .join('\n');
+
+    // Safely access core traits
+    const coreTraits = userSession.coreTraits || [];
+    const consciousTrait = coreTraits[0]?.trait || 'N/A';
+    const consciousDesc = coreTraits[0]?.description || 'N/A';
+    const consciousHex = coreTraits[0]?.hexagram || 'N/A';
+
+    const unconsciousTrait = coreTraits[1]?.trait || 'N/A';
+    const unconsciousDesc = coreTraits[1]?.description || 'N/A';
+    const unconsciousHex = coreTraits[1]?.hexagram || 'N/A';
+
+    // Safely get DOM elements
+    const getElementText = (id) => {
+        const element = document.getElementById(id);
+        return element ? element.textContent : 'N/A';
+    };
+
+    // Get trajectory information
+    const trajectoryElement = document.getElementById('trajectory');
+    let ageBand = 'N/A';
+    let journeyDetails = '';
+
+    if (trajectoryElement) {
+        const ageBandMatch = trajectoryElement.innerHTML.match(/<strong>Age Band:<\/strong>\s*([^<]+)/);
+        if (ageBandMatch) ageBand = ageBandMatch[1].trim();
+
+        if (ageBand.includes('0-50')) {
+            // For 0-50 age band
+            const fromMatch = trajectoryElement.innerHTML.match(/<strong>From:<\/strong>\s*([^<]+)\s*<strong>To:<\/strong>\s*([^<]+)/);
+            const fromTo = fromMatch ? `🔄 *From:* ${fromMatch[1].trim()} *To:* ${fromMatch[2].trim()}` : '';
+
+            const processMatch = trajectoryElement.innerHTML.match(/<strong>Process:<\/strong>\s*([^<]+)/);
+            const process = processMatch ? `⚙️ *Process:* ${processMatch[1].trim()}` : '';
+
+            const perspectiveMatch = trajectoryElement.innerHTML.match(/<strong>Perspective:<\/strong>\s*([^<]+)/);
+            const perspective = perspectiveMatch ? `🔭 *Perspective:* ${perspectiveMatch[1].trim()}` : '';
+
+            journeyDetails = `${fromTo}\n${process}\n${perspective}`;
+        } else {
+            // For 50+ age band
+            const currentMatch = trajectoryElement.innerHTML.match(/<strong>Current:<\/strong>\s*([^<]+)/);
+            const current = currentMatch ? `🔄 *Current:* ${currentMatch[1].trim()}` : '';
+
+            const reflectingMatch = trajectoryElement.innerHTML.match(/<strong>Reflecting On:<\/strong>\s*([^<]+)/);
+            const reflecting = reflectingMatch ? `🔄 *Reflecting On:* ${reflectingMatch[1].trim()}` : '';
+
+            const perspectiveMatch = trajectoryElement.innerHTML.match(/<strong>Perspective:<\/strong>\s*([^<]+)/);
+            const perspective = perspectiveMatch ? `🔭 *Perspective:* ${perspectiveMatch[1].trim()}` : '';
+
+            const reflectionMatch = trajectoryElement.innerHTML.match(/<strong>Reflection:<\/strong>\s*([^<]+)/);
+            const reflection = reflectionMatch ? `💭 *Reflection:* ${reflectionMatch[1].trim()}` : '';
+
+            journeyDetails = `${current}\n${reflecting}\n${perspective}\n${reflection}`;
+        }
+    }
+
+    // Get lineage skills
+    let lineageSkills = 'N/A';
+    const skillsElement = document.querySelector('.lineage-skills');
+    if (skillsElement) {
+        const skills = Array.from(skillsElement.querySelectorAll('.trait-pill'))
+            .map(el => el.textContent.trim());
+        lineageSkills = skills.join('\n➤ ');
+    }
+
+    return `✨ *Identity Forge* ✨
+
+▫️▫️▫️▫️▫️▫️▫️▫️▫️
+
+👤 *Name:* ${userSession.name || 'N/A'}
+
+🌿 *Lineage:* ${userSession.lineage?.name || 'N/A'}
+📝 ${userSession.lineage?.description || 'N/A'}
+
+🧠 *Native Skills:*
+➤ ${lineageSkills}
+
+🎭 *Role:* ${userSession.lineage?.role || 'N/A'}
+
+📊 *Attributes:*
+${attributes}
+
+💫 *Surplus:* ${userSession.remainingSurplus || 'N/A'}
+
+🏛️ *Tribe:* ${userSession.tribe?.name || 'N/A'}
+🗣️ *Tongue:* ${userSession.tribe?.tongue || 'N/A'}
+⚖️ *Resonance:* ${userSession.tribe?.resonance || 'N/A'}
+✨ *Effect:* ${userSession.tribe?.effect || 'N/A'}
+📜 *Ethos:* ${userSession.tribe?.ethos || 'N/A'}
+💰 *Power Cost:* ${userSession.tribe?.powerCost || 'N/A'}
+⚡ *Critical Effect:* ${userSession.tribe?.criticalEffect || 'N/A'}
+🔥 *Burn:* ${userSession.tribe?.burn || 'N/A'}
+
+🌀 *Soul Pattern:* ${userSession.soulPattern?.pattern || 'N/A'}
+👤 *Personality Profile:* ${userSession.soulPattern?.profile || 'N/A'}
+
+🔍 *Core Traits:*
+➤ *Conscious:* ${consciousTrait}
+  ${consciousDesc} (Hexagram ${consciousHex})
+
+➤ *Unconscious:* ${unconsciousTrait}
+  ${unconsciousDesc} (Hexagram ${unconsciousHex})
+
+🧭 *Character Journey:*
+⏳ *Age Band:* ${ageBand}
+${journeyDetails}
+
+🌌 *Hexagram Matrix:*
+🔸 *Intellectual DC:* ${getElementText('intellectual-dc')}
+🔹 *Physical DC:* ${getElementText('physical-dc')}
+🔸 *Emotional DC:* ${getElementText('emotional-dc')}
+🔹 *Spiritual DC:* ${getElementText('spiritual-dc')}
+
+✨ *Magical Matrix:*
+🔮 *Prime:* ${getElementText('prime-dc')}
+🔮 *Second:* ${getElementText('second-dc')}
+🔮 *Third:* ${getElementText('third-dc')}
+🔮 *Fourth:* ${getElementText('fourth-dc')}
+
+▫️▫️▫️▫️▫️▫️▫️▫️▫️
+
+#AuldEwe #FateCast`;
+}
+
+
+      // Telegram button event
+
+      document
+
+        .getElementById("telegram-button")
+
+        .addEventListener("click", function () {
+
+          // const characterName =
+
+          //   document.querySelector("#result .generated-name")?.innerText ||
+
+          //   "No Name Generated";
+
+          // const lineageInfo =
+
+          //   document.querySelector("#heritage-result")?.innerText ||
+
+          //   "No Heritage Info";
+
+          // const soulPatternInfo =
+
+          //   document.querySelector("#inner-world .soul-pattern")?.innerText ||
+
+          //   "No Soul Pattern Info";
+
+          // const coreTraitsInfo =
+
+          //   document.querySelector("#inner-world .core-traits")?.innerText ||
+
+          //   "No Core Traits Info";
+
+          // const journeyPathInfo =
+
+          //   document.querySelector("#inner-world .journey-path")?.innerText ||
+
+          //   "No Journey Path Info";
+
+          // const hexagramMatrixInfo =
+
+          //   document.querySelector("#inner-world .hexagram-matrix")
+
+          //     ?.innerText ||
+
+          //   "No Hexagram Matrix Info";
+
+          // let message = `*Character Details:*\n\n*Name:*
+
+          // ${characterName}\n\n*Heritage:*\n${lineageInfo}\n\n*Soul Pattern:*\n${soulPatternInfo}\n\n*Core
+
+          // Traits:*\n${coreTraitsInfo}\n\n*Character Journey:*\n${journeyPathInfo}\n\n*Hexagram
+
+          // Matrix:*\n${hexagramMatrixInfo}`;
+
+
+          const message = getTelegramMessage(); // Use the new function
+
+          const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
+
+          const chatId = "-1002185533073";
+
+          const telegramURL =
+
+            `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&` +
+
+            `text=${encodeURIComponent(
+
+              message
+
+            )}`;
+
+          fetch(telegramURL)
+
+            .then((response) => {
+
+              if (response.ok) {
+
+                alert("Character details sent to Telegram!");
+
+              } else {
+
+                alert(
+
+                  "Failed to send to Telegram. Please check your bot token and chat ID."
+
+                );
+
+              }
+
+            })
+
+            .catch((error) => {
+
+              console.error("Telegram send error:", error);
+
+              alert("Telegram send error. Please try again.");
+
+            });
+
+        });
 
       // Unified forgeIdentity function – used by both shake and button streams.
+
       function forgeIdentity() {
+
         // Increment roll count and (for a fresh generation) use the default surplus.
+
         const rollCount = updateRollSession();
+
         let name = generateName();
+
         if (!name || name.trim() === "") {
+
           name = "Unnamed One";
+
         }
+
+
         // Update the result area with name and hexagram info.
+
         document.getElementById("result").innerHTML = `
+
           <div class="name-reveal">
+
             <div class="hex-source">
+
               <span class="hex">Hexagram ${userSession.originalHexagram}</span>
+
               <span class="hex-name">${hexagramData[userSession.originalHexagram].name}</span>
+
             </div>
+
             <p><strong>Given Name:</strong> <span class="generated-name">${name}</span></p>
+
           </div>`;
-        // Select a random lineage.
-        const lineage = randomElement(lineages);
+
+
+
+  // Select a random lineage.
+
+          const lineage = randomElement(lineages);
+
+userSession.lineage = lineage;
+
         // Always start with the default surplus.
+
         const effectiveSurplus = lineage.surplus;
+
         // Initialize attribute distribution.
+
         userSession.currentAttributes = Object.assign({}, lineage.baseAttributes);
+
         userSession.remainingSurplus = effectiveSurplus;
+
         // Build the heritage HTML with base attributes and plus buttons.
+
         let heritageHTML = `
+
           <h2>${lineage.name} <span class="badge ${lineage.type.toLowerCase().replace(" ", "-")}">${lineage.type}</span></h2>
+
           <div class="lineage-description">${lineage.description}</div>
+
           <h3>Native Skills</h3>
+
           <ul class="lineage-skills">
+
             ${lineage.traits.map(t => `<li class="trait-pill">${t}</li>`).join("")}
+
           </ul>
+
           <p><strong>Role:</strong> ${lineage.role}</p>
+
           <h3>Base Attributes</h3>
+
           <ul class="base-attributes">
+
             ${Object.keys(userSession.currentAttributes).map(attr => `
+
               <li>
+
                 <strong>${attr}:</strong>
+
                 <span class="attr-value" data-attr="${attr}">${userSession.currentAttributes[attr]}</span>
+
                 <button class="plus-pill" data-attr="${attr}">+</button>
+
               </li>
+
             `).join("")}
+
           </ul>
+
           <p><strong>Surplus:</strong> <span id="surplus-points">${userSession.remainingSurplus}</span></p>`;
+
         // Append tribal affiliation details.
+
         const tribe = randomElement(tribes);
+userSession.tribe = tribe;
+
         heritageHTML += `
+
           <h3>Tribal Affiliation</h3>
+
           <div class="tribe-section">
+
             <h4><i class="fa fa-users"></i> ${tribe.name}</h4>
+
             <p><i class="fa fa-language"></i> <strong>Tongue:</strong> ${tribe.tongue}</p>
+
             <p><i class="fa fa-balance-scale"></i> <strong>Resonance:</strong> ${tribe.resonance}</p>
+
             <p><i class="fa fa-magic"></i> <strong>Effect:</strong> ${tribe.effect}</p>
+
             <p><i class="fa fa-scroll"></i> <strong>Ethos:</strong> ${tribe.ethos}</p>
+
             <p><i class="fa fa-coins"></i> <strong>Power Cost:</strong> ${tribe.powerCost}</p>
+
             <p><i class="fa fa-bolt"></i> <strong>Critical Effect:</strong> ${tribe.criticalEffect}</p>
+
             <p><i class="fa fa-fire"></i> <strong>Burn:</strong> ${tribe.burn}</p>
+
           </div>`;
+
         document.getElementById("heritage-result").innerHTML = heritageHTML;
+
         document.getElementById("heritage-result").style.display = "block";
+
         // Attach event listeners to plus-pill buttons.
+
         document.querySelectorAll(".plus-pill").forEach(button => {
+
           button.addEventListener("click", function () {
+
             const attr = this.getAttribute("data-attr");
+
             allocatePoint(attr);
+
           });
+
         });
+
         // Display inner world details.
+
         const soulPattern = randomElement(soulPatterns);
+userSession.soulPattern = soulPattern;
+
         document.getElementById("soul-pattern").innerHTML = `
+
           <div style="color: var(--near-white);">${soulPattern.pattern}</div>
+
           <p class="orbitron-bold-blue">Personality Profile: ${soulPattern.profile}</p>`;
+
         const consciousTrait = randomElement(coreTraits);
+
         const unconsciousTrait = randomElement(coreTraits);
+userSession.coreTraits = [
+  consciousTrait,
+  unconsciousTrait
+];
+
         document.querySelector(".core-traits .conscious").innerHTML = `
+
           <h4 class="orbitron-bold-blue">Conscious</h4>
+
           <p><strong>${consciousTrait.trait}</strong>: ${consciousTrait.description} (Hexagram ${consciousTrait.hexagram})</p>`;
+
         document.querySelector(".core-traits .unconscious").innerHTML = `
+
           <h4 class="orbitron-bold-blue">Unconscious</h4>
+
           <p><strong>${unconsciousTrait.trait}</strong>: ${unconsciousTrait.description} (Hexagram ${unconsciousTrait.hexagram})</p>`;
+
         // Character Journey and Hexagram Matrix Population.
+
         const selectedAgeBand = Math.random() < 0.5 ? "0-50" : "50+";
+
         const availableTrajectories = trajectories.filter(t => t.ageBand === selectedAgeBand);
+
         const selectedTrajectory = randomElement(availableTrajectories);
+
         let trajectoryHTML = `<p><strong>Age Band:</strong> ${selectedTrajectory.ageBand}</p>`;
+
         if (selectedAgeBand === "0-50") {
+
           trajectoryHTML += `
+
             <p><strong>From:</strong> ${selectedTrajectory.fromName} <strong>To:</strong> ${selectedTrajectory.toName}</p>
+
             <p><strong>Process:</strong> ${selectedTrajectory.process}</p>
+
             <p><strong>Perspective:</strong> ${selectedTrajectory.perspective}</p>`;
+
         } else {
+
           trajectoryHTML += `
+
             <p><strong>Current:</strong> ${selectedTrajectory.currentName}</p>
+
             <p><strong>Reflecting On:</strong> ${selectedTrajectory.reflectingName}</p>
+
             <p><strong>Perspective:</strong> ${selectedTrajectory.perspective}</p>
+
             <p><strong>Reflection:</strong> ${selectedTrajectory.reflection}</p>`;
+
         }
+
         document.getElementById("trajectory").innerHTML = trajectoryHTML;
+
         const intellectualDC = consciousTrait.hexagram;
+
         const physicalDC = unconsciousTrait.hexagram;
+
         const emotionalDC = selectedAgeBand === "0-50" ? selectedTrajectory.fromHex : selectedTrajectory.currentHex;
+
         const spiritualDC = selectedAgeBand === "0-50" ? selectedTrajectory.toHex : selectedTrajectory.reflectingHex;
+
         document.getElementById("intellectual-dc").textContent = intellectualDC;
+
         document.getElementById("physical-dc").textContent = physicalDC;
+
         document.getElementById("emotional-dc").textContent = emotionalDC;
+
         document.getElementById("spiritual-dc").textContent = spiritualDC;
+
         document.getElementById("prime-dc").textContent = intellectualDC;
+
         document.getElementById("second-dc").textContent = physicalDC;
+
         document.getElementById("third-dc").textContent = emotionalDC;
+
         document.getElementById("fourth-dc").textContent = spiritualDC;
+
         document.getElementById("inner-world").style.display = "block";
-      }
-      // allocatePoint: Called when a plus-pill is clicked.
-      function allocatePoint(attribute) {
-        // Enforce an upper limit of 5 for any attribute.
-        if (userSession.currentAttributes[attribute] < 5) {
-          if (userSession.remainingSurplus > 0) {
-            userSession.currentAttributes[attribute]++;
-            userSession.remainingSurplus--;
-            // Update the attribute display.
-            const span = document.querySelector(`.attr-value[data-attr="${attribute}"]`);
-            if (span) {
-              span.textContent = userSession.currentAttributes[attribute];
-            }
-            // Update surplus display.
-            document.getElementById("surplus-points").textContent = userSession.remainingSurplus;
-          } else {
-            alert("No surplus points remaining");
-          }
-        } else {
-          alert("Maximum points for this attribute reached (5)");
-        }
-      }
-      // Unified generateName function that returns the generated name.
-      function generateName(hexagramOverride) {
-        const gender =
-          document.querySelector('input[name="gender"]:checked')?.value || "ewe";
-        const hexagram =
-          hexagramOverride ||
-          parseInt(randomElement(Object.keys(hexagramData)), 10);
-        if (!hexagramData[hexagram]) {
-          document.getElementById("result").textContent = "Hexagram data not found";
-          return "";
-        }
-        userSession.originalHexagram = hexagram;
-        userSession.renames = 5;
-        userSession.syllableCount = hexagram < 9 ? 2 : hexagram < 33 ? 3 : 4;
-        const { consonants, vowels, name: hexName } = hexagramData[hexagram];
-        let nameParts = [];
-        for (let i = 0; i < userSession.syllableCount - 1; i++) {
-          const con = consonants[Math.floor(Math.random() * consonants.length)];
-          const vow = vowels[Math.floor(Math.random() * vowels.length)];
-          nameParts.push(i === 0 ? con.toUpperCase() + vow : con + vow);
-        }
-        const suffixPool =
-          gender === "ewe"
-            ? ["ia", "elle", "ora", "yn", "ala"]
-            : ["on", "ath", "orn", "rak", "thos"];
-        nameParts.push(suffixPool[Math.floor(Math.random() * suffixPool.length)]);
-        const fullName = nameParts.join("");
-        userSession.name = fullName;
-        // Update result area with new name (this may be overwritten by forgeIdentity later).
-        document.getElementById("result").innerHTML = `
-          <div class="name-reveal">
-            <div class="hex-source">
-              <span class="hex">Hexagram ${hexagram}</span>
-              <span class="hex-name">${hexName}</span>
-            </div>
-            <div class="generated-name">${fullName}</div>
-          </div>`;
-        // Optionally, push to Telegram.
-        pushToTelegram(`Name: ${fullName} (From Hex ${hexagram}: ${hexName})`);
-        return fullName;
-      }
-      // Rename function for the "Rename" button.
-      function renameCharacter() {
-        if (!userSession.originalHexagram || userSession.renames <= 0) {
-          alert(
-            userSession.renames <= 0
-              ? "No more renames available"
-              : "Generate a name first!"
-          );
-          return;
-        }
-        userSession.renames--;
-        generateName(userSession.originalHexagram);
-      }
-      // Session handling: updateRollSession.
-      function updateRollSession() {
-        const now = Date.now();
-        let sessionData = localStorage.getItem("idForgeSession");
-        sessionData = sessionData ? JSON.parse(sessionData) : null;
-        if (!sessionData || now - sessionData.firstRollTime > 24 * 60 * 60 * 1000) {
-          sessionData = { firstRollTime: now, rollCount: 0 };
-        }
-        sessionData.rollCount++;
-        localStorage.setItem("idForgeSession", JSON.stringify(sessionData));
-        return sessionData.rollCount;
-      }
-      // Utility: randomElement.
-      function randomElement(arr) {
-        return arr[Math.floor(Math.random() * arr.length)];
+
       }
 
+      // allocatePoint: Called when a plus-pill is clicked.
+
+      function allocatePoint(attribute) {
+
+        // Enforce an upper limit of 5 for any attribute.
+
+        if (userSession.currentAttributes[attribute] < 5) {
+
+          if (userSession.remainingSurplus > 0) {
+
+            userSession.currentAttributes[attribute]++;
+
+            userSession.remainingSurplus--;
+
+            // Update the attribute display.
+
+            const span = document.querySelector(`.attr-value[data-attr="${attribute}"]`);
+
+            if (span) {
+
+              span.textContent = userSession.currentAttributes[attribute];
+
+            }
+
+            // Update surplus display.
+
+            document.getElementById("surplus-points").textContent = userSession.remainingSurplus;
+
+          } else {
+
+            alert("No surplus points remaining");
+
+          }
+
+        } else {
+
+          alert("Maximum points for this attribute reached (5)");
+
+        }
+
+      }
+
+      // Unified generateName function that returns the generated name.
+
+      function generateName(hexagramOverride) {
+
+        const gender =
+
+          document.querySelector('input[name="gender"]:checked')?.value || "ewe";
+
+        const hexagram =
+
+          hexagramOverride ||
+
+          parseInt(randomElement(Object.keys(hexagramData)), 10);
+
+        if (!hexagramData[hexagram]) {
+
+          document.getElementById("result").textContent = "Hexagram data not found";
+
+          return "";
+
+        }
+
+        userSession.originalHexagram = hexagram;
+
+        userSession.renames = 5;
+
+        userSession.syllableCount = hexagram < 9 ? 2 : hexagram < 33 ? 3 : 4;
+
+        const { consonants, vowels, name: hexName } = hexagramData[hexagram];
+
+        let nameParts = [];
+
+        for (let i = 0; i < userSession.syllableCount - 1; i++) {
+
+          const con = consonants[Math.floor(Math.random() * consonants.length)];
+
+          const vow = vowels[Math.floor(Math.random() * vowels.length)];
+
+          nameParts.push(i === 0 ? con.toUpperCase() + vow : con + vow);
+
+        }
+
+        const suffixPool =
+
+          gender === "ewe"
+
+            ? ["ia", "elle", "ora", "yn", "ala"]
+
+            : ["on", "ath", "orn", "rak", "thos"];
+
+        nameParts.push(suffixPool[Math.floor(Math.random() * suffixPool.length)]);
+
+        const fullName = nameParts.join("");
+
+        userSession.name = fullName;
+
+        // Update result area with new name (this may be overwritten by forgeIdentity later).
+
+        document.getElementById("result").innerHTML = `
+
+          <div class="name-reveal">
+
+            <div class="hex-source">
+
+              <span class="hex">Hexagram ${hexagram}</span>
+
+              <span class="hex-name">${hexName}</span>
+
+            </div>
+
+            <div class="generated-name">${fullName}</div>
+
+          </div>`;
+
+                return fullName;
+
+      }
+
+      // Rename function for the "Rename" button.
+
+      function renameCharacter() {
+
+        if (!userSession.originalHexagram || userSession.renames <= 0) {
+
+          alert(
+
+            userSession.renames <= 0
+
+              ? "No more renames available"
+
+              : "Generate a name first!"
+
+          );
+
+          return;
+
+        }
+
+        userSession.renames--;
+
+        generateName(userSession.originalHexagram);
+
+      }
+
+      // Session handling: updateRollSession.
+
+      function updateRollSession() {
+
+        const now = Date.now();
+
+        let sessionData = localStorage.getItem("idForgeSession");
+
+        sessionData = sessionData ? JSON.parse(sessionData) : null;
+
+        if (!sessionData || now - sessionData.firstRollTime > 24 * 60 * 60 * 1000) {
+
+          sessionData = { firstRollTime: now, rollCount: 0 };
+
+        }
+
+        sessionData.rollCount++;
+
+        localStorage.setItem("idForgeSession", JSON.stringify(sessionData));
+
+        return sessionData.rollCount;
+
+      }
+
+      // Utility: randomElement.
+
+      function randomElement(arr) {
+
+        return arr[Math.floor(Math.random() * arr.length)];
+
+      }
+      
 // Data arrays (hexagramData, tribes, lineages, soulPatterns, coreTraits, trajectories)
       // are included here as in the original file.
       const hexagramData = {
