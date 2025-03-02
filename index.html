@@ -637,23 +637,40 @@ function getTelegramMessage() {
     // Get trajectory information
     const trajectoryElement = document.getElementById('trajectory');
     let ageBand = 'N/A';
-    let fromTo = 'N/A';
-    let process = 'N/A';
-    let perspective = 'N/A';
+    let journeyDetails = '';
     
     if (trajectoryElement) {
         const ageBandMatch = trajectoryElement.innerHTML.match(/<strong>Age Band:<\/strong>\s*([^<]+)/);
         if (ageBandMatch) ageBand = ageBandMatch[1].trim();
         
-        // For 0-50 age band
-        const fromMatch = trajectoryElement.innerHTML.match(/<strong>From:<\/strong>\s*([^<]+)\s*<strong>To:<\/strong>\s*([^<]+)/);
-        if (fromMatch) fromTo = `From: ${fromMatch[1].trim()} To: ${fromMatch[2].trim()}`;
-        
-        const processMatch = trajectoryElement.innerHTML.match(/<strong>Process:<\/strong>\s*([^<]+)/);
-        if (processMatch) process = processMatch[1].trim();
-        
-        const perspectiveMatch = trajectoryElement.innerHTML.match(/<strong>Perspective:<\/strong>\s*([^<]+)/);
-        if (perspectiveMatch) perspective = perspectiveMatch[1].trim();
+        if (ageBand.includes('0-50')) {
+            // For 0-50 age band
+            const fromMatch = trajectoryElement.innerHTML.match(/<strong>From:<\/strong>\s*([^<]+)\s*<strong>To:<\/strong>\s*([^<]+)/);
+            const fromTo = fromMatch ? `🔄 *From:* ${fromMatch[1].trim()} *To:* ${fromMatch[2].trim()}` : '';
+            
+            const processMatch = trajectoryElement.innerHTML.match(/<strong>Process:<\/strong>\s*([^<]+)/);
+            const process = processMatch ? `⚙️ *Process:* ${processMatch[1].trim()}` : '';
+            
+            const perspectiveMatch = trajectoryElement.innerHTML.match(/<strong>Perspective:<\/strong>\s*([^<]+)/);
+            const perspective = perspectiveMatch ? `🔭 *Perspective:* ${perspectiveMatch[1].trim()}` : '';
+            
+            journeyDetails = `${fromTo}\n${process}\n${perspective}`;
+        } else {
+            // For 50+ age band
+            const currentMatch = trajectoryElement.innerHTML.match(/<strong>Current:<\/strong>\s*([^<]+)/);
+            const current = currentMatch ? `🔄 *Current:* ${currentMatch[1].trim()}` : '';
+            
+            const reflectingMatch = trajectoryElement.innerHTML.match(/<strong>Reflecting On:<\/strong>\s*([^<]+)/);
+            const reflecting = reflectingMatch ? `🔄 *Reflecting On:* ${reflectingMatch[1].trim()}` : '';
+            
+            const perspectiveMatch = trajectoryElement.innerHTML.match(/<strong>Perspective:<\/strong>\s*([^<]+)/);
+            const perspective = perspectiveMatch ? `🔭 *Perspective:* ${perspectiveMatch[1].trim()}` : '';
+            
+            const reflectionMatch = trajectoryElement.innerHTML.match(/<strong>Reflection:<\/strong>\s*([^<]+)/);
+            const reflection = reflectionMatch ? `💭 *Reflection:* ${reflectionMatch[1].trim()}` : '';
+            
+            journeyDetails = `${current}\n${reflecting}\n${perspective}\n${reflection}`;
+        }
     }
     
     // Get lineage skills
@@ -705,9 +722,7 @@ ${attributes}
 
 🧭 *Character Journey:*
 ⏳ *Age Band:* ${ageBand}
-🔄 ${fromTo}
-⚙️ *Process:* ${process}
-🔭 *Perspective:* ${perspective}
+${journeyDetails}
 
 🌌 *Hexagram Matrix:*
 🔸 *Intellectual DC:* ${getElementText('intellectual-dc')}
@@ -725,7 +740,6 @@ ${attributes}
 
 #AuldEwe #FateCast`;
 }
-
 
 
       // Telegram button event
