@@ -1,1606 +1,3038 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>The Chronicles of Auld Ewe - Identity Forge</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-    />
-    <style>
-      :root {
-        --primary: #6b46c1;
-        --primary-hover: #553c9a;
-        --bg-dark: #1a1a2e;
-        --bg-darker: #16213e;
-        --text-light: #e2e8f0;
-        --heritage-primary: #9b7c52;
-        --off-white: #f0f0f0;
-        --near-white: #f8f8f8;
-        --heritage-bg: #0d0d0d;
-      }
-      h1,
-      h2,
-      h3,
-      h4 {
-        font-family: "Cinzel Decorative", serif;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-      }
-      .container > h2 {
-        color: var(--heritage-primary);
-        margin-bottom: 1rem;
-      }
-      body {
-        background: linear-gradient(45deg, var(--bg-dark) 0%, var(--bg-darker) 100%);
-        color: var(--text-light);
-        font-family: "Orbitron", sans-serif;
-        text-align: center;
-        line-height: 1.5;
-        margin: 0;
-        padding: 0;
-        min-height: 100vh;
-      }
-      nav {
-        background: rgba(22, 33, 62, 0.9);
-        backdrop-filter: blur(10px);
-        border-bottom: 2px solid var(--primary);
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-      }
-      .container {
-        max-width: 100%;
-        margin: 0 auto;
-        padding: 1rem;
-        background: rgba(26, 26, 46, 0.9);
-        border: 1px solid var(--primary);
-        box-shadow: 0 0 30px rgba(107, 70, 193, 0.2);
-        border-radius: 8px;
-        backdrop-filter: blur(5px);
-      }
-      h1 {
-        margin-bottom: 1rem;
-        color: var(--heritage-primary);
-      }
-      button {
-        background-color: var(--primary);
-        color: white;
-        border: none;
-        border-radius: 0.375rem;
-        cursor: pointer;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        padding: 0.8rem;
-        width: 100%;
-        margin-bottom: 1rem;
-        display: block;
-      }
-      button:hover {
-        background-color: var(--primary-hover);
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(107, 70, 193, 0.4);
-      }
-      #result {
-        margin-top: 1.5rem;
-        padding: 1rem;
-        background: rgba(22, 33, 62, 0.8);
-        border-radius: 0.375rem;
-        border: 1px solid var(--primary);
-        box-shadow: inset 0 0 20px rgba(107, 70, 193, 0.1);
-      }
-      /* Align attributes & plus buttons */
-      .base-attributes li {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.5rem 0;
-      }
-      .attr-info {
-        flex-grow: 1;
-        display: flex;
-        align-items: center;
-      }
-      .attr-value {
-        margin-left: 0.5rem;
-        font-weight: bold;
-      }
-      .plus-pill {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 2rem;
-        height: 2rem;
-        border-radius: 50%;
-        background: var(--primary);
-        color: white;
-        font-size: 1.2rem;
-        cursor: pointer;
-        transition: 0.3s ease;
-        margin-left: 1rem;
-      }
-      .plus-pill:hover {
-        background: var(--primary-hover);
-        transform: scale(1.1);
-      }
-      #surplus-points {
-        font-weight: bold;
-      }
-      #result {
-        margin-top: 1.5rem;
-        padding: 1rem;
-        background: rgba(22, 33, 62, 0.8);
-        border-radius: 0.375rem;
-        border: 1px solid var(--primary);
-        box-shadow: inset 0 0 20px rgba(107, 70, 193, 0.1);
-      }
-      .shake-to-roll {
-        margin-bottom: 2rem;
-      }
-      .toggle-group {
-        margin: 1.5rem 0;
-      }
-      .heritage-container {
-        background: var(--heritage-bg);
-        border-color: var(--heritage-primary);
-        font-family: "Cinzel Decorative", serif;
-        margin-top: 2rem;
-        padding: 1.5rem;
-        color: var(--near-white);
-      }
-      .heritage-container h2 {
-        color: var(--heritage-primary);
-        margin-bottom: 1rem;
-      }
-      .tribe-section,
-      .lineage-section {
-        padding: 1.5rem;
-        background: rgba(13, 13, 46, 0.9);
-        border-radius: 8px;
-        border: 1px solid var(--primary);
-      }
-      .bloodline-divider {
-        text-align: center;
-        margin: 2rem 0;
-        position: relative;
-        font-size: 1.2rem;
-        color: var(--heritage-primary);
-      }
-      .bloodline-divider::before,
-      .bloodline-divider::after {
-        content: "⋆⋅☆⋅⋆";
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        opacity: 0.6;
-      }
-      .bloodline-divider::before {
-        left: 0;
-      }
-      .bloodline-divider::after {
-        right: 0;
-      }
-      .sacred-tongue {
-        font-size: 1.5rem;
-        font-weight: bold;
-      }
-      .badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 15px;
-        font-size: 0.8rem;
-        margin: 0.5rem 0;
-      }
-      .virtuous {
-        background: #4a752c;
-      }
-      .challenging {
-        background: #8b0000;
-      }
-      .neutral {
-        background: #5a5a5a;
-      }
-      .lineage-description {
-        font-style: italic;
-        margin: 1rem 0;
-      }
-      .lineage-skills {
-        list-style: none;
-        padding: 0;
-        margin: 1rem 0;
-      }
-      .lineage-skills li {
-        margin-bottom: 0.5rem;
-        display: block;
-      }
-      #inner-world {
-        margin-top: 1.5rem;
-        padding: 1rem;
-        background: rgba(13, 13, 46, 0.9);
-        border: 1px solid #4a752c;
-        border-radius: 8px;
-        display: none;
-      }
-      #inner-world h2 {
-        color: var(--heritage-primary) !important;
-        text-align: center;
-        border-bottom: 3px solid var(--off-white);
-        padding-bottom: 0.5rem;
-        margin-bottom: 1.5rem;
-      }
-      #inner-world h3 {
-        margin-bottom: 0.75rem;
-      }
-      .core-traits h4 {
-        margin-bottom: 0.5rem;
-        letter-spacing: 1px;
-      }
-      .soul-pattern,
-      .core-traits,
-      .journey-path,
-      .hexagram-matrix {
-        margin-bottom: 1rem;
-      }
-      .soul-pattern div,
-      .core-traits div,
-      .journey-path div {
-        margin: 0.5rem 0;
-        text-align: left;
-      }
-      .soul-pattern-heading {
-        color: var(--heritage-primary);
-        text-align: center;
-        font-family: "Cinzel Decorative", serif;
-        text-transform: uppercase;
-        margin: 1.5rem 0;
-        font-weight: bold;
-      }
-      .personality-profile {
-        font-weight: bold;
-      }
-      .hexagram-matrix {
-        padding: 1rem;
-        background: rgba(22, 33, 62, 0.8);
-        border-radius: 8px;
-        border: 1px solid var(--primary);
-        display: block;
-      }
-      .hexagram-matrix p {
-        margin: 0.5rem 0;
-      }
-      .hexagram-matrix strong {
-        display: block;
-        margin-top: 1rem;
-        color: var(--primary);
-      }
-      .generated-name {
-        font-size: 2rem;
-        font-weight: bold;
-        color: var(--heritage-primary);
-      }
-      .trait-pill {
-        display: block;
-        padding: 0.5rem 1rem;
-        margin: 0.5rem 0;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 15px;
-        font-family: "Orbitron", sans-serif;
-      }
-      .power-stats {
-        margin: 1rem 0;
-      }
-      .power-stat-line {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin: 0.5rem 0;
-      }
-    </style>
-  </head>
-  <body>
-    <nav>
-      <strong>The Chronicles of Auld Ewe - Identity Forge</strong>
-    </nav>
-    <main class="container">
-      <h1>The Chronicles of Auld Ewe</h1>
-      <h2>Identity Forge</h2>
-      <!-- Shake to Roll Feature -->
-      <div class="shake-to-roll">
-        <label for="shake-toggle">Shake to Roll:</label>
-        <input type="checkbox" id="shake-toggle" />
-        <span id="shake-status">Disabled</span>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Chronicles of Auld Ewe - Identity Forge</title>
+  <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    :root {
+      --primary: #6b46c1;
+      --primary-hover: #553c9a;
+      --bg-dark: #1a1a2e;
+      --bg-darker: #16213e;
+      --text-light: #e2e8f0;
+      --heritage-primary: #9b7c52;
+      --off-white: #f0f0f0;
+      --near-white: #f8f8f8;
+      --heritage-bg: #0d0d0d;
+    } 
 
-      <!-- Telegram Button -->
-      <button id="telegram-button">
-        <i class="fab fa-telegram"></i> Send to Telegram
-      </button>
-      <div class="toggle-group">
-        <input type="radio" id="ram" name="gender" value="ram" checked />
-        <label for="ram">Ram (♂ Male)</label>
-        <input type="radio" id="ewe" name="gender" value="ewe" />
-        <label for="ewe">Ewe (♀ Female)</label>
-      </div>
-      <button id="forge-identity">Forge Identity</button>
-      <button id="rename-character">Rename</button>
-      <div id="result"></div>
-      <div id="heritage-result" class="heritage-container" style="display: none;"></div>
-      <div id="inner-world" class="inner-world" style="display: none;">
-        <h2>Inner World</h2>
-        <h3>Soul Pattern</h3>
-        <div class="soul-pattern">
-          <div id="soul-pattern"></div>
-        </div>
-        <h3>Core Traits</h3>
-        <div class="core-traits">
-          <div class="conscious"></div>
-          <div class="unconscious"></div>
-        </div>
+    h1, h2, h3, h4 {
+      font-family: "Cinzel Decorative", serif;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    } 
 
-        <h3>Character Journey</h3>
-        <div class="journey-path">
-          <div id="trajectory"></div>
-        </div>
-        <div class="hexagram-matrix">
-          <h3>HEXAGRAM MATRIX</h3>
-          <div class="hexagram-matrix-description">
-            <p>
-              Your Hexagram Matrix reflects your innate magical potential and
-              defines your Personal DC.
-            </p>
-            <strong>Personal</strong>
-            <p>
-              Intellectual DC: <span id="intellectual-dc"></span><br />
-              Physical DC: <span id="physical-dc"></span><br />
-              Emotional DC: <span id="emotional-dc"></span><br />
-              Spiritual DC: <span id="spiritual-dc"></span>
-            </p>
-            <strong>Magical</strong>
-            <p>
-              Prime: <span id="prime-dc"></span><br />
-              Second: <span id="second-dc"></span><br />
-              Third: <span id="third-dc"></span><br />
-              Fourth: <span id="fourth-dc"></span>
-            </p>
-          </div>
-        </div>
-      </div>
-    </main>
-    <footer class="container">
-      <small>
-        <a href="#">Privacy Policy</a> • <a href="#">Terms of Service</a>
-      </small>
-    </footer>
-    <script>
+    .container > h2 {
+      color: var(--heritage-primary);
+      margin-bottom: 1rem;
+    } 
 
-      // Haptic feedback function
-      function vibrate(duration) {
-        if ("vibrate" in navigator) {
-          navigator.vibrate(duration);
-        }
-      }
-      let shakeToRollEnabled = false;
-      let lastShake = 0;
-      const SHAKE_THRESHOLD = 15;
-      // Unified motion handler for shake-to-roll (with distinct visual cues possible)
-      function handleMotion(event) {
-        if (!shakeToRollEnabled) return;
-        const acceleration =
-          event.accelerationIncludingGravity || event.acceleration;
-        if (!acceleration) return;
-        const { x, y, z } = acceleration;
-        const accelerationMagnitude =
-          Math.sqrt(x * x + y * y + z * z) - 9.81;
-        if (accelerationMagnitude > SHAKE_THRESHOLD) {
-          const now = Date.now();
-          if (now - lastShake > 1000) {
-            // For the shake stream, you can add visual cues here if desired.
-            forgeIdentity();
-            vibrate(200);
-            lastShake = now;
-          }
-        }
-      }
-      // iOS permission handling for device motion events
-      if (
-        typeof DeviceMotionEvent !== "undefined" &&
-        typeof DeviceMotionEvent.requestPermission === "function"
-      ) {
-        const shakeToggle = document.getElementById("shake-toggle");
-        const shakeStatus = document.getElementById("shake-status");
-        shakeToggle.addEventListener("click", async function (e) {
-          if (this.checked && !shakeToRollEnabled) {
-            try {
-              const permission = await DeviceMotionEvent.requestPermission();
-              if (permission === "granted") {
-                window.addEventListener("devicemotion", handleMotion);
-                shakeToRollEnabled = true;
-                shakeStatus.innerText = "Enabled";
-                vibrate(100);
-              } else {
-                this.checked = false;
-                shakeStatus.innerText = "Permission Denied";
-              }
-            } catch (error) {
-              console.error("Permission error:", error);
-              this.checked = false;
-              shakeStatus.innerText = "Enable in Settings";
-            }
-          } else {
-            window.removeEventListener("devicemotion", handleMotion);
-            shakeToRollEnabled = false;
-            this.checked = false;
-            shakeStatus.innerText = "Disabled";
-          }
-        });
-      } else {
-        // Standard (non-iOS) implementation
-        const shakeToggle = document.getElementById("shake-toggle");
-        shakeToggle.addEventListener("change", function () {
-          shakeToRollEnabled = this.checked;
-          document.getElementById("shake-status").innerText = this.checked
-            ? "Enabled"
-            : "Disabled";
-          if (this.checked) {
-            window.addEventListener("devicemotion", handleMotion);
-          } else {
-            window.removeEventListener("devicemotion", handleMotion);
-          }
-        });
-      }
-      // Telegram button event
-      document
-        .getElementById("telegram-button")
-        .addEventListener("click", function () {
-          const characterName =
-            document.querySelector("#result .generated-name")?.innerText ||
-            "No Name Generated";
-          const lineageInfo =
-            document.querySelector("#heritage-result")?.innerText ||
-            "No Heritage Info";
-          const soulPatternInfo =
-            document.querySelector("#inner-world .soul-pattern")?.innerText ||
-            "No Soul Pattern Info";
-          const coreTraitsInfo =
-            document.querySelector("#inner-world .core-traits")?.innerText ||
-            "No Core Traits Info";
-          const journeyPathInfo =
-            document.querySelector("#inner-world .journey-path")?.innerText ||
-            "No Journey Path Info";
-          const hexagramMatrixInfo =
-            document.querySelector("#inner-world .hexagram-matrix")?.innerText ||
-            "No Hexagram Matrix Info";
-          let message = `*Character Details:*\n\n*Name:* ${characterName}\n\n*Heritage:*\n${lineageInfo}\n\n*Soul Pattern:*\n${soulPatternInfo}\n\n*Core Traits:*\n${coreTraitsInfo}\n\n*Character Journey:*\n${journeyPathInfo}\n\n*Hexagram Matrix:*\n${hexagramMatrixInfo}`;
-          const botToken =
-            "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
-          const chatId = "-1002185533073";
-          const telegramURL = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&text=${encodeURIComponent(message)}`;
-          fetch(telegramURL)
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.ok) {
-                alert("Message sent to Telegram!");
-              } else {
-                alert(
-                  "Failed to send message to Telegram.  Check the console for errors."
-                );
-                console.error("Telegram API Error:", data);
-              }
-            })
-            .catch((error) => {
-              console.error("Telegram API Error:", error);
-              alert("Error sending message to Telegram.");
-            });
-        });
+    body {
+      background: linear-gradient(45deg, var(--bg-dark) 0%, var(--bg-darker) 100%);
+      color: var(--text-light);
+      font-family: "Orbitron", sans-serif;
+      text-align: center;
+      line-height: 1.5;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    } 
+
+    nav {
+      background: rgba(22, 33, 62, 0.9);
+      backdrop-filter: blur(10px);
+      border-bottom: 2px solid var(--primary);
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      font-weight: bold;
+      text-align: center;
+    } 
+
+    nav strong {
+      font-family: "Cinzel Decorative", serif;
+      font-size: 1.2rem;
+      color: var(--heritage-primary);
+    } 
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+      background: rgba(26, 26, 46, 0.9);
+      border: 1px solid var(--primary);
+      box-shadow: 0 0 30px rgba(107, 70, 193, 0.2);
+      border-radius: 8px;
+      backdrop-filter: blur(5px);
+    } 
+
+    h1 {
+      margin-bottom: 1rem;
+      color: var(--heritage-primary);
+    } 
+
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      padding: 0.8rem;
+      width: 100%;
+      margin-bottom: 1rem;
+      display: block;
+    } 
+
+    button:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(107, 70, 193, 0.4);
+    } 
+
+    /* Telegram button */
+    #telegram-button {
+      background-color: #0088cc;
+    } 
+
+    #telegram-button:hover {
+      background-color: #006699;
+    } 
+
+    /* Plus-pill style with centered plus sign */
+    .plus-pill {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--primary);
+      border: none;
+      color: white;
+      border-radius: 50%;
+      width: 2rem;
+      height: 2rem;
+      font-size: 1.2rem;
+      cursor: pointer;
+      margin-left: 0.5rem;
+    } 
+
+    .plus-pill:hover {
+      background: var(--primary-hover);
+    } 
+
+    /* Heritage & Inner World styles */
+    #result {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: rgba(22, 33, 62, 0.8);
+      border-radius: 0.375rem;
+      border: 1px solid var(--primary);
+      box-shadow: inset 0 0 20px rgba(107, 70, 193, 0.1);
+    } 
+
+    .shake-to-roll {
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    } 
+
+    .shake-to-roll label {
+      margin-right: 0.5rem;
+    } 
+
+    #shake-status {
+      margin-left: 0.5rem;
+      font-weight: bold;
+      color: var(--heritage-primary);
+    } 
+
+    .toggle-group {
+      margin: 1.5rem 0;
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+    } 
+
+    .toggle-group input[type="radio"] {
+      margin-right: 0.5rem;
+    } 
+
+    .heritage-container {
+      background: var(--heritage-bg);
+      border: 2px solid var(--heritage-primary);
+      font-family: "Cinzel Decorative", serif;
+      margin-top: 2rem;
+      padding: 1.5rem;
+      color: var(--near-white);
+      border-radius: 8px;
+    } 
+
+    .tribe-section, .lineage-section {
+      padding: 1.5rem;
+      background: rgba(13, 13, 46, 0.9);
+      border-radius: 8px;
+      border: 1px solid var(--primary);
+      margin-bottom: 1.5rem;
+    } 
+
+    .base-attributes {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0;
+    } 
+
+    .base-attributes li {
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    } 
+
+    .attr-value {
+      margin-left: 0.5rem;
+    } 
+
+    #surplus-points {
+      font-weight: bold;
+    } 
+
+    #inner-world {
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      background: rgba(13, 13, 46, 0.9);
+      border: 1px solid #4a752c;
+      border-radius: 8px;
+    } 
+
+    #inner-world h2 {
+      color: var(--heritage-primary) !important;
+      text-align: center;
+      border-bottom: 3px solid var(--off-white);
+      padding-bottom: 0.5rem;
+      margin-bottom: 1.5rem;
+    } 
+
+    #inner-world h3 {
+      margin: 1.5rem 0 0.75rem 0;
+      color: var(--heritage-primary);
+    } 
+
+    .core-traits h4 {
+      margin-bottom: 0.5rem;
+      letter-spacing: 1px;
+    } 
+
+    .soul-pattern, .core-traits, .journey-path, .hexagram-matrix {
+      margin-bottom: 1.5rem;
+      background: rgba(22, 33, 62, 0.5);
+      padding: 1rem;
+      border-radius: 8px;
+    } 
+
+    .soul-pattern div, .core-traits div, .journey-path div {
+      margin: 0.5rem 0;
+    } 
+
+    .conscious, .unconscious {
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      background: rgba(22, 33, 62, 0.3);
+      border-radius: 8px;
+    } 
+
+    .soul-pattern-heading {
+      color: var(--heritage-primary);
+      text-align: center;
+      font-family: "Cinzel Decorative", serif;
+      text-transform: uppercase;
+      margin: 1.5rem 0;
+      font-weight: bold;
+    } 
+
+    .personality-profile {
+      font-weight: bold;
+    } 
+
+    .hexagram-matrix {
+      padding: 1rem;
+      background: rgba(22, 33, 62, 0.8);
+      border-radius: 8px;
+      border: 1px solid var(--primary);
+      display: block;
+    } 
+
+    .hexagram-matrix h3 {
+      margin-top: 0;
+    } 
+
+    .hexagram-matrix p {
+      margin: 0.5rem 0;
+    } 
+
+    .hexagram-matrix strong {
+      display: block;
+      margin-top: 1rem;
+      color: var(--primary);
+    } 
+
+    .hexagram-matrix-description p {
+      margin-bottom: 1rem;
+    } 
+
+    .generated-name {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--heritage-primary);
+      margin: 1.5rem 0;
+    } 
+
+    .trait-pill {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      margin: 0.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      font-family: "Orbitron", sans-serif;
+    } 
+
+    .power-stats {
+      margin: 1rem 0;
+    } 
+
+    .power-stat-line {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      justify-content: space-between;
+    } 
+
+    footer {
+      margin-top: 2rem;
+      padding: 1rem;
+      font-size: 0.8rem;
+      text-align: center;
+    } 
+
+    footer a {
+      color: var(--text-light);
+      text-decoration: none;
+      margin: 0 0.5rem;
+    } 
+
+    footer a:hover {
+      color: var(--heritage-primary);
+    } 
+
+    /* Add responsive grid layout */
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    } 
+
+    @media (min-width: 768px) {
+      .grid-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .toggle-group {
+        gap: 3rem;
+      }
+    } 
+
+    @media (min-width: 1024px) {
+      .container {
+        padding: 2rem;
+      }
+    } 
+
+    /* Fix for section overflow */
+    section, main, div {
+      max-width: 100%;
+      overflow-x: hidden;
+    } 
+
+    /* Ensure proper spacing between sections */
+    section + section {
+      margin-top: 2rem;
+    }
+  </style>
+</head> 
+
+<body>
+  <nav>
+    <strong>The Chronicles of Auld Ewe - Identity Forge</strong>
+  </nav> 
+
+  <main class="container">
+    <h1>The Chronicles of Auld Ewe</h1>
+    <h2>Identity Forge</h2>
+    
+    <!-- Shake to Roll Feature -->
+    <div class="shake-to-roll">
+      <label for="shake-toggle">Shake to Roll:</label>
+      <input type="checkbox" id="shake-toggle" />
+      <span id="shake-status">Disabled</span>
+    </div>
+    
+    <!-- Telegram Button -->
+    <button id="telegram-button">
+      <i class="fab fa-telegram"></i> Send to Telegram
+    </button>
+    
+    <div class="toggle-group">
+      <div>
+        <input type="radio" id="ram" name="gender" value="ram" checked />
+        <label for="ram">Ram (♂ Male)</label>
+      </div>
+      <div>
+        <input type="radio" id="ewe" name="gender" value="ewe" />
+        <label for="ewe">Ewe (♀ Female)</label>
+      </div>
+    </div>
+    
+    <button id="forge-identity">Forge Identity</button>
+    <button id="rename-character">Rename</button>
+    
+    <div id="result"></div>
+    <div id="heritage-result" class="heritage-container" style="display: none;"></div>
+    
+    <div id="inner-world" style="display: none;">
+      <h2>Inner World</h2>
+      
+      <h3>Soul Pattern</h3>
+      <div class="soul-pattern">
+        <div id="soul-pattern"></div>
+      </div>
+      
+      <h3>Core Traits</h3>
+      <div class="core-traits">
+        <div class="conscious"></div>
+        <div class="unconscious"></div>
+      </div>
+      
+      <h3>Character Journey</h3>
+      <div class="journey-path">
+        <div id="trajectory"></div>
+      </div>
+      
+      <div class="hexagram-matrix">
+        <h3>HEXAGRAM MATRIX</h3>
+        <div class="hexagram-matrix-description">
+          <p>
+            Your Hexagram Matrix reflects your innate magical potential and
+            defines your Personal DC.
+          </p>
+          <strong>Personal</strong>
+          <p>
+            Intellectual DC: <span id="intellectual-dc"></span><br />
+            Physical DC: <span id="physical-dc"></span><br />
+            Emotional DC: <span id="emotional-dc"></span><br />
+            Spiritual DC: <span id="spiritual-dc"></span>
+          </p>
+          <strong>Magical</strong>
+          <p>
+            Prime: <span id="prime-dc"></span><br />
+            Second: <span id="second-dc"></span><br />
+            Third: <span id="third-dc"></span><br />
+            Fourth: <span id="fourth-dc"></span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </main> 
+
+  <footer class="container">
+    <small>
+      <a href="#">Privacy Policy</a> •
+      <a href="#">Terms of Service</a>
+    </small>
+  </footer> 
+
+  <script>
+     // Haptic feedback function
+
+      function vibrate(duration) {
+
+        if ("vibrate" in navigator) {
+
+          navigator.vibrate(duration);
+
+        }
+
+      }
+
+      let shakeToRollEnabled = false;
+
+      let lastShake = 0;
+
+      const SHAKE_THRESHOLD = 15;
+
+      // Unified motion handler for shake-to-roll (with distinct visual cues possible)
+
+      function handleMotion(event) {
+
+        if (!shakeToRollEnabled) return;
+
+        const acceleration =
+
+          event.accelerationIncludingGravity || event.acceleration;
+
+        if (!acceleration) return;
+
+        const { x, y, z } = acceleration;
+
+        const accelerationMagnitude =
+
+          Math.sqrt(x * x + y * y + z * z) - 9.81;
+
+        if (accelerationMagnitude > SHAKE_THRESHOLD) {
+
+          const now = Date.now();
+
+          if (now - lastShake > 1000) {
+
+            // For the shake stream, you can add visual cues here if desired.
+
+            forgeIdentity();
+
+            vibrate(200);
+
+            lastShake = now;
+
+          }
+
+        }
+
+      }
+
+      // iOS permission handling for device motion events
+
+      if (
+
+        typeof DeviceMotionEvent !== "undefined" &&
+
+        typeof DeviceMotionEvent.requestPermission === "function"
+
+      ) {
+
+        const shakeToggle = document.getElementById("shake-toggle");
+
+        const shakeStatus = document.getElementById("shake-status");
+
+        shakeToggle.addEventListener("click", async function (e) {
+
+          if (this.checked && !shakeToRollEnabled) {
+
+            try {
+
+              const permission = await DeviceMotionEvent.requestPermission();
+
+              if (permission === "granted") {
+
+                window.addEventListener("devicemotion", handleMotion);
+
+                shakeToRollEnabled = true;
+
+                shakeStatus.innerText = "Enabled";
+
+                vibrate(100);
+
+              } else {
+
+                this.checked = false;
+
+                shakeStatus.innerText = "Permission Denied";
+
+              }
+
+            } catch (error) {
+
+              console.error("Permission error:", error);
+
+              this.checked = false;
+
+              shakeStatus.innerText = "Enable in Settings";
+
+            }
+
+          } else {
+
+            window.removeEventListener("devicemotion", handleMotion);
+
+            shakeToRollEnabled = false;
+
+            this.checked = false;
+
+            shakeStatus.innerText = "Disabled";
+
+          }
+
+        });
+
+      } else {
+
+        // Standard (non-iOS) implementation
+
+        const shakeToggle = document.getElementById("shake-toggle");
+
+        shakeToggle.addEventListener("change", function () {
+
+          shakeToRollEnabled = this.checked;
+
+          document.getElementById("shake-status").innerText = this.checked
+
+            ? "Enabled"
+
+            : "Disabled";
+
+          if (this.checked) {
+
+            window.addEventListener("devicemotion", handleMotion);
+
+          } else {
+
+            window.removeEventListener("devicemotion", handleMotion);
+
+          }
+
+        });
+
+      }
 
 
-      // Unified forgeIdentity function – used by both shake and button streams.
-      function forgeIdentity() {
-        // Increment roll count and (for a fresh generation) use the default surplus.
-        const rollCount = updateRollSession();
-        let name = generateName();
-        if (!name || name.trim() === "") {
-          name = "Unnamed One";
-        }
-        // Update the result area with name and hexagram info.
-        document.getElementById("result").innerHTML = `
-          <div class="name-reveal">
-            <div class="hex-source">
-              <span class="hex">Hexagram ${userSession.originalHexagram}</span>
-              <span class="hex-name">${hexagramData[userSession.originalHexagram].name}</span>
-            </div>
-            <p><strong>Given Name:</strong> <span class="generated-name">${name}</span></p>
-          </div>`;
-        // Select a random lineage.
-        const lineage = randomElement(lineages);
-        // Always start with the default surplus.
-        const effectiveSurplus = lineage.surplus;
-        // Initialize attribute distribution.
-        userSession.currentAttributes = Object.assign({}, lineage.baseAttributes);
-        userSession.remainingSurplus = effectiveSurplus;
-        // Build the heritage HTML with base attributes and plus buttons.
-        let heritageHTML = `
-          <h2>${lineage.name} <span class="badge ${lineage.type.toLowerCase().replace(" ", "-")}">${lineage.type}</span></h2>
-          <div class="lineage-description">${lineage.description}</div>
-          <h3>Native Skills</h3>
-          <ul class="lineage-skills">
-            ${lineage.traits.map(t => `<li class="trait-pill">${t}</li>`).join("")}
-          </ul>
-          <p><strong>Role:</strong> ${lineage.role}</p>
-          <h3>Base Attributes</h3>
-          <ul class="base-attributes">
-            ${Object.keys(userSession.currentAttributes).map(attr => `
-              <li>
-                <strong>${attr}:</strong>
-                <span class="attr-value" data-attr="${attr}">${userSession.currentAttributes[attr]}</span>
-                <button class="plus-pill" data-attr="${attr}">+</button>
-              </li>
-            `).join("")}
-          </ul>
-          <p><strong>Surplus:</strong> <span id="surplus-points">${userSession.remainingSurplus}</span></p>`;
-        // Append tribal affiliation details.
-        const tribe = randomElement(tribes);
-        heritageHTML += `
-          <h3>Tribal Affiliation</h3>
-          <div class="tribe-section">
-            <h4><i class="fa fa-users"></i> ${tribe.name}</h4>
-            <p><i class="fa fa-language"></i> <strong>Tongue:</strong> ${tribe.tongue}</p>
-            <p><i class="fa fa-balance-scale"></i> <strong>Resonance:</strong> ${tribe.resonance}</p>
-            <p><i class="fa fa-magic"></i> <strong>Effect:</strong> ${tribe.effect}</p>
-            <p><i class="fa fa-scroll"></i> <strong>Ethos:</strong> ${tribe.ethos}</p>
-            <p><i class="fa fa-coins"></i> <strong>Power Cost:</strong> ${tribe.powerCost}</p>
-            <p><i class="fa fa-bolt"></i> <strong>Critical Effect:</strong> ${tribe.criticalEffect}</p>
-            <p><i class="fa fa-fire"></i> <strong>Burn:</strong> ${tribe.burn}</p>
-          </div>`;
-        document.getElementById("heritage-result").innerHTML = heritageHTML;
-        document.getElementById("heritage-result").style.display = "block";
-        // Attach event listeners to plus-pill buttons.
-        document.querySelectorAll(".plus-pill").forEach(button => {
-          button.addEventListener("click", function () {
-            const attr = this.getAttribute("data-attr");
-            allocatePoint(attr);
-          });
-        });
-        // Display inner world details.
-        const soulPattern = randomElement(soulPatterns);
-        document.getElementById("soul-pattern").innerHTML = `
-          <div style="color: var(--near-white);">${soulPattern.pattern}</div>
-          <p class="orbitron-bold-blue">Personality Profile: ${soulPattern.profile}</p>`;
-        const consciousTrait = randomElement(coreTraits);
-        const unconsciousTrait = randomElement(coreTraits);
-        document.querySelector(".core-traits .conscious").innerHTML = `
-          <h4 class="orbitron-bold-blue">Conscious</h4>
-          <p><strong>${consciousTrait.trait}</strong>: ${consciousTrait.description} (Hexagram ${consciousTrait.hexagram})</p>`;
-        document.querySelector(".core-traits .unconscious").innerHTML = `
-          <h4 class="orbitron-bold-blue">Unconscious</h4>
-          <p><strong>${unconsciousTrait.trait}</strong>: ${unconsciousTrait.description} (Hexagram ${unconsciousTrait.hexagram})</p>`;
-        // Character Journey and Hexagram Matrix Population.
-        const selectedAgeBand = Math.random() < 0.5 ? "0-50" : "50+";
-        const availableTrajectories = trajectories.filter(t => t.ageBand === selectedAgeBand);
-        const selectedTrajectory = randomElement(availableTrajectories);
-        let trajectoryHTML = `<p><strong>Age Band:</strong> ${selectedTrajectory.ageBand}</p>`;
-        if (selectedAgeBand === "0-50") {
-          trajectoryHTML += `
-            <p><strong>From:</strong> ${selectedTrajectory.fromName} <strong>To:</strong> ${selectedTrajectory.toName}</p>
-            <p><strong>Process:</strong> ${selectedTrajectory.process}</p>
-            <p><strong>Perspective:</strong> ${selectedTrajectory.perspective}</p>`;
-        } else {
-          trajectoryHTML += `
-            <p><strong>Current:</strong> ${selectedTrajectory.currentName}</p>
-            <p><strong>Reflecting On:</strong> ${selectedTrajectory.reflectingName}</p>
-            <p><strong>Perspective:</strong> ${selectedTrajectory.perspective}</p>
-            <p><strong>Reflection:</strong> ${selectedTrajectory.reflection}</p>`;
-        }
-        document.getElementById("trajectory").innerHTML = trajectoryHTML;
-        const intellectualDC = consciousTrait.hexagram;
-        const physicalDC = unconsciousTrait.hexagram;
-        const emotionalDC = selectedAgeBand === "0-50" ? selectedTrajectory.fromHex : selectedTrajectory.currentHex;
-        const spiritualDC = selectedAgeBand === "0-50" ? selectedTrajectory.toHex : selectedTrajectory.reflectingHex;
-        document.getElementById("intellectual-dc").textContent = intellectualDC;
-        document.getElementById("physical-dc").textContent = physicalDC;
-        document.getElementById("emotional-dc").textContent = emotionalDC;
-        document.getElementById("spiritual-dc").textContent = spiritualDC;
-        document.getElementById("prime-dc").textContent = intellectualDC;
-        document.getElementById("second-dc").textContent = physicalDC;
-        document.getElementById("third-dc").textContent = emotionalDC;
-        document.getElementById("fourth-dc").textContent = spiritualDC;
-        document.getElementById("inner-world").style.display = "block";
-      }
-      // allocatePoint: Called when a plus-pill is clicked.
-      function allocatePoint(attribute) {
-        // Enforce an upper limit of 5 for any attribute.
-        if (userSession.currentAttributes[attribute] < 5) {
-          if (userSession.remainingSurplus > 0) {
-            userSession.currentAttributes[attribute]++;
-            userSession.remainingSurplus--;
-            // Update the attribute display.
-            const span = document.querySelector(`.attr-value[data-attr="${attribute}"]`);
-            if (span) {
-              span.textContent = userSession.currentAttributes[attribute];
-            }
-            // Update surplus display.
-            document.getElementById("surplus-points").textContent = userSession.remainingSurplus;
-          } else {
-            alert("No surplus points remaining");
-          }
-        } else {
-          alert("Maximum points for this attribute reached (5)");
-        }
-      }
-      // Unified generateName function that returns the generated name.
-      function generateName(hexagramOverride) {
-        const gender =
-          document.querySelector('input[name="gender"]:checked')?.value || "ewe";
-        const hexagram =
-          hexagramOverride ||
-          parseInt(randomElement(Object.keys(hexagramData)), 10);
-        if (!hexagramData[hexagram]) {
-          document.getElementById("result").textContent = "Hexagram data not found";
-          return "";
-        }
-        userSession.originalHexagram = hexagram;
-        userSession.renames = 5;
-        userSession.syllableCount = hexagram < 9 ? 2 : hexagram < 33 ? 3 : 4;
-        const { consonants, vowels, name: hexName } = hexagramData[hexagram];
-        let nameParts = [];
-        for (let i = 0; i < userSession.syllableCount - 1; i++) {
-          const con = consonants[Math.floor(Math.random() * consonants.length)];
-          const vow = vowels[Math.floor(Math.random() * vowels.length)];
-          nameParts.push(i === 0 ? con.toUpperCase() + vow : con + vow);
-        }
-        const suffixPool =
-          gender === "ewe"
-            ? ["ia", "elle", "ora", "yn", "ala"]
-            : ["on", "ath", "orn", "rak", "thos"];
-        nameParts.push(suffixPool[Math.floor(Math.random() * suffixPool.length)]);
-        const fullName = nameParts.join("");
-        userSession.name = fullName;
-        // Update result area with new name (this may be overwritten by forgeIdentity later).
-        document.getElementById("result").innerHTML = `
-          <div class="name-reveal">
-            <div class="hex-source">
-              <span class="hex">Hexagram ${hexagram}</span>
-              <span class="hex-name">${hexName}</span>
-            </div>
-            <div class="generated-name">${fullName}</div>
-          </div>`;
-        // Optionally, push to Telegram.
-        pushToTelegram(`Name: ${fullName} (From Hex ${hexagram}: ${hexName})`);
-        return fullName;
-      }
-      // Rename function for the "Rename" button.
-      function renameCharacter() {
-        if (!userSession.originalHexagram || userSession.renames <= 0) {
-          alert(
-            userSession.renames <= 0
-              ? "No more renames available"
-              : "Generate a name first!"
-          );
-          return;
-        }
-        userSession.renames--;
-        generateName(userSession.originalHexagram);
-      }
-      // Session handling: updateRollSession.
-      function updateRollSession() {
-        const now = Date.now();
-        let sessionData = localStorage.getItem("idForgeSession");
-        sessionData = sessionData ? JSON.parse(sessionData) : null;
-        if (!sessionData || now - sessionData.firstRollTime > 24 * 60 * 60 * 1000) {
-          sessionData = { firstRollTime: now, rollCount: 0 };
-        }
-        sessionData.rollCount++;
-        localStorage.setItem("idForgeSession", JSON.stringify(sessionData));
-        return sessionData.rollCount;
-      }
-      // Utility: randomElement.
-      function randomElement(arr) {
-        return arr[Math.floor(Math.random() * arr.length)];
-      }
+function getTelegramMessage() {
+    // Ensure userSession and its properties exist
+    if (!userSession) return "Error: User session not found";
+    
+    // Safely access attributes
+    const attributes = Object.entries(userSession.currentAttributes || {})
+        .map(([attr, val]) => `➤ ${attr}: ${val}`)
+        .join('\n');
+    
+    // Safely access core traits
+    const coreTraits = userSession.coreTraits || [];
+    const consciousTrait = coreTraits[0]?.trait || 'N/A';
+    const consciousDesc = coreTraits[0]?.description || 'N/A';
+    const consciousHex = coreTraits[0]?.hexagram || 'N/A';
+    
+    const unconsciousTrait = coreTraits[1]?.trait || 'N/A';
+    const unconsciousDesc = coreTraits[1]?.description || 'N/A';
+    const unconsciousHex = coreTraits[1]?.hexagram || 'N/A';
+    
+    // Safely get DOM elements
+    const getElementText = (id) => {
+        const element = document.getElementById(id);
+        return element ? element.textContent : 'N/A';
+    };
+    
+    // Get trajectory information
+    const trajectoryElement = document.getElementById('trajectory');
+    let ageBand = 'N/A';
+    let fromTo = 'N/A';
+    let process = 'N/A';
+    let perspective = 'N/A';
+    
+    if (trajectoryElement) {
+        const ageBandMatch = trajectoryElement.innerHTML.match(/<strong>Age Band:<\/strong>\s*([^<]+)/);
+        if (ageBandMatch) ageBand = ageBandMatch[1].trim();
+        
+        // For 0-50 age band
+        const fromMatch = trajectoryElement.innerHTML.match(/<strong>From:<\/strong>\s*([^<]+)\s*<strong>To:<\/strong>\s*([^<]+)/);
+        if (fromMatch) fromTo = `From: ${fromMatch[1].trim()} To: ${fromMatch[2].trim()}`;
+        
+        const processMatch = trajectoryElement.innerHTML.match(/<strong>Process:<\/strong>\s*([^<]+)/);
+        if (processMatch) process = processMatch[1].trim();
+        
+        const perspectiveMatch = trajectoryElement.innerHTML.match(/<strong>Perspective:<\/strong>\s*([^<]+)/);
+        if (perspectiveMatch) perspective = perspectiveMatch[1].trim();
+    }
+    
+    // Get lineage skills
+    let lineageSkills = 'N/A';
+    const skillsElement = document.querySelector('.lineage-skills');
+    if (skillsElement) {
+        const skills = Array.from(skillsElement.querySelectorAll('.trait-pill'))
+            .map(el => el.textContent.trim());
+        lineageSkills = skills.join('\n➤ ');
+    }
+    
+    return `✨ *Identity Forge* ✨
+
+▫️▫️▫️▫️▫️▫️▫️▫️▫️
+
+👤 *Name:* ${userSession.name || 'N/A'}
+
+🌿 *Lineage:* ${userSession.lineage?.name || 'N/A'}
+📝 ${userSession.lineage?.description || 'N/A'}
+
+🧠 *Native Skills:*
+➤ ${lineageSkills}
+
+🎭 *Role:* ${userSession.lineage?.role || 'N/A'}
+
+📊 *Attributes:*
+${attributes}
+
+💫 *Surplus:* ${userSession.remainingSurplus || 'N/A'}
+
+🏛️ *Tribe:* ${userSession.tribe?.name || 'N/A'}
+🗣️ *Tongue:* ${userSession.tribe?.tongue || 'N/A'}
+⚖️ *Resonance:* ${userSession.tribe?.resonance || 'N/A'}
+✨ *Effect:* ${userSession.tribe?.effect || 'N/A'}
+📜 *Ethos:* ${userSession.tribe?.ethos || 'N/A'}
+💰 *Power Cost:* ${userSession.tribe?.powerCost || 'N/A'}
+⚡ *Critical Effect:* ${userSession.tribe?.criticalEffect || 'N/A'}
+🔥 *Burn:* ${userSession.tribe?.burn || 'N/A'}
+
+🌀 *Soul Pattern:* ${userSession.soulPattern?.pattern || 'N/A'}
+👤 *Personality Profile:* ${userSession.soulPattern?.profile || 'N/A'}
+
+🔍 *Core Traits:*
+➤ *Conscious:* ${consciousTrait}
+  ${consciousDesc} (Hexagram ${consciousHex})
+
+➤ *Unconscious:* ${unconsciousTrait}
+  ${unconsciousDesc} (Hexagram ${unconsciousHex})
+
+🧭 *Character Journey:*
+⏳ *Age Band:* ${ageBand}
+🔄 ${fromTo}
+⚙️ *Process:* ${process}
+🔭 *Perspective:* ${perspective}
+
+🌌 *Hexagram Matrix:*
+🔸 *Intellectual DC:* ${getElementText('intellectual-dc')}
+🔹 *Physical DC:* ${getElementText('physical-dc')}
+🔸 *Emotional DC:* ${getElementText('emotional-dc')}
+🔹 *Spiritual DC:* ${getElementText('spiritual-dc')}
+
+✨ *Magical Matrix:*
+🔮 *Prime:* ${getElementText('prime-dc')}
+🔮 *Second:* ${getElementText('second-dc')}
+🔮 *Third:* ${getElementText('third-dc')}
+🔮 *Fourth:* ${getElementText('fourth-dc')}
+
+▫️▫️▫️▫️▫️▫️▫️▫️▫️
+
+#AuldEwe #FateCast`;
+}
+
+
+
+      // Telegram button event
+
+      document
+
+        .getElementById("telegram-button")
+
+        .addEventListener("click", function () {
+
+          // const characterName =
+
+          //   document.querySelector("#result .generated-name")?.innerText ||
+
+          //   "No Name Generated";
+
+          // const lineageInfo =
+
+          //   document.querySelector("#heritage-result")?.innerText ||
+
+          //   "No Heritage Info";
+
+          // const soulPatternInfo =
+
+          //   document.querySelector("#inner-world .soul-pattern")?.innerText ||
+
+          //   "No Soul Pattern Info";
+
+          // const coreTraitsInfo =
+
+          //   document.querySelector("#inner-world .core-traits")?.innerText ||
+
+          //   "No Core Traits Info";
+
+          // const journeyPathInfo =
+
+          //   document.querySelector("#inner-world .journey-path")?.innerText ||
+
+          //   "No Journey Path Info";
+
+          // const hexagramMatrixInfo =
+
+          //   document.querySelector("#inner-world .hexagram-matrix")
+
+          //     ?.innerText ||
+
+          //   "No Hexagram Matrix Info";
+
+          // let message = `*Character Details:*\n\n*Name:*
+
+          // ${characterName}\n\n*Heritage:*\n${lineageInfo}\n\n*Soul Pattern:*\n${soulPatternInfo}\n\n*Core
+
+          // Traits:*\n${coreTraitsInfo}\n\n*Character Journey:*\n${journeyPathInfo}\n\n*Hexagram
+
+          // Matrix:*\n${hexagramMatrixInfo}`;
+
+
+          const message = getTelegramMessage(); // Use the new function
+
+          const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
+
+          const chatId = "-1002185533073";
+
+          const telegramURL =
+
+            `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&` +
+
+            `text=${encodeURIComponent(
+
+              message
+
+            )}`;
+
+          fetch(telegramURL)
+
+            .then((response) => {
+
+              if (response.ok) {
+
+                alert("Character details sent to Telegram!");
+
+              } else {
+
+                alert(
+
+                  "Failed to send to Telegram. Please check your bot token and chat ID."
+
+                );
+
+              }
+
+            })
+
+            .catch((error) => {
+
+              console.error("Telegram send error:", error);
+
+              alert("Telegram send error. Please try again.");
+
+            });
+
+        });
+
+      // Unified forgeIdentity function – used by both shake and button streams.
+
+      function forgeIdentity() {
+
+        // Increment roll count and (for a fresh generation) use the default surplus.
+
+        const rollCount = updateRollSession();
+
+        let name = generateName();
+
+        if (!name || name.trim() === "") {
+
+          name = "Unnamed One";
+
+        }
+
+
+        // Update the result area with name and hexagram info.
+
+        document.getElementById("result").innerHTML = `
+
+          <div class="name-reveal">
+
+            <div class="hex-source">
+
+              <span class="hex">Hexagram ${userSession.originalHexagram}</span>
+
+              <span class="hex-name">${hexagramData[userSession.originalHexagram].name}</span>
+
+            </div>
+
+            <p><strong>Given Name:</strong> <span class="generated-name">${name}</span></p>
+
+          </div>`;
+
+       
+
+  // Select a random lineage.
+
+          const lineage = randomElement(lineages);
+
+userSession.lineage = lineage;
+
+        // Always start with the default surplus.
+
+        const effectiveSurplus = lineage.surplus;
+
+        // Initialize attribute distribution.
+
+        userSession.currentAttributes = Object.assign({}, lineage.baseAttributes);
+
+        userSession.remainingSurplus = effectiveSurplus;
+
+        // Build the heritage HTML with base attributes and plus buttons.
+
+        let heritageHTML = `
+
+          <h2>${lineage.name} <span class="badge ${lineage.type.toLowerCase().replace(" ", "-")}">${lineage.type}</span></h2>
+
+          <div class="lineage-description">${lineage.description}</div>
+
+          <h3>Native Skills</h3>
+
+          <ul class="lineage-skills">
+
+            ${lineage.traits.map(t => `<li class="trait-pill">${t}</li>`).join("")}
+
+          </ul>
+
+          <p><strong>Role:</strong> ${lineage.role}</p>
+
+          <h3>Base Attributes</h3>
+
+          <ul class="base-attributes">
+
+            ${Object.keys(userSession.currentAttributes).map(attr => `
+
+              <li>
+
+                <strong>${attr}:</strong>
+
+                <span class="attr-value" data-attr="${attr}">${userSession.currentAttributes[attr]}</span>
+
+                <button class="plus-pill" data-attr="${attr}">+</button>
+
+              </li>
+
+            `).join("")}
+
+          </ul>
+
+          <p><strong>Surplus:</strong> <span id="surplus-points">${userSession.remainingSurplus}</span></p>`;
+
+        // Append tribal affiliation details.
+
+        const tribe = randomElement(tribes);
+userSession.tribe = tribe;
+
+        heritageHTML += `
+
+          <h3>Tribal Affiliation</h3>
+
+          <div class="tribe-section">
+
+            <h4><i class="fa fa-users"></i> ${tribe.name}</h4>
+
+            <p><i class="fa fa-language"></i> <strong>Tongue:</strong> ${tribe.tongue}</p>
+
+            <p><i class="fa fa-balance-scale"></i> <strong>Resonance:</strong> ${tribe.resonance}</p>
+
+            <p><i class="fa fa-magic"></i> <strong>Effect:</strong> ${tribe.effect}</p>
+
+            <p><i class="fa fa-scroll"></i> <strong>Ethos:</strong> ${tribe.ethos}</p>
+
+            <p><i class="fa fa-coins"></i> <strong>Power Cost:</strong> ${tribe.powerCost}</p>
+
+            <p><i class="fa fa-bolt"></i> <strong>Critical Effect:</strong> ${tribe.criticalEffect}</p>
+
+            <p><i class="fa fa-fire"></i> <strong>Burn:</strong> ${tribe.burn}</p>
+
+          </div>`;
+
+        document.getElementById("heritage-result").innerHTML = heritageHTML;
+
+        document.getElementById("heritage-result").style.display = "block";
+
+        // Attach event listeners to plus-pill buttons.
+
+        document.querySelectorAll(".plus-pill").forEach(button => {
+
+          button.addEventListener("click", function () {
+
+            const attr = this.getAttribute("data-attr");
+
+            allocatePoint(attr);
+
+          });
+
+        });
+
+        // Display inner world details.
+
+        const soulPattern = randomElement(soulPatterns);
+userSession.soulPattern = soulPattern;
+
+        document.getElementById("soul-pattern").innerHTML = `
+
+          <div style="color: var(--near-white);">${soulPattern.pattern}</div>
+
+          <p class="orbitron-bold-blue">Personality Profile: ${soulPattern.profile}</p>`;
+
+        const consciousTrait = randomElement(coreTraits);
+
+        const unconsciousTrait = randomElement(coreTraits);
+userSession.coreTraits = [
+  consciousTrait,
+  unconsciousTrait
+];
+
+        document.querySelector(".core-traits .conscious").innerHTML = `
+
+          <h4 class="orbitron-bold-blue">Conscious</h4>
+
+          <p><strong>${consciousTrait.trait}</strong>: ${consciousTrait.description} (Hexagram ${consciousTrait.hexagram})</p>`;
+
+        document.querySelector(".core-traits .unconscious").innerHTML = `
+
+          <h4 class="orbitron-bold-blue">Unconscious</h4>
+
+          <p><strong>${unconsciousTrait.trait}</strong>: ${unconsciousTrait.description} (Hexagram ${unconsciousTrait.hexagram})</p>`;
+
+        // Character Journey and Hexagram Matrix Population.
+
+        const selectedAgeBand = Math.random() < 0.5 ? "0-50" : "50+";
+
+        const availableTrajectories = trajectories.filter(t => t.ageBand === selectedAgeBand);
+
+        const selectedTrajectory = randomElement(availableTrajectories);
+
+        let trajectoryHTML = `<p><strong>Age Band:</strong> ${selectedTrajectory.ageBand}</p>`;
+
+        if (selectedAgeBand === "0-50") {
+
+          trajectoryHTML += `
+
+            <p><strong>From:</strong> ${selectedTrajectory.fromName} <strong>To:</strong> ${selectedTrajectory.toName}</p>
+
+            <p><strong>Process:</strong> ${selectedTrajectory.process}</p>
+
+            <p><strong>Perspective:</strong> ${selectedTrajectory.perspective}</p>`;
+
+        } else {
+
+          trajectoryHTML += `
+
+            <p><strong>Current:</strong> ${selectedTrajectory.currentName}</p>
+
+            <p><strong>Reflecting On:</strong> ${selectedTrajectory.reflectingName}</p>
+
+            <p><strong>Perspective:</strong> ${selectedTrajectory.perspective}</p>
+
+            <p><strong>Reflection:</strong> ${selectedTrajectory.reflection}</p>`;
+
+        }
+
+        document.getElementById("trajectory").innerHTML = trajectoryHTML;
+
+        const intellectualDC = consciousTrait.hexagram;
+
+        const physicalDC = unconsciousTrait.hexagram;
+
+        const emotionalDC = selectedAgeBand === "0-50" ? selectedTrajectory.fromHex : selectedTrajectory.currentHex;
+
+        const spiritualDC = selectedAgeBand === "0-50" ? selectedTrajectory.toHex : selectedTrajectory.reflectingHex;
+
+        document.getElementById("intellectual-dc").textContent = intellectualDC;
+
+        document.getElementById("physical-dc").textContent = physicalDC;
+
+        document.getElementById("emotional-dc").textContent = emotionalDC;
+
+        document.getElementById("spiritual-dc").textContent = spiritualDC;
+
+        document.getElementById("prime-dc").textContent = intellectualDC;
+
+        document.getElementById("second-dc").textContent = physicalDC;
+
+        document.getElementById("third-dc").textContent = emotionalDC;
+
+        document.getElementById("fourth-dc").textContent = spiritualDC;
+
+        document.getElementById("inner-world").style.display = "block";
+
+      }
+
+      // allocatePoint: Called when a plus-pill is clicked.
+
+      function allocatePoint(attribute) {
+
+        // Enforce an upper limit of 5 for any attribute.
+
+        if (userSession.currentAttributes[attribute] < 5) {
+
+          if (userSession.remainingSurplus > 0) {
+
+            userSession.currentAttributes[attribute]++;
+
+            userSession.remainingSurplus--;
+
+            // Update the attribute display.
+
+            const span = document.querySelector(`.attr-value[data-attr="${attribute}"]`);
+
+            if (span) {
+
+              span.textContent = userSession.currentAttributes[attribute];
+
+            }
+
+            // Update surplus display.
+
+            document.getElementById("surplus-points").textContent = userSession.remainingSurplus;
+
+          } else {
+
+            alert("No surplus points remaining");
+
+          }
+
+        } else {
+
+          alert("Maximum points for this attribute reached (5)");
+
+        }
+
+      }
+
+      // Unified generateName function that returns the generated name.
+
+      function generateName(hexagramOverride) {
+
+        const gender =
+
+          document.querySelector('input[name="gender"]:checked')?.value || "ewe";
+
+        const hexagram =
+
+          hexagramOverride ||
+
+          parseInt(randomElement(Object.keys(hexagramData)), 10);
+
+        if (!hexagramData[hexagram]) {
+
+          document.getElementById("result").textContent = "Hexagram data not found";
+
+          return "";
+
+        }
+
+        userSession.originalHexagram = hexagram;
+
+        userSession.renames = 5;
+
+        userSession.syllableCount = hexagram < 9 ? 2 : hexagram < 33 ? 3 : 4;
+
+        const { consonants, vowels, name: hexName } = hexagramData[hexagram];
+
+        let nameParts = [];
+
+        for (let i = 0; i < userSession.syllableCount - 1; i++) {
+
+          const con = consonants[Math.floor(Math.random() * consonants.length)];
+
+          const vow = vowels[Math.floor(Math.random() * vowels.length)];
+
+          nameParts.push(i === 0 ? con.toUpperCase() + vow : con + vow);
+
+        }
+
+        const suffixPool =
+
+          gender === "ewe"
+
+            ? ["ia", "elle", "ora", "yn", "ala"]
+
+            : ["on", "ath", "orn", "rak", "thos"];
+
+        nameParts.push(suffixPool[Math.floor(Math.random() * suffixPool.length)]);
+
+        const fullName = nameParts.join("");
+
+        userSession.name = fullName;
+
+        // Update result area with new name (this may be overwritten by forgeIdentity later).
+
+        document.getElementById("result").innerHTML = `
+
+          <div class="name-reveal">
+
+            <div class="hex-source">
+
+              <span class="hex">Hexagram ${hexagram}</span>
+
+              <span class="hex-name">${hexName}</span>
+
+            </div>
+
+            <div class="generated-name">${fullName}</div>
+
+          </div>`;
+
+                return fullName;
+
+      }
+
+      // Rename function for the "Rename" button.
+
+      function renameCharacter() {
+
+        if (!userSession.originalHexagram || userSession.renames <= 0) {
+
+          alert(
+
+            userSession.renames <= 0
+
+              ? "No more renames available"
+
+              : "Generate a name first!"
+
+          );
+
+          return;
+
+        }
+
+        userSession.renames--;
+
+        generateName(userSession.originalHexagram);
+
+      }
+
+      // Session handling: updateRollSession.
+
+      function updateRollSession() {
+
+        const now = Date.now();
+
+        let sessionData = localStorage.getItem("idForgeSession");
+
+        sessionData = sessionData ? JSON.parse(sessionData) : null;
+
+        if (!sessionData || now - sessionData.firstRollTime > 24 * 60 * 60 * 1000) {
+
+          sessionData = { firstRollTime: now, rollCount: 0 };
+
+        }
+
+        sessionData.rollCount++;
+
+        localStorage.setItem("idForgeSession", JSON.stringify(sessionData));
+
+        return sessionData.rollCount;
+
+      }
+
+      // Utility: randomElement.
+
+      function randomElement(arr) {
+
+        return arr[Math.floor(Math.random() * arr.length)];
+
+      }
+
 
 // Data arrays (hexagramData, tribes, lineages, soulPatterns, coreTraits, trajectories)
-      // are included here as in the original file.
-      const hexagramData = {
-        1: { name: "Creative Force", consonants: ["K","g","t","d","p","b"], vowels: ["a","o","u"] },
-        2: { name: "Receptive Energy", consonants: ["l","r","m","n"], vowels: ["e","i","u"] },
-        3: { name: "Difficulty at the Beginning", consonants: ["s","k","g","t","d"], vowels: ["a","o","u"] },
-        4: { name: "Youthful Folly", consonants: ["l","r","m","n","v"], vowels: ["e","i","u"] },
-        5: { name: "Waiting", consonants: ["l","r","m","n","f"], vowels: ["a","o","u"] },
-        6: { name: "Conflict", consonants: ["k","g","t","d","s"], vowels: ["a","o","u"] },
-        7: { name: "Army/Discipline", consonants: ["k","g","t","j","v"], vowels: ["e","i","u"] },
-        8: { name: "Holding Together", consonants: ["l","r","m","n","f"], vowels: ["a","o","u"] },
-        9: { name: "Small Accumulation", consonants: ["k","g","p","t","s"], vowels: ["e","i","u"] },
-        10: { name: "Treading Carefully", consonants: ["k","g","v","d","b"], vowels: ["a","o","u"] },
-        11: { name: "Flourishing Peace", consonants: ["l","r","m","n","h"], vowels: ["e","i","u"] },
-        12: { name: "Standstill", consonants: ["k","g","t","d","p","b"], vowels: ["a","o","u"] },
-        13: { name: "Community", consonants: ["l","r","m","n","s"], vowels: ["e","i","u"] },
-        14: { name: "Great Possessing", consonants: ["k","g","t","d","p","b"], vowels: ["a","o","u"] },
-        15: { name: "Humility", consonants: ["l","r","m","n","v"], vowels: ["e","i","u"] },
-        16: { name: "Enthusiasm", consonants: ["k","g","t","d","p","b"], vowels: ["a","o","u"] },
-        17: { name: "Following", consonants: ["l","r","m","n","s"], vowels: ["e","i","u"] },
-        18: { name: "Work on What Has Been Spoiled", consonants: ["k","g","i","t"], vowels: ["a","o","u"] },
-        19: { name: "Approaching", consonants: ["l","r","m","n","h"], vowels: ["e","i","u"] },
-        20: { name: "Contemplation", consonants: ["k","g","s","t","d"], vowels: ["a","o","u"] },
-        21: { name: "Biting Through", consonants: ["k","g","p","t","b"], vowels: ["e","i","u"] },
-        22: { name: "Grace", consonants: ["l","r","m","n","j"], vowels: ["a","o","u"] },
-        23: { name: "Splitting Apart", consonants: ["k","g","t","d","s"], vowels: ["e","i","u"] },
-        24: { name: "Return", consonants: ["l","r","m","n","f"], vowels: ["a","o","u"] },
-        25: { name: "Innocence", consonants: ["k","g","t","h","j"], vowels: ["e","i","u"] },
-        26: { name: "Great Accumulation", consonants: ["k","g","t","d","p","b"], vowels: ["a","o","u"] },
-        27: { name: "Nourishing", consonants: ["l","r","m","n","s"], vowels: ["a","o","u"] },
-        28: { name: "Preponderance of the Great", consonants: ["k","g","t","d","j"], vowels: ["a","o","u"] },
-        29: { name: "The Abyss", consonants: ["k","g","t","d","s"], vowels: ["e","i","u"] },
-        30: { name: "Clarity", consonants: ["l","r","m","n","v"], vowels: ["a","o","u"] },
-        31: { name: "Influence/Wooing", consonants: ["r","m","n","h"], vowels: ["e","i","u"] },
-        32: { name: "Duration", consonants: ["k","g","t","d","p"], vowels: ["a","o","u"] },
-        33: { name: "Retreat", consonants: ["r","m","n","j"], vowels: ["e","i","u"] },
-        34: { name: "Great Power", consonants: ["k","g","t","d","s"], vowels: ["a","o","u"] },
-        35: { name: "Progress", consonants: ["k","g","p","t","b"], vowels: ["e","i","u"] },
-        36: { name: "Darkening of the Light", consonants: ["r","m","n","v"], vowels: ["a","o","u"] },
-        37: { name: "Family", consonants: ["r","m","n","f"], vowels: ["e","i","u"] },
-        38: { name: "Opposition", consonants: ["k","g","t","d","j"], vowels: ["a","o","u"] },
-        39: { name: "Obstruction", consonants: ["r","m","n","h"], vowels: ["e","i","u"] },
-        40: { name: "Deliverance", consonants: ["k","g","t","d","p"], vowels: ["a","o","u"] },
-        41: { name: "Decrease", consonants: ["r","m","n","s"], vowels: ["e","i","u"] },
-        42: { name: "Increase", consonants: ["k","g","t","d","b"], vowels: ["a","o","u"] },
-        43: { name: "Breakthrough", consonants: ["k","g","p","t","j"], vowels: ["e","i","u"] },
-        44: { name: "Coming to Meet", consonants: ["r","m","n","v"], vowels: ["a","o","u"] },
-        45: { name: "Gathering Together", consonants: ["k","g","t","d","p"], vowels: ["e","i","u"] },
-        46: { name: "Pushing Upward", consonants: ["r","m","n","h"], vowels: ["a","o","u"] },
-        47: { name: "Oppression/Exhaustion", consonants: ["k","g","t","d","s"], vowels: ["e","i","u"] },
-        48: { name: "The Well", consonants: ["r","m","n","j"], vowels: ["a","o","u"] },
-        49: { name: "Revolution", consonants: ["k","g","p","t","b"], vowels: ["e","i","u"] },
-        50: { name: "The Cauldron", consonants: ["r","m","n","f"], vowels: ["a","o","u"] },
-        51: { name: "Thunder", consonants: ["k","g","t","d","p"], vowels: ["e","i","u"] },
-        52: { name: "Keeping Still", consonants: ["r","m","n","v"], vowels: ["a","o","u"] },
-        53: { name: "Gradual Progress", consonants: ["r","m","n","s"], vowels: ["a","o","u"] },
-        54: { name: "Marrying Maiden", consonants: ["k","g","t","d","v"], vowels: ["e","i","u"] },
-        55: { name: "Abundance", consonants: ["r","m","n","f"], vowels: ["a","o","u"] },
-        56: { name: "The Wanderer", consonants: ["k","g","p","t","b"], vowels: ["e","i","u"] },
-        57: { name: "Gentle Penetration", consonants: ["r","m","n","h"], vowels: ["a","o","u"] },
-        58: { name: "Joy", consonants: ["k","g","t","d","s"], vowels: ["e","i","u"] },
-        59: { name: "Dispersion", consonants: ["r","m","n","j"], vowels: ["a","o","u"] },
-        60: { name: "Limitation", consonants: ["k","g","t","d","f"], vowels: ["e","i","u"] },
-        61: { name: "Inner Truth", consonants: ["r","m","n","v"], vowels: ["a","o","u"] },
-        62: { name: "Preponderance of the Small", consonants: ["k","g","p","t","s"], vowels: ["e","i","u"] },
-        63: { name: "After Completion", consonants: ["k","g","t","d","b"], vowels: ["e","i","u"] },
-        64: { name: "Before Completion", consonants: ["r","s","j","h"], vowels: ["a","o","u"] }
-      };
+
+      // are included here as in the original file.
+
+      const hexagramData = {
+
+        1: { name: "Creative Force", consonants: ["K","g","t","d","p","b"], vowels: ["a","o","u"] },
+
+        2: { name: "Receptive Energy", consonants: ["l","r","m","n"], vowels: ["e","i","u"] },
+
+        3: { name: "Difficulty at the Beginning", consonants: ["s","k","g","t","d"], vowels: ["a","o","u"] },
+
+        4: { name: "Youthful Folly", consonants: ["l","r","m","n","v"], vowels: ["e","i","u"] },
+
+        5: { name: "Waiting", consonants: ["l","r","m","n","f"], vowels: ["a","o","u"] },
+
+        6: { name: "Conflict", consonants: ["k","g","t","d","s"], vowels: ["a","o","u"] },
+
+        7: { name: "Army/Discipline", consonants: ["k","g","t","j","v"], vowels: ["e","i","u"] },
+
+        8: { name: "Holding Together", consonants: ["l","r","m","n","f"], vowels: ["a","o","u"] },
+
+        9: { name: "Small Accumulation", consonants: ["k","g","p","t","s"], vowels: ["e","i","u"] },
+
+        10: { name: "Treading Carefully", consonants: ["k","g","v","d","b"], vowels: ["a","o","u"] },
+
+        11: { name: "Flourishing Peace", consonants: ["l","r","m","n","h"], vowels: ["e","i","u"] },
+
+        12: { name: "Standstill", consonants: ["k","g","t","d","p","b"], vowels: ["a","o","u"] },
+
+        13: { name: "Community", consonants: ["l","r","m","n","s"], vowels: ["e","i","u"] },
+
+        14: { name: "Great Possessing", consonants: ["k","g","t","d","p","b"], vowels: ["a","o","u"] },
+
+        15: { name: "Humility", consonants: ["l","r","m","n","v"], vowels: ["e","i","u"] },
+
+        16: { name: "Enthusiasm", consonants: ["k","g","t","d","p","b"], vowels: ["a","o","u"] },
+
+        17: { name: "Following", consonants: ["l","r","m","n","s"], vowels: ["e","i","u"] },
+
+        18: { name: "Work on What Has Been Spoiled", consonants: ["k","g","i","t"], vowels: ["a","o","u"] },
+
+        19: { name: "Approaching", consonants: ["l","r","m","n","h"], vowels: ["e","i","u"] },
+
+        20: { name: "Contemplation", consonants: ["k","g","s","t","d"], vowels: ["a","o","u"] },
+
+        21: { name: "Biting Through", consonants: ["k","g","p","t","b"], vowels: ["e","i","u"] },
+
+        22: { name: "Grace", consonants: ["l","r","m","n","j"], vowels: ["a","o","u"] },
+
+        23: { name: "Splitting Apart", consonants: ["k","g","t","d","s"], vowels: ["e","i","u"] },
+
+        24: { name: "Return", consonants: ["l","r","m","n","f"], vowels: ["a","o","u"] },
+
+        25: { name: "Innocence", consonants: ["k","g","t","h","j"], vowels: ["e","i","u"] },
+
+        26: { name: "Great Accumulation", consonants: ["k","g","t","d","p","b"], vowels: ["a","o","u"] },
+
+        27: { name: "Nourishing", consonants: ["l","r","m","n","s"], vowels: ["a","o","u"] },
+
+        28: { name: "Preponderance of the Great", consonants: ["k","g","t","d","j"], vowels: ["a","o","u"] },
+
+        29: { name: "The Abyss", consonants: ["k","g","t","d","s"], vowels: ["e","i","u"] },
+
+        30: { name: "Clarity", consonants: ["l","r","m","n","v"], vowels: ["a","o","u"] },
+
+        31: { name: "Influence/Wooing", consonants: ["r","m","n","h"], vowels: ["e","i","u"] },
+
+        32: { name: "Duration", consonants: ["k","g","t","d","p"], vowels: ["a","o","u"] },
+
+        33: { name: "Retreat", consonants: ["r","m","n","j"], vowels: ["e","i","u"] },
+
+        34: { name: "Great Power", consonants: ["k","g","t","d","s"], vowels: ["a","o","u"] },
+
+        35: { name: "Progress", consonants: ["k","g","p","t","b"], vowels: ["e","i","u"] },
+
+        36: { name: "Darkening of the Light", consonants: ["r","m","n","v"], vowels: ["a","o","u"] },
+
+        37: { name: "Family", consonants: ["r","m","n","f"], vowels: ["e","i","u"] },
+
+        38: { name: "Opposition", consonants: ["k","g","t","d","j"], vowels: ["a","o","u"] },
+
+        39: { name: "Obstruction", consonants: ["r","m","n","h"], vowels: ["e","i","u"] },
+
+        40: { name: "Deliverance", consonants: ["k","g","t","d","p"], vowels: ["a","o","u"] },
+
+        41: { name: "Decrease", consonants: ["r","m","n","s"], vowels: ["e","i","u"] },
+
+        42: { name: "Increase", consonants: ["k","g","t","d","b"], vowels: ["a","o","u"] },
+
+        43: { name: "Breakthrough", consonants: ["k","g","p","t","j"], vowels: ["e","i","u"] },
+
+        44: { name: "Coming to Meet", consonants: ["r","m","n","v"], vowels: ["a","o","u"] },
+
+        45: { name: "Gathering Together", consonants: ["k","g","t","d","p"], vowels: ["e","i","u"] },
+
+        46: { name: "Pushing Upward", consonants: ["r","m","n","h"], vowels: ["a","o","u"] },
+
+        47: { name: "Oppression/Exhaustion", consonants: ["k","g","t","d","s"], vowels: ["e","i","u"] },
+
+        48: { name: "The Well", consonants: ["r","m","n","j"], vowels: ["a","o","u"] },
+
+        49: { name: "Revolution", consonants: ["k","g","p","t","b"], vowels: ["e","i","u"] },
+
+        50: { name: "The Cauldron", consonants: ["r","m","n","f"], vowels: ["a","o","u"] },
+
+        51: { name: "Thunder", consonants: ["k","g","t","d","p"], vowels: ["e","i","u"] },
+
+        52: { name: "Keeping Still", consonants: ["r","m","n","v"], vowels: ["a","o","u"] },
+
+        53: { name: "Gradual Progress", consonants: ["r","m","n","s"], vowels: ["a","o","u"] },
+
+        54: { name: "Marrying Maiden", consonants: ["k","g","t","d","v"], vowels: ["e","i","u"] },
+
+        55: { name: "Abundance", consonants: ["r","m","n","f"], vowels: ["a","o","u"] },
+
+        56: { name: "The Wanderer", consonants: ["k","g","p","t","b"], vowels: ["e","i","u"] },
+
+        57: { name: "Gentle Penetration", consonants: ["r","m","n","h"], vowels: ["a","o","u"] },
+
+        58: { name: "Joy", consonants: ["k","g","t","d","s"], vowels: ["e","i","u"] },
+
+        59: { name: "Dispersion", consonants: ["r","m","n","j"], vowels: ["a","o","u"] },
+
+        60: { name: "Limitation", consonants: ["k","g","t","d","f"], vowels: ["e","i","u"] },
+
+        61: { name: "Inner Truth", consonants: ["r","m","n","v"], vowels: ["a","o","u"] },
+
+        62: { name: "Preponderance of the Small", consonants: ["k","g","p","t","s"], vowels: ["e","i","u"] },
+
+        63: { name: "After Completion", consonants: ["k","g","t","d","b"], vowels: ["e","i","u"] },
+
+        64: { name: "Before Completion", consonants: ["r","s","j","h"], vowels: ["a","o","u"] }
+
+      };
+
 const tribes = [
-  { 
-    name: "Tribe of Lightbearers", 
-    tongue: "Hope Tongue", 
-    resonance: "Virtuous", 
-    effect: "Advantage on morale checks, create fear-preventing aura", 
-    ethos: "Bearers of eternal optimism, their very presence inspires courage", 
-    powerCost: 2, 
-    criticalEffect: "Create 30ft fear-immunity aura", 
-    burn: "Immuno-Hope for 1c" 
-  },
-  { 
-    name: "Tribe of Flamekin", 
-    tongue: "Courage Tongue", 
-    resonance: "Virtuous", 
-    effect: "Advantage vs fear, grant temporary bravery", 
-    ethos: "Warriors forged in spiritual fires, turning fear to ash", 
-    powerCost: 3, 
-    criticalEffect: "Grant ally extra action", 
-    burn: "Momma-less panic" 
-  },
-  { 
-    name: "Tribe of Merrimakers", 
-    tongue: "Joy Tongue", 
-    resonance: "Virtuous", 
-    effect: "Advantage on social checks, grant temporary HP", 
-    ethos: "Keepers of celebration, weaving mirth into reality itself", 
-    powerCost: 2, 
-    criticalEffect: "Allies gain temp HP", 
-    burn: "Exhausting hour" 
-  },
-  { 
-    name: "Tribe of Seekers", 
-    tongue: "Wisdom Tongue", 
-    resonance: "Virtuous", 
-    effect: "Advantage on intelligence checks, share knowledge", 
-    ethos: "Living libraries preserving cosmic truths", 
-    powerCost: 3, 
-    criticalEffect: "Perfect recall", 
-    burn: "Confidence loss" 
-  },
-  { 
-    name: "Tribe of Bridgebuilders", 
-    tongue: "Unity Tongue", 
-    resonance: "Virtuous", 
-    effect: "Advantage on group coordination", 
-    ethos: "Weavers of social bonds and inter-tribal connections", 
-    powerCost: 3, 
-    criticalEffect: "Group double actions", 
-    burn: "Temporary cohesion loss" 
-  },
-  { 
-    name: "Tribe of Titans", 
-    tongue: "Strength Tongue", 
-    resonance: "Virtuous", 
-    effect: "Advantage on strength checks", 
-    ethos: "Living embodiments of physical perfection", 
-    powerCost: 2, 
-    criticalEffect: "Strength bonuses", 
-    burn: "Physical check disadvantage" 
-  },
-  { 
-    name: "Tribe of Caretakers", 
-    tongue: "Healing Tongue", 
-    resonance: "Virtuous", 
-    effect: "Restore health, enhance healing", 
-    ethos: "Menders of flesh and spirit", 
-    powerCost: 2, 
-    criticalEffect: "Area healing", 
-    burn: "Healing deficiency" 
-  },
-  { 
-    name: "Tribe of Songweavers", 
-    tongue: "Harmony Tongue", 
-    resonance: "Virtuous", 
-    effect: "Create bonds through art", 
-    ethos: "Artistic soul of Auld Ewe", 
-    powerCost: 2, 
-    criticalEffect: "Inspire creativity", 
-    burn: "Emotional discomfort" 
-  },
-  { 
-    name: "Tribe of Stormbringers", 
-    tongue: "Fury Tongue", 
-    resonance: "Challenging", 
-    effect: "Instill combat passion", 
-    ethos: "Channelers of primal storms", 
-    powerCost: 3, 
-    criticalEffect: "Enemy hesitation", 
-    burn: "Emotional overload" 
-  },
-  { 
-    name: "Tribe of Dread", 
-    tongue: "Fear Tongue", 
-    resonance: "Challenging", 
-    effect: "Induce fear effects", 
-    ethos: "Manipulators of primal terror", 
-    powerCost: 3, 
-    criticalEffect: "Mass fear", 
-    burn: "Residual fear" 
-  },
-  { 
-    name: "Tribe of Veilwalkers", 
-    tongue: "Deceit Tongue", 
-    resonance: "Challenging", 
-    effect: "Create illusions", 
-    ethos: "Masters of shadowplay", 
-    powerCost: 2, 
-    criticalEffect: "Forced deception", 
-    burn: "Illusion distortion" 
-  },
-  { 
-    name: "Tribe of Ironclad", 
-    tongue: "Conflict Tongue", 
-    resonance: "Challenging", 
-    effect: "Instigate discord", 
-    ethos: "Warfare incarnate", 
-    powerCost: 3, 
-    criticalEffect: "Enemy confusion", 
-    burn: "Suspicion" 
-  },
-  { 
-    name: "Tribe of Ally", 
-    tongue: "Trust Tongue", 
-    resonance: "Neutral", 
-    effect: "Advantage on Charisma", 
-    ethos: "Social lubricants of society", 
-    powerCost: 2, 
-    criticalEffect: "Unshakable trust", 
-    burn: "Dependency" 
-  },
-  { 
-    name: "Tribe of Rootkin", 
-    tongue: "Nature Tongue", 
-    resonance: "Neutral", 
-    effect: "Advantage on Nature checks", 
-    ethos: "Voice of the wild", 
-    powerCost: 2, 
-    criticalEffect: "Animal communication", 
-    burn: "Nature disconnection" 
-  },
-  { 
-    name: "Tribe of Reverents", 
-    tongue: "Spirit Tongue", 
-    resonance: "Neutral", 
-    effect: "Advantage on spiritual checks", 
-    ethos: "Bridge to the afterlife", 
-    powerCost: 3, 
-    criticalEffect: "Calm emotions", 
-    burn: "Charisma disadvantage" 
-  },
-  { 
-    name: "Tribe of Coinbearers", 
-    tongue: "Trade Tongue", 
-    resonance: "Neutral", 
-    effect: "Advantage on commerce", 
-    ethos: "Economic backbone", 
-    powerCost: 2, 
-    criticalEffect: "Persuasive trade", 
-    burn: "Distrust" 
-  },
-  { 
-    name: "Tribe of Griefkeepers", 
-    tongue: "Lament Tongue", 
-    resonance: "Neutral", 
-    effect: "Provide solace", 
-    ethos: "Memory preservers", 
-    powerCost: 2, 
-    criticalEffect: "Past insight", 
-    burn: "Emotional burden" 
-  },
-  { 
-    name: "Tribe of Puzzlers", 
-    tongue: "Riddle Tongue", 
-    resonance: "Neutral", 
-    effect: "Advantage on puzzles", 
-    ethos: "Solvers of enigmas", 
-    powerCost: 2, 
-    criticalEffect: "Reveal truths", 
-    burn: "Cognitive fatigue" 
-  },
-  { 
-    name: "Tribe of Maelstroms", 
-    tongue: "Chaos Tongue", 
-    resonance: "Challenging", 
-    effect: "Create confusion", 
-    ethos: "Agents of entropy", 
-    powerCost: 3, 
-    criticalEffect: "Combat disarray", 
-    burn: "Exhaustion" 
-  },
-  { 
-    name: "Tribe of Oathkeepers", 
-    tongue: "Truth Tongue", 
-    resonance: "Virtuous", 
-    effect: "Pierce deception", 
-    ethos: "Living lie detectors", 
-    powerCost: 3, 
-    criticalEffect: "Reveal truths", 
-    burn: "Distrust" 
-  }
+
+  { 
+
+    name: "Tribe of Lightbearers", 
+
+    tongue: "Hope Tongue", 
+
+    resonance: "Virtuous", 
+
+    effect: "Advantage on morale checks, create fear-preventing aura", 
+
+    ethos: "Bearers of eternal optimism, their very presence inspires courage", 
+
+    powerCost: 2, 
+
+    criticalEffect: "Create 30ft fear-immunity aura", 
+
+    burn: "Immuno-Hope for 1c" 
+
+  },
+
+  { 
+
+    name: "Tribe of Flamekin", 
+
+    tongue: "Courage Tongue", 
+
+    resonance: "Virtuous", 
+
+    effect: "Advantage vs fear, grant temporary bravery", 
+
+    ethos: "Warriors forged in spiritual fires, turning fear to ash", 
+
+    powerCost: 3, 
+
+    criticalEffect: "Grant ally extra action", 
+
+    burn: "Momma-less panic" 
+
+  },
+
+  { 
+
+    name: "Tribe of Merrimakers", 
+
+    tongue: "Joy Tongue", 
+
+    resonance: "Virtuous", 
+
+    effect: "Advantage on social checks, grant temporary HP", 
+
+    ethos: "Keepers of celebration, weaving mirth into reality itself", 
+
+    powerCost: 2, 
+
+    criticalEffect: "Allies gain temp HP", 
+
+    burn: "Exhausting hour" 
+
+  },
+
+  { 
+
+    name: "Tribe of Seekers", 
+
+    tongue: "Wisdom Tongue", 
+
+    resonance: "Virtuous", 
+
+    effect: "Advantage on intelligence checks, share knowledge", 
+
+    ethos: "Living libraries preserving cosmic truths", 
+
+    powerCost: 3, 
+
+    criticalEffect: "Perfect recall", 
+
+    burn: "Confidence loss" 
+
+  },
+
+  { 
+
+    name: "Tribe of Bridgebuilders", 
+
+    tongue: "Unity Tongue", 
+
+    resonance: "Virtuous", 
+
+    effect: "Advantage on group coordination", 
+
+    ethos: "Weavers of social bonds and inter-tribal connections", 
+
+    powerCost: 3, 
+
+    criticalEffect: "Group double actions", 
+
+    burn: "Temporary cohesion loss" 
+
+  },
+
+  { 
+
+    name: "Tribe of Titans", 
+
+    tongue: "Strength Tongue", 
+
+    resonance: "Virtuous", 
+
+    effect: "Advantage on strength checks", 
+
+    ethos: "Living embodiments of physical perfection", 
+
+    powerCost: 2, 
+
+    criticalEffect: "Strength bonuses", 
+
+    burn: "Physical check disadvantage" 
+
+  },
+
+  { 
+
+    name: "Tribe of Caretakers", 
+
+    tongue: "Healing Tongue", 
+
+    resonance: "Virtuous", 
+
+    effect: "Restore health, enhance healing", 
+
+    ethos: "Menders of flesh and spirit", 
+
+    powerCost: 2, 
+
+    criticalEffect: "Area healing", 
+
+    burn: "Healing deficiency" 
+
+  },
+
+  { 
+
+    name: "Tribe of Songweavers", 
+
+    tongue: "Harmony Tongue", 
+
+    resonance: "Virtuous", 
+
+    effect: "Create bonds through art", 
+
+    ethos: "Artistic soul of Auld Ewe", 
+
+    powerCost: 2, 
+
+    criticalEffect: "Inspire creativity", 
+
+    burn: "Emotional discomfort" 
+
+  },
+
+  { 
+
+    name: "Tribe of Stormbringers", 
+
+    tongue: "Fury Tongue", 
+
+    resonance: "Challenging", 
+
+    effect: "Instill combat passion", 
+
+    ethos: "Channelers of primal storms", 
+
+    powerCost: 3, 
+
+    criticalEffect: "Enemy hesitation", 
+
+    burn: "Emotional overload" 
+
+  },
+
+  { 
+
+    name: "Tribe of Dread", 
+
+    tongue: "Fear Tongue", 
+
+    resonance: "Challenging", 
+
+    effect: "Induce fear effects", 
+
+    ethos: "Manipulators of primal terror", 
+
+    powerCost: 3, 
+
+    criticalEffect: "Mass fear", 
+
+    burn: "Residual fear" 
+
+  },
+
+  { 
+
+    name: "Tribe of Veilwalkers", 
+
+    tongue: "Deceit Tongue", 
+
+    resonance: "Challenging", 
+
+    effect: "Create illusions", 
+
+    ethos: "Masters of shadowplay", 
+
+    powerCost: 2, 
+
+    criticalEffect: "Forced deception", 
+
+    burn: "Illusion distortion" 
+
+  },
+
+  { 
+
+    name: "Tribe of Ironclad", 
+
+    tongue: "Conflict Tongue", 
+
+    resonance: "Challenging", 
+
+    effect: "Instigate discord", 
+
+    ethos: "Warfare incarnate", 
+
+    powerCost: 3, 
+
+    criticalEffect: "Enemy confusion", 
+
+    burn: "Suspicion" 
+
+  },
+
+  { 
+
+    name: "Tribe of Ally", 
+
+    tongue: "Trust Tongue", 
+
+    resonance: "Neutral", 
+
+    effect: "Advantage on Charisma", 
+
+    ethos: "Social lubricants of society", 
+
+    powerCost: 2, 
+
+    criticalEffect: "Unshakable trust", 
+
+    burn: "Dependency" 
+
+  },
+
+  { 
+
+    name: "Tribe of Rootkin", 
+
+    tongue: "Nature Tongue", 
+
+    resonance: "Neutral", 
+
+    effect: "Advantage on Nature checks", 
+
+    ethos: "Voice of the wild", 
+
+    powerCost: 2, 
+
+    criticalEffect: "Animal communication", 
+
+    burn: "Nature disconnection" 
+
+  },
+
+  { 
+
+    name: "Tribe of Reverents", 
+
+    tongue: "Spirit Tongue", 
+
+    resonance: "Neutral", 
+
+    effect: "Advantage on spiritual checks", 
+
+    ethos: "Bridge to the afterlife", 
+
+    powerCost: 3, 
+
+    criticalEffect: "Calm emotions", 
+
+    burn: "Charisma disadvantage" 
+
+  },
+
+  { 
+
+    name: "Tribe of Coinbearers", 
+
+    tongue: "Trade Tongue", 
+
+    resonance: "Neutral", 
+
+    effect: "Advantage on commerce", 
+
+    ethos: "Economic backbone", 
+
+    powerCost: 2, 
+
+    criticalEffect: "Persuasive trade", 
+
+    burn: "Distrust" 
+
+  },
+
+  { 
+
+    name: "Tribe of Griefkeepers", 
+
+    tongue: "Lament Tongue", 
+
+    resonance: "Neutral", 
+
+    effect: "Provide solace", 
+
+    ethos: "Memory preservers", 
+
+    powerCost: 2, 
+
+    criticalEffect: "Past insight", 
+
+    burn: "Emotional burden" 
+
+  },
+
+  { 
+
+    name: "Tribe of Puzzlers", 
+
+    tongue: "Riddle Tongue", 
+
+    resonance: "Neutral", 
+
+    effect: "Advantage on puzzles", 
+
+    ethos: "Solvers of enigmas", 
+
+    powerCost: 2, 
+
+    criticalEffect: "Reveal truths", 
+
+    burn: "Cognitive fatigue" 
+
+  },
+
+  { 
+
+    name: "Tribe of Maelstroms", 
+
+    tongue: "Chaos Tongue", 
+
+    resonance: "Challenging", 
+
+    effect: "Create confusion", 
+
+    ethos: "Agents of entropy", 
+
+    powerCost: 3, 
+
+    criticalEffect: "Combat disarray", 
+
+    burn: "Exhaustion" 
+
+  },
+
+  { 
+
+    name: "Tribe of Oathkeepers", 
+
+    tongue: "Truth Tongue", 
+
+    resonance: "Virtuous", 
+
+    effect: "Pierce deception", 
+
+    ethos: "Living lie detectors", 
+
+    powerCost: 3, 
+
+    criticalEffect: "Reveal truths", 
+
+    burn: "Distrust" 
+
+  }
+
 ];
+
 const lineages = [
-  { 
-    name: "Elder Ewelings", 
-    type: "Pureblood", 
-    description: "Regal beings with flowing metallic wool, living archives of ancient wisdom", 
-    traits: ["Natural leaders", "Ancient magic", "Tradition-bound"], 
-    role: "Historians & Diplomats", 
-    baseAttributes: { 
-      Inspiration: 3, Intellect: 4, Prowess: 3, 
-      SelfAwareness: 3, Instinct: 2, Drive: 2, 
-      Energy: 2, Emotion: 2, Will: 3 
-    }, 
-    surplus: 10 
-  },
-  { 
-    name: "Luminary Ewelings", 
-    type: "Pureblood", 
-    description: "Ethereal guides with radiant wool glowing with spiritual energy", 
-    traits: ["Healing Light", "Mystic Insight", "Harmonious Presence"], 
-    role: "Spiritual Leaders", 
-    baseAttributes: { 
-      Inspiration: 3, Intellect: 3, Prowess: 2, 
-      SelfAwareness: 4, Instinct: 2, Drive: 2, 
-      Energy: 1, Emotion: 4, Will: 3 
-    }, 
-    surplus: 10 
-  },
-  { 
-    name: "Noble Ewelings", 
-    type: "Pureblood", 
-    description: "Aristocratic leaders with lustrous styled wool and regal bearing", 
-    traits: ["Royal Command", "Strategic Mastery", "Protective Aura"], 
-    role: "Government Leaders", 
-    baseAttributes: { 
-      Inspiration: 3, Intellect: 3, Prowess: 4, 
-      SelfAwareness: 2, Instinct: 2, Drive: 4, 
-      Energy: 3, Emotion: 2, Will: 3 
-    }, 
-    surplus: 10 
-  },
-  { 
-    name: "Lamolians", 
-    type: "Baseblood", 
-    description: "Gentle nurturers with soft patterned wool and empathetic eyes", 
-    traits: ["Social Harmony", "Herb Lore", "Innocence"], 
-    role: "Community Leaders", 
-    baseAttributes: { 
-      Inspiration: 2, Intellect: 2, Prowess: 3, 
-      SelfAwareness: 3, Instinct: 3, Drive: 2, 
-      Energy: 2, Emotion: 4, Will: 2 
-    }, 
-    surplus: 10 
-  },
-  { 
-    name: "Ewelings", 
-    type: "Baseblood", 
-    description: "Three-eyed truth-seekers with metallic wool and dual ears", 
-    traits: ["Enhanced Senses", "FUD Resilience", "Insight"], 
-    role: "Investigators", 
-    baseAttributes: { 
-      Inspiration: 2, Intellect: 3, Prowess: 2, 
-      SelfAwareness: 4, Instinct: 4, Drive: 2, 
-      Energy: 2, Emotion: 3, Will: 2 
-    }, 
-    surplus: 10 
-  },
-  { 
-    name: "Half-Goblin Tinkerwools", 
-    type: "Mixedblood", 
-    description: "Green-tinged inventors blending ovine calm with goblin ingenuity", 
-    traits: ["Mechanical Affinity", "Innovation", "Problem-Solving"], 
-    role: "Engineers", 
-    baseAttributes: { 
-      Inspiration: 4, Intellect: 3, Prowess: 2, 
-      SelfAwareness: 2, Instinct: 3, Drive: 3, 
-      Energy: 2, Emotion: 2, Will: 2 
-    }, 
-    surplus: 10 
-  },
-  { 
-    name: "Seafleece Elves", 
-    type: "Mixedblood", 
-    description: "Marine navigators with iridescent wool and fin-like ears", 
-    traits: ["Water Breathing", "Swift Swimming", "Aquatic Affinity"], 
-    role: "Marine Explorers", 
-    baseAttributes: { 
-      Inspiration: 2, Intellect: 3, Prowess: 2, 
-      SelfAwareness: 2, Instinct: 3, Drive: 3, 
-      Energy: 2, Emotion: 3, Will: 3 
-    }, 
-    surplus: 10 
-  },
-  { 
-    name: "Mersheep", 
-    type: "Mixedblood", 
-    description: "Amphibious guardians with bioluminescent wool and fish tails", 
-    traits: ["Water Manipulation", "Aquatic Vision", "Song of the Sea"], 
-    role: "Ocean Guardians", 
-    baseAttributes: { 
-      Inspiration: 2, Intellect: 2, Prowess: 2, 
-      SelfAwareness: 3, Instinct: 3, Drive: 3, 
-      Energy: 2, Emotion: 3, Will: 3 
-    }, 
-    surplus: 10 
-  },
-  { 
-    name: "Shaggy Dwarves", 
-    type: "Mixedblood", 
-    description: "Stout miners with mineral-infused wool and darkvision", 
-    traits: ["Stone Sense", "Weather Resistance", "Stonecraft"], 
-    role: "Mountain Crafters", 
-    baseAttributes: { 
-      Inspiration: 2, Intellect: 2, Prowess: 3, 
-      SelfAwareness: 2, Instinct: 3, Drive: 3, 
-      Energy: 4, Emotion: 2, Will: 3 
-    }, 
-    surplus: 10 
-  },
-  { 
-    name: "Ramshorn Elves", 
-    type: "Crossbreed", 
-    description: "Winged mystics with spiral horns channeling aerial magic", 
-    traits: ["Flight", "Magical Affinity", "Farsight"], 
-    role: "Sky Sentinels", 
-    baseAttributes: { 
-      Inspiration: 3, Intellect: 3, Prowess: 2, 
-      SelfAwareness: 3, Instinct: 3, Drive: 2, 
-      Energy: 2, Emotion: 3, Will: 3 
-    }, 
-    surplus: 10 
-  },
-  { 
-    name: "Fairyflocks", 
-    type: "Crossbreed", 
-    description: "Tiny winged enchanters with shimmering magical wool", 
-    traits: ["Nature Magic", "Illusion Craft", "Flight"], 
-    role: "Nature Wardens", 
-    baseAttributes: { 
-      Inspiration: 4, Intellect: 2, Prowess: 2, 
-      SelfAwareness: 2, Instinct: 3, Drive: 3, 
-      Energy: 1, Emotion: 4, Will: 2 
-    }, 
-    surplus: 10 
-  },
-  { 
-    name: "Battlefleece Minotaurs", 
-    type: "Augmented", 
-    description: "Muscular hybrids with dense shaggy wool and curved horns", 
-    traits: ["Battle Tactics", "Mechanical Savvy", "Warrior's Resilience"], 
-    role: "Military Strategists", 
-    baseAttributes: { 
-      Inspiration: 3, Intellect: 3, Prowess: 4, 
-      SelfAwareness: 2, Instinct: 2, Drive: 4, 
-      Energy: 4, Emotion: 1, Will: 1 
-    }, 
-    surplus: 10 
-  },
-  { 
-    name: "Mechanized Tinkerweaves", 
-    type: "Augmented", 
-    description: "Cybernetic hybrids with wool-metal fur and tool fingers", 
-    traits: ["Mechanical Mastery", "Technomancy", "Trap Savvy"], 
-    role: "Technological Innovators", 
-    baseAttributes: { 
-      Inspiration: 4, Intellect: 4, Prowess: 1, 
-      SelfAwareness: 1, Instinct: 5, Drive: 5, 
-      Energy: 1, Emotion: 1, Will: 1 
-    }, 
-    surplus: 10 
-  },
-  { 
-    name: "Lampling Seafleeces", 
-    type: "Hybrid", 
-    description: "Aquatic nurturers with iridescent patterns and fin-ears", 
-    traits: ["Calm Waters", "Aquatic Herb Lore", "Harmonious Navigation"], 
-    role: "Marine Mediators", 
-    baseAttributes: { 
-      Inspiration: 1, Intellect: 1, Prowess: 1, 
-      SelfAwareness: 1, Instinct: 5, Drive: 5, 
-      Energy: 1, Emotion: 1, Will: 1 
-    }, 
-    surplus: 10 
-  },
-  { 
-    name: "Mersheep Eweings", 
-    type: "Hybrid", 
-    description: "Three-eyed aquatic seers with bioluminescent wool", 
-    traits: ["Aquatic Vision", "Insightful Charm", "FUD Perception"], 
-    role: "Deep Sea Oracles", 
-    baseAttributes: { 
-      Inspiration: 1, Intellect: 1, Prowess: 1, 
-      SelfAwareness: 1, Instinct: 5, Drive: 5, 
-      Energy: 1, Emotion: 1, Will: 1 
-    }, 
-    surplus: 10 
-  }
+
+  { 
+
+    name: "Elder Ewelings", 
+
+    type: "Pureblood", 
+
+    description: "Regal beings with flowing metallic wool, living archives of ancient wisdom", 
+
+    traits: ["Natural leaders", "Ancient magic", "Tradition-bound"], 
+
+    role: "Historians & Diplomats", 
+
+    baseAttributes: { 
+
+      Inspiration: 3, Intellect: 4, Prowess: 3, 
+
+      SelfAwareness: 3, Instinct: 2, Drive: 2, 
+
+      Energy: 2, Emotion: 2, Will: 3 
+
+    }, 
+
+    surplus: 10 
+
+  },
+
+  { 
+
+    name: "Luminary Ewelings", 
+
+    type: "Pureblood", 
+
+    description: "Ethereal guides with radiant wool glowing with spiritual energy", 
+
+    traits: ["Healing Light", "Mystic Insight", "Harmonious Presence"], 
+
+    role: "Spiritual Leaders", 
+
+    baseAttributes: { 
+
+      Inspiration: 3, Intellect: 3, Prowess: 2, 
+
+      SelfAwareness: 4, Instinct: 2, Drive: 2, 
+
+      Energy: 1, Emotion: 4, Will: 3 
+
+    }, 
+
+    surplus: 10 
+
+  },
+
+  { 
+
+    name: "Noble Ewelings", 
+
+    type: "Pureblood", 
+
+    description: "Aristocratic leaders with lustrous styled wool and regal bearing", 
+
+    traits: ["Royal Command", "Strategic Mastery", "Protective Aura"], 
+
+    role: "Government Leaders", 
+
+    baseAttributes: { 
+
+      Inspiration: 3, Intellect: 3, Prowess: 4, 
+
+      SelfAwareness: 2, Instinct: 2, Drive: 4, 
+
+      Energy: 3, Emotion: 2, Will: 3 
+
+    }, 
+
+    surplus: 10 
+
+  },
+
+  { 
+
+    name: "Lamolians", 
+
+    type: "Baseblood", 
+
+    description: "Gentle nurturers with soft patterned wool and empathetic eyes", 
+
+    traits: ["Social Harmony", "Herb Lore", "Innocence"], 
+
+    role: "Community Leaders", 
+
+    baseAttributes: { 
+
+      Inspiration: 2, Intellect: 2, Prowess: 3, 
+
+      SelfAwareness: 3, Instinct: 3, Drive: 2, 
+
+      Energy: 2, Emotion: 4, Will: 2 
+
+    }, 
+
+    surplus: 10 
+
+  },
+
+  { 
+
+    name: "Ewelings", 
+
+    type: "Baseblood", 
+
+    description: "Three-eyed truth-seekers with metallic wool and dual ears", 
+
+    traits: ["Enhanced Senses", "FUD Resilience", "Insight"], 
+
+    role: "Investigators", 
+
+    baseAttributes: { 
+
+      Inspiration: 2, Intellect: 3, Prowess: 2, 
+
+      SelfAwareness: 4, Instinct: 4, Drive: 2, 
+
+      Energy: 2, Emotion: 3, Will: 2 
+
+    }, 
+
+    surplus: 10 
+
+  },
+
+  { 
+
+    name: "Half-Goblin Tinkerwools", 
+
+    type: "Mixedblood", 
+
+    description: "Green-tinged inventors blending ovine calm with goblin ingenuity", 
+
+    traits: ["Mechanical Affinity", "Innovation", "Problem-Solving"], 
+
+    role: "Engineers", 
+
+    baseAttributes: { 
+
+      Inspiration: 4, Intellect: 3, Prowess: 2, 
+
+      SelfAwareness: 2, Instinct: 3, Drive: 3, 
+
+      Energy: 2, Emotion: 2, Will: 2 
+
+    }, 
+
+    surplus: 10 
+
+  },
+
+  { 
+
+    name: "Seafleece Elves", 
+
+    type: "Mixedblood", 
+
+    description: "Marine navigators with iridescent wool and fin-like ears", 
+
+    traits: ["Water Breathing", "Swift Swimming", "Aquatic Affinity"], 
+
+    role: "Marine Explorers", 
+
+    baseAttributes: { 
+
+      Inspiration: 2, Intellect: 3, Prowess: 2, 
+
+      SelfAwareness: 2, Instinct: 3, Drive: 3, 
+
+      Energy: 2, Emotion: 3, Will: 3 
+
+    }, 
+
+    surplus: 10 
+
+  },
+
+  { 
+
+    name: "Mersheep", 
+
+    type: "Mixedblood", 
+
+    description: "Amphibious guardians with bioluminescent wool and fish tails", 
+
+    traits: ["Water Manipulation", "Aquatic Vision", "Song of the Sea"], 
+
+    role: "Ocean Guardians", 
+
+    baseAttributes: { 
+
+      Inspiration: 2, Intellect: 2, Prowess: 2, 
+
+      SelfAwareness: 3, Instinct: 3, Drive: 3, 
+
+      Energy: 2, Emotion: 3, Will: 3 
+
+    }, 
+
+    surplus: 10 
+
+  },
+
+  { 
+
+    name: "Shaggy Dwarves", 
+
+    type: "Mixedblood", 
+
+    description: "Stout miners with mineral-infused wool and darkvision", 
+
+    traits: ["Stone Sense", "Weather Resistance", "Stonecraft"], 
+
+    role: "Mountain Crafters", 
+
+    baseAttributes: { 
+
+      Inspiration: 2, Intellect: 2, Prowess: 3, 
+
+      SelfAwareness: 2, Instinct: 3, Drive: 3, 
+
+      Energy: 4, Emotion: 2, Will: 3 
+
+    }, 
+
+    surplus: 10 
+
+  },
+
+  { 
+
+    name: "Ramshorn Elves", 
+
+    type: "Crossbreed", 
+
+    description: "Winged mystics with spiral horns channeling aerial magic", 
+
+    traits: ["Flight", "Magical Affinity", "Farsight"], 
+
+    role: "Sky Sentinels", 
+
+    baseAttributes: { 
+
+      Inspiration: 3, Intellect: 3, Prowess: 2, 
+
+      SelfAwareness: 3, Instinct: 3, Drive: 2, 
+
+      Energy: 2, Emotion: 3, Will: 3 
+
+    }, 
+
+    surplus: 10 
+
+  },
+
+  { 
+
+    name: "Fairyflocks", 
+
+    type: "Crossbreed", 
+
+    description: "Tiny winged enchanters with shimmering magical wool", 
+
+    traits: ["Nature Magic", "Illusion Craft", "Flight"], 
+
+    role: "Nature Wardens", 
+
+    baseAttributes: { 
+
+      Inspiration: 4, Intellect: 2, Prowess: 2, 
+
+      SelfAwareness: 2, Instinct: 3, Drive: 3, 
+
+      Energy: 1, Emotion: 4, Will: 2 
+
+    }, 
+
+    surplus: 10 
+
+  },
+
+  { 
+
+    name: "Battlefleece Minotaurs", 
+
+    type: "Augmented", 
+
+    description: "Muscular hybrids with dense shaggy wool and curved horns", 
+
+    traits: ["Battle Tactics", "Mechanical Savvy", "Warrior's Resilience"], 
+
+    role: "Military Strategists", 
+
+    baseAttributes: { 
+
+      Inspiration: 3, Intellect: 3, Prowess: 4, 
+
+      SelfAwareness: 2, Instinct: 2, Drive: 4, 
+
+      Energy: 4, Emotion: 1, Will: 1 
+
+    }, 
+
+    surplus: 10 
+
+  },
+
+  { 
+
+    name: "Mechanized Tinkerweaves", 
+
+    type: "Augmented", 
+
+    description: "Cybernetic hybrids with wool-metal fur and tool fingers", 
+
+    traits: ["Mechanical Mastery", "Technomancy", "Trap Savvy"], 
+
+    role: "Technological Innovators", 
+
+    baseAttributes: { 
+
+      Inspiration: 4, Intellect: 4, Prowess: 1, 
+
+      SelfAwareness: 1, Instinct: 5, Drive: 5, 
+
+      Energy: 1, Emotion: 1, Will: 1 
+
+    }, 
+
+    surplus: 10 
+
+  },
+
+  { 
+
+    name: "Lampling Seafleeces", 
+
+    type: "Hybrid", 
+
+    description: "Aquatic nurturers with iridescent patterns and fin-ears", 
+
+    traits: ["Calm Waters", "Aquatic Herb Lore", "Harmonious Navigation"], 
+
+    role: "Marine Mediators", 
+
+    baseAttributes: { 
+
+      Inspiration: 1, Intellect: 1, Prowess: 1, 
+
+      SelfAwareness: 1, Instinct: 5, Drive: 5, 
+
+      Energy: 1, Emotion: 1, Will: 1 
+
+    }, 
+
+    surplus: 10 
+
+  },
+
+  { 
+
+    name: "Mersheep Eweings", 
+
+    type: "Hybrid", 
+
+    description: "Three-eyed aquatic seers with bioluminescent wool", 
+
+    traits: ["Aquatic Vision", "Insightful Charm", "FUD Perception"], 
+
+    role: "Deep Sea Oracles", 
+
+    baseAttributes: { 
+
+      Inspiration: 1, Intellect: 1, Prowess: 1, 
+
+      SelfAwareness: 1, Instinct: 5, Drive: 5, 
+
+      Energy: 1, Emotion: 1, Will: 1 
+
+    }, 
+
+    surplus: 10 
+
+  }
+
 ];
+
 const soulPatterns = [
-  { pattern: "Seeker of Trials", profile: "Investigating Catalyst (1/3)" },
-  { pattern: "Lore Weaver", profile: "Investigating Networker (1/4)" },
-  { pattern: "Quiet Bridge", profile: "Hermit Networker (2/4)" },
-  { pattern: "Whispering Rebel", profile: "Hermit Heretic (2/5)" },
-  { pattern: "Trial-Forged Rebel", profile: "Catalyst Heretic (3/5)" },
-  { pattern: "Wandering Beacon", profile: "Catalyst Exemplar (3/6)" },
-  { pattern: "Gathering Light", profile: "Networker Exemplar (4/6)" },
-  { pattern: "Questioning Thread", profile: "Networker Investigator (4/1)" },
-  { pattern: "Storm-Bringer Seeker", profile: "Heretic Investigator (5/1)" },
-  { pattern: "Seduced Storm", profile: "Heretic Hermit (5/2)" },
-  { pattern: "Hermon's Lantern", profile: "Exemplar Hermit (6/2)" },
-  { pattern: "Crucible of Wisdom", profile: "Exemplar Catalyst (6/3)" }
+
+  { pattern: "Seeker of Trials", profile: "Investigating Catalyst (1/3)" },
+
+  { pattern: "Lore Weaver", profile: "Investigating Networker (1/4)" },
+
+  { pattern: "Quiet Bridge", profile: "Hermit Networker (2/4)" },
+
+  { pattern: "Whispering Rebel", profile: "Hermit Heretic (2/5)" },
+
+  { pattern: "Trial-Forged Rebel", profile: "Catalyst Heretic (3/5)" },
+
+  { pattern: "Wandering Beacon", profile: "Catalyst Exemplar (3/6)" },
+
+  { pattern: "Gathering Light", profile: "Networker Exemplar (4/6)" },
+
+  { pattern: "Questioning Thread", profile: "Networker Investigator (4/1)" },
+
+  { pattern: "Storm-Bringer Seeker", profile: "Heretic Investigator (5/1)" },
+
+  { pattern: "Seduced Storm", profile: "Heretic Hermit (5/2)" },
+
+  { pattern: "Hermon's Lantern", profile: "Exemplar Hermit (6/2)" },
+
+  { pattern: "Crucible of Wisdom", profile: "Exemplar Catalyst (6/3)" }
+
 ];
+
 const coreTraits = [
-  { 
-    trait: "Self-Expression", 
-    description: "The Storyteller: Characterized by vivid communication and narrative crafting abilities. Natural weaver of experiences into compelling tales.", 
-    hexagram: 1 
-  },
-  { 
-    trait: "Receptivity", 
-    description: "The Empath: Possesses deep emotional resonance. Naturally absorbs and reflects others' emotional states.", 
-    hexagram: 2   
-  },
-  { 
-    trait: "Innovation", 
-    description: "The Visionary: Sees potential patterns before others. Constantly generates novel solutions to old problems.", 
-    hexagram: 3 
-  },
-  { 
-    trait: "Formulization",  
-    description: "The Systemizer: Creates order from chaos. Innate need to structure unstructured environments.", 
-    hexagram: 4 
-  },
-  { 
-    trait: "Fixed Rhythms", 
-    description: "The Timekeeper: Maintains cyclical patterns. Finds security in predictable temporal structures.", 
-    hexagram: 5 
-  },
-  { 
-    trait: "Conflict Resolution", 
-    description: "The Peacemaker: Natural mediator who transforms discord into harmony through empathetic negotiation.", 
-    hexagram: 6 
-  },
-  { 
-    trait: "Leadership", 
-    description: "The Charismatic Guide: Inspires followership through authentic presence and clarity of vision.", 
-    hexagram: 7   
-  },
-  { 
-    trait: "Contribution", 
-    description: "The Generous Spirit: Finds purpose through giving. Measures worth by impact on others.", 
-    hexagram: 8 
-  },
-  { 
-    trait: "Focus", 
-    description: "The Laser Mind: Maintains unwavering attention on priorities. Filters distractions effortlessly.", 
-    hexagram: 9 
-  },
-  { 
-    trait: "Self-Behavior", 
-    description: "The Self-Aware Adapter: Constantly monitors and adjusts personal conduct to situation demands.", 
-    hexagram: 10 
-  },
-  { 
-    trait: "Ideas", 
-    description: "The Conceptual Innovator: Generates abstract frameworks. Connects disparate concepts into new paradigms.", 
-    hexagram: 11 
-  },
-  { 
-    trait: "Caution", 
-    description: "The Prudent Planner: Calculates risk/reward ratios instinctively. Values preparation over impulse.", 
-    hexagram: 12 
-  },
-  { 
-    trait: "Listener", 
-    description: "The Empathetic Ear: Processes information through attentive silence. Creates safe spaces for sharing.", 
-    hexagram: 13 
-  },
-  { 
-    trait: "Power Skills", 
-    description: "The Magnetic Influencer: Naturally commands attention. Converts presence into actionable momentum.", 
-    hexagram: 14 
-  },
-  { 
-    trait: "Extremes", 
-    description: "The Intensity Seeker: Thrives in polarized states. Pushes boundaries to feel truly alive.", 
-    hexagram: 15 
-  },
-  { 
-    trait: "Enthusiasm", 
-    description: "The Energizer: Infectiously passionate. Transforms mundane tasks into exciting challenges.", 
-    hexagram: 16 
-  },
-  { 
-    trait: "Following", 
-    description: "The Loyal Supporter: Excels in secondary roles. Strengthens leaders through devoted service.", 
-    hexagram: 17 
-  },
-  { 
-    trait: "Correction", 
-    description: "The Perfectionist: Identifies flaws instinctively. Driven to optimize and refine endlessly.", 
-    hexagram: 18 
-  },
-  { 
-    trait: "Wanting", 
-    description: "The Seeker: Perpetually curious. Finds fulfillment in the pursuit rather than possession.", 
-    hexagram: 19 
-  },
-  { 
-    trait: "Contemplation", 
-    description: "The Philosopher: Engages in deep reflection. Values understanding over action.", 
-    hexagram: 20 
-  },
-  { 
-    trait: "Control", 
-    description: "The Director: Naturally coordinates systems. Maintains order through strategic oversight.", 
-    hexagram: 21 
-  },
-  { 
-    trait: "Openness", 
-    description: "The Receptive: Approachable and adaptable. Welcomes new experiences without prejudice.", 
-    hexagram: 22 
-  },
-  { 
-    trait: "Assimilation", 
-    description: "The Integrator: Synthesizes diverse elements. Creates cohesion from fragmentation.", 
-    hexagram: 23 
-  },
-  { 
-    trait: "Rationalization", 
-    description: "The Logical Thinker: Seeks empirical foundations. Distills complexity into clear principles.", 
-    hexagram: 24 
-  },
-  { 
-    trait: "Innocence", 
-    description: "The Pure Heart: Maintains childlike wonder. Approaches life with unfiltered authenticity.", 
-    hexagram: 25 
-  },
-  { 
-    trait: "Salesmanship", 
-    description: "The Persuader: Master of constructive influence. Aligns others' interests with shared goals.", 
-    hexagram: 26 
-  },
-  { 
-    trait: "Nurturance", 
-    description: "The Caregiver: Provides emotional sustenance. Derives meaning from supporting growth.", 
-    hexagram: 27 
-  },
-  { 
-    trait: "Purpose", 
-    description: "The Goal-Setter: Defines clear objectives. Measures progress through tangible milestones.", 
-    hexagram: 28 
-  },
-  { 
-    trait: "Commitment", 
-    description: "The Devoted: Maintains steadfast dedication. Honors promises through persistent action.", 
-    hexagram: 29 
-  },
-  { 
-    trait: "Recognition", 
-    description: "The Acknowledged Leader: Earns authority through demonstrated competence. Naturally rises to prominence.", 
-    hexagram: 30 
-  },
-  { 
-    trait: "Continuity", 
-    description: "The Sustainer: Preserves valuable traditions. Bridges past wisdom with present needs.", 
-    hexagram: 31 
-  },
-  { 
-    trait: "Privacy", 
-    description: "The Reserved: Values personal boundaries. Shares selectively to maintain inner sanctum.", 
-    hexagram: 32 
-  },
-  { 
-    trait: "Power", 
-    description: "The Influencer: Wields authority responsibly. Understands leadership as service.", 
-    hexagram: 33 
-  },
-  { 
-    trait: "Change", 
-    description: "The Adapter: Embraces flux comfortably. Masters transitional states.", 
-    hexagram: 34 
-  },
-  { 
-    trait: "Crisis Management", 
-    description: "The Rescuer: Thrives under pressure. Transforms chaos into order through decisive action.", 
-    hexagram: 35 
-  },
-  { 
-    trait: "Family/Community", 
-    description: "The Connector: Strengthens social bonds. Builds networks through genuine care.", 
-    hexagram: 36 
-  },
-  { 
-    trait: "Opposition", 
-    description: "The Challenger: Questions assumptions constructively. Drives progress through healthy friction.", 
-    hexagram: 37 
-  },
-  { 
-    trait: "Provocation", 
-    description: "The Instigator: Stimulates action through strategic disruption. Breaks complacency patterns.", 
-    hexagram: 38 
-  },
-  { 
-    trait: "Deliverance", 
-    description: "The Liberator: Frees others from constraints. Champions autonomy and self-determination.", 
-    hexagram: 39 
-  },
-  { 
-    trait: "Fantasy", 
-    description: "The Dreamer: Generates alternative realities. Uses imagination as problem-solving tool.", 
-    hexagram: 40 
-  },
-  { 
-    trait: "Maturation", 
-    description: "The Grown: Integrates life lessons. Manifests wisdom through considered action.", 
-    hexagram: 41 
-  },
-  { 
-    trait: "Insight", 
-    description: "The Sage: Perceives underlying truths. Reveals hidden connections through intuition.", 
-    hexagram: 42 
-  },
-  { 
-    trait: "Alertness", 
-    description: "The Vigilant: Maintains situational awareness. Anticipates challenges before they manifest.", 
-    hexagram: 43 
-  },
-  { 
-    trait: "Gathering", 
-    description: "The Collector: Accumulates knowledge/resources. Builds reserves for strategic deployment.", 
-    hexagram: 44 
-  },
-  { 
-    trait: "Determination", 
-    description: "The Resolute: Persists against obstacles. Converts setbacks into fuel for effort.", 
-    hexagram: 45 
-  },
-  { 
-    trait: "Realization", 
-    description: "The Enlightened: Achieves clarity through experience. Translates epiphanies into action.", 
-    hexagram: 46 
-  },
-  { 
-    trait: "Depth", 
-    description: "The Profound: Seeks substantive meaning. Rejects superficial engagement.", 
-    hexagram: 47 
-  },
-  { 
-    trait: "Principles", 
-    description: "The Moralist: Guided by ethical code. Aligns actions with core values consistently.", 
-    hexagram: 48 
-  },
-  { 
-    trait: "Values", 
-    description: "The Believer: Anchored in personal truth. Makes decisions through value-based filtering.", 
-    hexagram: 49 
-  },
-  { 
-    trait: "Initiative", 
-    description: "The Self-Starter: Generates momentum autonomously. Prefers action to deliberation.", 
-    hexagram: 50 
-  },
-  { 
-    trait: "Stillness", 
-    description: "The Calm: Maintains equanimity under stress. Creates peace through centered presence.", 
-    hexagram: 51 
-  },
-  { 
-    trait: "Beginnings", 
-    description: "The Pioneer: Embraces genesis energy. Comfortable initiating from nothingness.", 
-    hexagram: 52 
-  },
-  { 
-    trait: "Ambition", 
-    description: "The Achiever: Sets escalating challenges. Measures self-worth through accomplishment.", 
-    hexagram: 53 
-  },
-  { 
-    trait: "Abundance", 
-    description: "The Prosperous: Attracts and shares resources. Believes in limitless potential.", 
-    hexagram: 54 
-  },
-  { 
-    trait: "Stimulation", 
-    description: "The Excited: Thrives on novel experiences. Avoids stagnation through constant engagement.", 
-    hexagram: 55 
-  },
-  { 
-    trait: "Clarity", 
-    description: "The Seer: Discerns essential truths. Filters noise to reveal core reality.", 
-    hexagram: 56 
-  },
-  { 
-    trait: "Vitality", 
-    description: "The Energetic: Radiates life force. Inspires others through vigorous engagement.", 
-    hexagram: 57 
-  },
-  { 
-    trait: "Intimacy", 
-    description: "The Close: Develops profound connections. Values depth over breadth in relationships.", 
-    hexagram: 58 
-  },
-  { 
-    trait: "Limitation", 
-    description: "The Restrained: Practices conscious boundaries. Understands freedom through discipline.", 
-    hexagram: 59 
-  },
-  { 
-    trait: "Mystery", 
-    description: "The Enigma: Maintains intriguing ambiguity. Reveals self through layered disclosure.", 
-    hexagram: 60 
-  },
-  { 
-    trait: "Detail", 
-    description: "The Meticulous: Notices subtle particulars. Believes excellence lives in minutiae.", 
-    hexagram: 61 
-  },
-  { 
-    trait: "Doubt", 
-    description: "The Skeptic: Questions apparent truths. Strengthens ideas through rigorous testing.", 
-    hexagram: 62 
-  },
-  { 
-    trait: "Confusion", 
-    description: "The Bewildered: Navigates complexity through intuition. Finds clarity in apparent chaos.", 
-    hexagram: 63 
-  },
-  { 
-    trait: "Completion", 
-    description: "The Finisher: Drives projects to conclusion. Understands the power of closure.", 
-    hexagram: 64 
-  }
+
+  { 
+
+    trait: "Self-Expression", 
+
+    description: "The Storyteller: Characterized by vivid communication and narrative crafting abilities. Natural weaver of experiences into compelling tales.", 
+
+    hexagram: 1 
+
+  },
+
+  { 
+
+    trait: "Receptivity", 
+
+    description: "The Empath: Possesses deep emotional resonance. Naturally absorbs and reflects others' emotional states.", 
+
+    hexagram: 2   
+
+  },
+
+  { 
+
+    trait: "Innovation", 
+
+    description: "The Visionary: Sees potential patterns before others. Constantly generates novel solutions to old problems.", 
+
+    hexagram: 3 
+
+  },
+
+  { 
+
+    trait: "Formulization",  
+
+    description: "The Systemizer: Creates order from chaos. Innate need to structure unstructured environments.", 
+
+    hexagram: 4 
+
+  },
+
+  { 
+
+    trait: "Fixed Rhythms", 
+
+    description: "The Timekeeper: Maintains cyclical patterns. Finds security in predictable temporal structures.", 
+
+    hexagram: 5 
+
+  },
+
+  { 
+
+    trait: "Conflict Resolution", 
+
+    description: "The Peacemaker: Natural mediator who transforms discord into harmony through empathetic negotiation.", 
+
+    hexagram: 6 
+
+  },
+
+  { 
+
+    trait: "Leadership", 
+
+    description: "The Charismatic Guide: Inspires followership through authentic presence and clarity of vision.", 
+
+    hexagram: 7   
+
+  },
+
+  { 
+
+    trait: "Contribution", 
+
+    description: "The Generous Spirit: Finds purpose through giving. Measures worth by impact on others.", 
+
+    hexagram: 8 
+
+  },
+
+  { 
+
+    trait: "Focus", 
+
+    description: "The Laser Mind: Maintains unwavering attention on priorities. Filters distractions effortlessly.", 
+
+    hexagram: 9 
+
+  },
+
+  { 
+
+    trait: "Self-Behavior", 
+
+    description: "The Self-Aware Adapter: Constantly monitors and adjusts personal conduct to situation demands.", 
+
+    hexagram: 10 
+
+  },
+
+  { 
+
+    trait: "Ideas", 
+
+    description: "The Conceptual Innovator: Generates abstract frameworks. Connects disparate concepts into new paradigms.", 
+
+    hexagram: 11 
+
+  },
+
+  { 
+
+    trait: "Caution", 
+
+    description: "The Prudent Planner: Calculates risk/reward ratios instinctively. Values preparation over impulse.", 
+
+    hexagram: 12 
+
+  },
+
+  { 
+
+    trait: "Listener", 
+
+    description: "The Empathetic Ear: Processes information through attentive silence. Creates safe spaces for sharing.", 
+
+    hexagram: 13 
+
+  },
+
+  { 
+
+    trait: "Power Skills", 
+
+    description: "The Magnetic Influencer: Naturally commands attention. Converts presence into actionable momentum.", 
+
+    hexagram: 14 
+
+  },
+
+  { 
+
+    trait: "Extremes", 
+
+    description: "The Intensity Seeker: Thrives in polarized states. Pushes boundaries to feel truly alive.", 
+
+    hexagram: 15 
+
+  },
+
+  { 
+
+    trait: "Enthusiasm", 
+
+    description: "The Energizer: Infectiously passionate. Transforms mundane tasks into exciting challenges.", 
+
+    hexagram: 16 
+
+  },
+
+  { 
+
+    trait: "Following", 
+
+    description: "The Loyal Supporter: Excels in secondary roles. Strengthens leaders through devoted service.", 
+
+    hexagram: 17 
+
+  },
+
+  { 
+
+    trait: "Correction", 
+
+    description: "The Perfectionist: Identifies flaws instinctively. Driven to optimize and refine endlessly.", 
+
+    hexagram: 18 
+
+  },
+
+  { 
+
+    trait: "Wanting", 
+
+    description: "The Seeker: Perpetually curious. Finds fulfillment in the pursuit rather than possession.", 
+
+    hexagram: 19 
+
+  },
+
+  { 
+
+    trait: "Contemplation", 
+
+    description: "The Philosopher: Engages in deep reflection. Values understanding over action.", 
+
+    hexagram: 20 
+
+  },
+
+  { 
+
+    trait: "Control", 
+
+    description: "The Director: Naturally coordinates systems. Maintains order through strategic oversight.", 
+
+    hexagram: 21 
+
+  },
+
+  { 
+
+    trait: "Openness", 
+
+    description: "The Receptive: Approachable and adaptable. Welcomes new experiences without prejudice.", 
+
+    hexagram: 22 
+
+  },
+
+  { 
+
+    trait: "Assimilation", 
+
+    description: "The Integrator: Synthesizes diverse elements. Creates cohesion from fragmentation.", 
+
+    hexagram: 23 
+
+  },
+
+  { 
+
+    trait: "Rationalization", 
+
+    description: "The Logical Thinker: Seeks empirical foundations. Distills complexity into clear principles.", 
+
+    hexagram: 24 
+
+  },
+
+  { 
+
+    trait: "Innocence", 
+
+    description: "The Pure Heart: Maintains childlike wonder. Approaches life with unfiltered authenticity.", 
+
+    hexagram: 25 
+
+  },
+
+  { 
+
+    trait: "Salesmanship", 
+
+    description: "The Persuader: Master of constructive influence. Aligns others' interests with shared goals.", 
+
+    hexagram: 26 
+
+  },
+
+  { 
+
+    trait: "Nurturance", 
+
+    description: "The Caregiver: Provides emotional sustenance. Derives meaning from supporting growth.", 
+
+    hexagram: 27 
+
+  },
+
+  { 
+
+    trait: "Purpose", 
+
+    description: "The Goal-Setter: Defines clear objectives. Measures progress through tangible milestones.", 
+
+    hexagram: 28 
+
+  },
+
+  { 
+
+    trait: "Commitment", 
+
+    description: "The Devoted: Maintains steadfast dedication. Honors promises through persistent action.", 
+
+    hexagram: 29 
+
+  },
+
+  { 
+
+    trait: "Recognition", 
+
+    description: "The Acknowledged Leader: Earns authority through demonstrated competence. Naturally rises to prominence.", 
+
+    hexagram: 30 
+
+  },
+
+  { 
+
+    trait: "Continuity", 
+
+    description: "The Sustainer: Preserves valuable traditions. Bridges past wisdom with present needs.", 
+
+    hexagram: 31 
+
+  },
+
+  { 
+
+    trait: "Privacy", 
+
+    description: "The Reserved: Values personal boundaries. Shares selectively to maintain inner sanctum.", 
+
+    hexagram: 32 
+
+  },
+
+  { 
+
+    trait: "Power", 
+
+    description: "The Influencer: Wields authority responsibly. Understands leadership as service.", 
+
+    hexagram: 33 
+
+  },
+
+  { 
+
+    trait: "Change", 
+
+    description: "The Adapter: Embraces flux comfortably. Masters transitional states.", 
+
+    hexagram: 34 
+
+  },
+
+  { 
+
+    trait: "Crisis Management", 
+
+    description: "The Rescuer: Thrives under pressure. Transforms chaos into order through decisive action.", 
+
+    hexagram: 35 
+
+  },
+
+  { 
+
+    trait: "Family/Community", 
+
+    description: "The Connector: Strengthens social bonds. Builds networks through genuine care.", 
+
+    hexagram: 36 
+
+  },
+
+  { 
+
+    trait: "Opposition", 
+
+    description: "The Challenger: Questions assumptions constructively. Drives progress through healthy friction.", 
+
+    hexagram: 37 
+
+  },
+
+  { 
+
+    trait: "Provocation", 
+
+    description: "The Instigator: Stimulates action through strategic disruption. Breaks complacency patterns.", 
+
+    hexagram: 38 
+
+  },
+
+  { 
+
+    trait: "Deliverance", 
+
+    description: "The Liberator: Frees others from constraints. Champions autonomy and self-determination.", 
+
+    hexagram: 39 
+
+  },
+
+  { 
+
+    trait: "Fantasy", 
+
+    description: "The Dreamer: Generates alternative realities. Uses imagination as problem-solving tool.", 
+
+    hexagram: 40 
+
+  },
+
+  { 
+
+    trait: "Maturation", 
+
+    description: "The Grown: Integrates life lessons. Manifests wisdom through considered action.", 
+
+    hexagram: 41 
+
+  },
+
+  { 
+
+    trait: "Insight", 
+
+    description: "The Sage: Perceives underlying truths. Reveals hidden connections through intuition.", 
+
+    hexagram: 42 
+
+  },
+
+  { 
+
+    trait: "Alertness", 
+
+    description: "The Vigilant: Maintains situational awareness. Anticipates challenges before they manifest.", 
+
+    hexagram: 43 
+
+  },
+
+  { 
+
+    trait: "Gathering", 
+
+    description: "The Collector: Accumulates knowledge/resources. Builds reserves for strategic deployment.", 
+
+    hexagram: 44 
+
+  },
+
+  { 
+
+    trait: "Determination", 
+
+    description: "The Resolute: Persists against obstacles. Converts setbacks into fuel for effort.", 
+
+    hexagram: 45 
+
+  },
+
+  { 
+
+    trait: "Realization", 
+
+    description: "The Enlightened: Achieves clarity through experience. Translates epiphanies into action.", 
+
+    hexagram: 46 
+
+  },
+
+  { 
+
+    trait: "Depth", 
+
+    description: "The Profound: Seeks substantive meaning. Rejects superficial engagement.", 
+
+    hexagram: 47 
+
+  },
+
+  { 
+
+    trait: "Principles", 
+
+    description: "The Moralist: Guided by ethical code. Aligns actions with core values consistently.", 
+
+    hexagram: 48 
+
+  },
+
+  { 
+
+    trait: "Values", 
+
+    description: "The Believer: Anchored in personal truth. Makes decisions through value-based filtering.", 
+
+    hexagram: 49 
+
+  },
+
+  { 
+
+    trait: "Initiative", 
+
+    description: "The Self-Starter: Generates momentum autonomously. Prefers action to deliberation.", 
+
+    hexagram: 50 
+
+  },
+
+  { 
+
+    trait: "Stillness", 
+
+    description: "The Calm: Maintains equanimity under stress. Creates peace through centered presence.", 
+
+    hexagram: 51 
+
+  },
+
+  { 
+
+    trait: "Beginnings", 
+
+    description: "The Pioneer: Embraces genesis energy. Comfortable initiating from nothingness.", 
+
+    hexagram: 52 
+
+  },
+
+  { 
+
+    trait: "Ambition", 
+
+    description: "The Achiever: Sets escalating challenges. Measures self-worth through accomplishment.", 
+
+    hexagram: 53 
+
+  },
+
+  { 
+
+    trait: "Abundance", 
+
+    description: "The Prosperous: Attracts and shares resources. Believes in limitless potential.", 
+
+    hexagram: 54 
+
+  },
+
+  { 
+
+    trait: "Stimulation", 
+
+    description: "The Excited: Thrives on novel experiences. Avoids stagnation through constant engagement.", 
+
+    hexagram: 55 
+
+  },
+
+  { 
+
+    trait: "Clarity", 
+
+    description: "The Seer: Discerns essential truths. Filters noise to reveal core reality.", 
+
+    hexagram: 56 
+
+  },
+
+  { 
+
+    trait: "Vitality", 
+
+    description: "The Energetic: Radiates life force. Inspires others through vigorous engagement.", 
+
+    hexagram: 57 
+
+  },
+
+  { 
+
+    trait: "Intimacy", 
+
+    description: "The Close: Develops profound connections. Values depth over breadth in relationships.", 
+
+    hexagram: 58 
+
+  },
+
+  { 
+
+    trait: "Limitation", 
+
+    description: "The Restrained: Practices conscious boundaries. Understands freedom through discipline.", 
+
+    hexagram: 59 
+
+  },
+
+  { 
+
+    trait: "Mystery", 
+
+    description: "The Enigma: Maintains intriguing ambiguity. Reveals self through layered disclosure.", 
+
+    hexagram: 60 
+
+  },
+
+  { 
+
+    trait: "Detail", 
+
+    description: "The Meticulous: Notices subtle particulars. Believes excellence lives in minutiae.", 
+
+    hexagram: 61 
+
+  },
+
+  { 
+
+    trait: "Doubt", 
+
+    description: "The Skeptic: Questions apparent truths. Strengthens ideas through rigorous testing.", 
+
+    hexagram: 62 
+
+  },
+
+  { 
+
+    trait: "Confusion", 
+
+    description: "The Bewildered: Navigates complexity through intuition. Finds clarity in apparent chaos.", 
+
+    hexagram: 63 
+
+  },
+
+  { 
+
+    trait: "Completion", 
+
+    description: "The Finisher: Drives projects to conclusion. Understands the power of closure.", 
+
+    hexagram: 64 
+
+  }
+
 ];
+
 const trajectories = [
-  { id: 1, ageBand: "0-50", fromHex: 13, fromName: "The Listener (Hex 13)", toHex: 7, toName: "The Leader (Hex 7)", process: "Developing leadership while retaining empathy", perspective: "Learning when to guide vs. listen" },
-  { id: 2, ageBand: "0-50", fromHex: 49, fromName: "The Revolutionist (Hex 49)", toHex: 4, toName: "The Systemizer (Hex 4)", process: "Channeling rebellion into structural change", perspective: "Balancing idealism with practicality" },
-  { id: 3, ageBand: "0-50", fromHex: 30, fromName: "The Visionary (Hex 30)", toHex: 29, toName: "The Committed (Hex 29)", process: "Grounding ideas in sustained action", perspective: "Discovering patience through passion" },
-  { id: 4, ageBand: "0-50", fromHex: 55, fromName: "The Abundant (Hex 55)", toHex: 59, toName: "The Harmonizer (Hex 59)", process: "Transforming resources into unity", perspective: "Learning true wealth is collective" },
-  { id: 5, ageBand: "0-50", fromHex: 37, fromName: "The Familial (Hex 37)", toHex: 40, toName: "The Liberator (Hex 40)", process: "Evolving community bonds into autonomy", perspective: "Exploring freedom within relationships" },
-  { id: 6, ageBand: "0-50", fromHex: 63, fromName: "The Doubter (Hex 63)", toHex: 64, toName: "The Clarifier (Hex 64)", process: "Refining skepticism into discernment", perspective: "Developing critical thinking" },
-  { id: 7, ageBand: "0-50", fromHex: 22, fromName: "The Charismatic (Hex 22)", toHex: 47, toName: "The Insightful (Hex 47)", process: "Deepening charm into wisdom", perspective: "Moving beyond superficiality" },
-  { id: 8, ageBand: "0-50", fromHex: 36, fromName: "The Crisis Manager (Hex 36)", toHex: 6, toName: "The Mediator (Hex 6)", process: "Evolving reaction into prevention", perspective: "Learning proactive peacemaking" },
-  { id: 9, ageBand: "0-50", fromHex: 25, fromName: "The Innocent (Hex 25)", toHex: 46, toName: "The Determined (Hex 46)", process: "Maturing naivety into resilience", perspective: "Building strength through experience" },
-  { id: 10, ageBand: "0-50", fromHex: 17, fromName: "The Follower (Hex 17)", toHex: 18, toName: "The Reformer (Hex 18)", process: "Growing loyalty into constructive change", perspective: "Learning when to support vs. challenge" },
-  { id: 11, ageBand: "0-50", fromHex: 21, fromName: "The Controller (Hex 21)", toHex: 48, toName: "The Deep Thinker (Hex 48)", process: "Transforming authority into contemplation", perspective: "Discovering power in reflection" },
-  { id: 12, ageBand: "0-50", fromHex: 51, fromName: "The Shocking (Hex 51)", toHex: 57, toName: "The Gentle Penetrator (Hex 57)", process: "Channeling disruption into subtle influence", perspective: "Learning lasting change requires patience" },
-  { id: 13, ageBand: "0-50", fromHex: 42, fromName: "The Completer (Hex 42)", toHex: 32, toName: "The Consistent (Hex 32)", process: "Evolving finalization into maintenance", perspective: "Understanding completion is cyclical" },
-  { id: 14, ageBand: "0-50", fromHex: 50, fromName: "The Responsible (Hex 50)", toHex: 3, toName: "The Innovative (Hex 3)", process: "Balancing duty with creativity", perspective: "Discovering tradition can fuel progress" },
-  { id: 15, ageBand: "0-50", fromHex: 27, fromName: "The Nurturer (Hex 27)", toHex: 28, toName: "The Visionary Risk-Taker (Hex 28)", process: "Transforming care into bold action", perspective: "Learning to balance caution with courage" },
-  { id: 16, ageBand: "0-50", fromHex: 24, fromName: "The Returner (Hex 24)", toHex: 44, toName: "The Alert (Hex 44)", process: "Evolving reflection into preparedness", perspective: "Using history to anticipate futures" },
-  { id: 17, ageBand: "0-50", fromHex: 1, fromName: "The Creative (Hex 1)", toHex: 2, toName: "The Receptive (Hex 2)", process: "Balancing initiation with adaptation", perspective: "Learning creation requires flexibility" },
-  { id: 18, ageBand: "0-50", fromHex: 23, fromName: "The Transformer (Hex 23)", toHex: 43, toName: "The Insightful Decider (Hex 43)", process: "Channeling chaos into decisive action", perspective: "Finding clarity amidst upheaval" },
-  { id: 19, ageBand: "0-50", fromHex: 14, fromName: "The Prosperous (Hex 14)", toHex: 8, toName: "The Unifier (Hex 8)", process: "Transforming wealth into community", perspective: "Learning prosperity is collective" },
-  { id: 20, ageBand: "0-50", fromHex: 20, fromName: "The Contemplative (Hex 20)", toHex: 34, toName: "The Powerful (Hex 34)", process: "Grounding thought into action", perspective: "Discovering reflection enables influence" },
-  { id: 21, ageBand: "0-50", fromHex: 16, fromName: "The Enthusiastic (Hex 16)", toHex: 9, toName: "The Detail-Oriented (Hex 9)", process: "Focusing energy into precision", perspective: "Learning big visions need small steps" },
-  { id: 22, ageBand: "0-50", fromHex: 35, fromName: "The Progressive (Hex 35)", toHex: 5, toName: "The Patient (Hex 5)", process: "Balancing speed with timing", perspective: "Discovering progress requires pauses" },
-  { id: 23, ageBand: "0-50", fromHex: 45, fromName: "The Gatherer (Hex 45)", toHex: 26, toName: "The Tamer (Hex 26)", process: "Transforming collection into focus", perspective: "Learning abundance needs direction" },
-  { id: 24, ageBand: "0-50", fromHex: 12, fromName: "The Stagnant (Hex 12)", toHex: 11, toName: "The Harmonious (Hex 11)", process: "Breaking paralysis through balance", perspective: "Discovering flow overcomes obstacles" },
-  { id: 25, ageBand: "0-50", fromHex: 15, fromName: "The Modest (Hex 15)", toHex: 10, toName: "The Confident (Hex 10)", process: "Building self-assurance from humility", perspective: "Learning quiet strength becomes visible" },
-  { id: 26, ageBand: "0-50", fromHex: 52, fromName: "The Still (Hex 52)", toHex: 58, toName: "The Joyous (Hex 58)", process: "Transforming meditation into engagement", perspective: "Discovering inner peace fuels action" },
-  { id: 27, ageBand: "0-50", fromHex: 38, fromName: "The Challenger (Hex 38)", toHex: 39, toName: "The Instigator (Hex 39)", process: "Channeling opposition into provocation", perspective: "Learning to spark needed change" },
-  { id: 28, ageBand: "0-50", fromHex: 53, fromName: "The Pioneer (Hex 53)", toHex: 54, toName: "The Achiever (Hex 54)", process: "Grounding exploration into results", perspective: "Balancing novelty with completion" },
-  { id: 29, ageBand: "0-50", fromHex: 61, fromName: "The Enigma (Hex 61)", toHex: 62, toName: "The Meticulous (Hex 62)", process: "Transforming mystery into analysis", perspective: "Discovering clarity in complexity" },
-  { id: 30, ageBand: "0-50", fromHex: 56, fromName: "The Excited (Hex 56)", toHex: 60, toName: "The Restrained (Hex 60)", process: "Channeling energy into discipline", perspective: "Learning focus amplifies impact" },
-  { id: 31, ageBand: "0-50", fromHex: 31, fromName: "The Guide (Hex 31)", toHex: 41, toName: "The Dreamer (Hex 41)", process: "Balancing leadership with imagination", perspective: "Discovering vision informs direction" },
-  { id: 32, ageBand: "0-50", fromHex: 33, fromName: "The Reserved (Hex 33)", toHex: 19, toName: "The Seeker (Hex 19)", process: "Transforming introspection into exploration", perspective: "Learning internal wisdom drives action" },
-  { id: 33, ageBand: "50+", currentHex: 7, currentName: "The Leader (Hex 7)", reflectingHex: 13, reflectingName: "The Listener (Hex 13)", perspective: "Guiding through earned authority", reflection: "My listening phase taught me true leadership serves" },
-  { id: 34, ageBand: "50+", currentHex: 4, currentName: "The Systemizer (Hex 4)", reflectingHex: 49, reflectingName: "The Revolutionist (Hex 49)", perspective: "Maintaining humane systems", reflection: "My rebellious youth ensures these structures stay ethical" },
-  { id: 35, ageBand: "50+", currentHex: 29, currentName: "The Committed (Hex 29)", reflectingHex: 30, reflectingName: "The Visionary (Hex 30)", perspective: "Sustaining effort through purpose", reflection: "My early passion still fuels this work" },
-  { id: 36, ageBand: "50+", currentHex: 59, currentName: "The Harmonizer (Hex 59)", reflectingHex: 55, reflectingName: "The Abundant (Hex 55)", perspective: "Resolving conflicts through understanding", reflection: "My experience with wealth taught true value" },
-  { id: 37, ageBand: "50+", currentHex: 40, currentName: "The Liberator (Hex 40)", reflectingHex: 37, reflectingName: "The Familial (Hex 37)", perspective: "Championing freedom with compassion", reflection: "My family roots ground my advocacy" },
-  { id: 38, ageBand: "50+", currentHex: 64, currentName: "The Clarifier (Hex 64)", reflectingHex: 63, reflectingName: "The Doubter (Hex 63)", perspective: "Resolving complexity systematically", reflection: "My skepticism trained my discernment" },
-  { id: 39, ageBand: "50+", currentHex: 47, currentName: "The Insightful (Hex 47)", reflectingHex: 22, reflectingName: "The Charismatic (Hex 22)", perspective: "Sharing wisdom authentically", reflection: "My charm evolved into meaningful presence" },
-  { id: 40, ageBand: "50+", currentHex: 6, currentName: "The Mediator (Hex 6)", reflectingHex: 36, reflectingName: "The Crisis Manager (Hex 36)", perspective: "Preventing conflicts proactively", reflection: "My crisis experience taught prevention's value" },
-  { id: 41, ageBand: "50+", currentHex: 46, currentName: "The Determined (Hex 46)", reflectingHex: 25, reflectingName: "The Innocent (Hex 25)", perspective: "Persisting with childlike wonder", reflection: "My naivety became resilient optimism" },
-  { id: 42, ageBand: "50+", currentHex: 18, currentName: "The Reformer (Hex 18)", reflectingHex: 17, reflectingName: "The Follower (Hex 17)", perspective: "Improving systems respectfully", reflection: "My loyalty taught me how to change carefully" },
-  { id: 43, ageBand: "50+", currentHex: 48, currentName: "The Deep Thinker (Hex 48)", reflectingHex: 21, reflectingName: "The Controller (Hex 21)", perspective: "Understanding through contemplation", reflection: "My need for control revealed deeper truths" },
-  { id: 44, ageBand: "50+", currentHex: 57, currentName: "The Gentle Penetrator (Hex 57)", reflectingHex: 51, reflectingName: "The Shocking (Hex 51)", perspective: "Effecting change through subtlety", reflection: "My disruptive past taught patience" },
-  { id: 45, ageBand: "50+", currentHex: 32, currentName: "The Consistent (Hex 32)", reflectingHex: 42, reflectingName: "The Completer (Hex 42)", perspective: "Maintaining through cycles", reflection: "My completions taught me about renewal" },
-  { id: 46, ageBand: "50+", currentHex: 3, currentName: "The Innovative (Hex 3)", reflectingHex: 50, reflectingName: "The Responsible (Hex 50)", perspective: "Creating within boundaries", reflection: "My sense of duty fuels creative solutions" },
-  { id: 47, ageBand: "50+", currentHex: 28, currentName: "The Visionary Risk-Taker (Hex 28)", reflectingHex: 27, reflectingName: "The Nurturer (Hex 27)", perspective: "Bold action informed by care", reflection: "My nurturing past grounds my daring" },
-  { id: 48, ageBand: "50+", currentHex: 44, currentName: "The Alert (Hex 44)", reflectingHex: 24, reflectingName: "The Returner (Hex 24)", perspective: "Vigilance informed by history", reflection: "My reflections taught me anticipation" },
-  { id: 49, ageBand: "50+", currentHex: 2, currentName: "The Receptive (Hex 2)", reflectingHex: 1, reflectingName: "The Creative (Hex 1)", perspective: "Adapting through foundational wisdom", reflection: "My creative spark lives in my flexibility" },
-  { id: 50, ageBand: "50+", currentHex: 43, currentName: "The Insightful Decider (Hex 43)", reflectingHex: 23, reflectingName: "The Transformer (Hex 23)", perspective: "Decisiveness born from chaos", reflection: "My turbulent past sharpened my clarity" },
-  { id: 51, ageBand: "50+", currentHex: 8, currentName: "The Unifier (Hex 8)", reflectingHex: 14, reflectingName: "The Prosperous (Hex 14)", perspective: "Building community through resources", reflection: "My wealth became a tool for connection" },
-  { id: 52, ageBand: "50+", currentHex: 34, currentName: "The Powerful (Hex 34)", reflectingHex: 20, reflectingName: "The Contemplative (Hex 20)", perspective: "Strength informed by reflection", reflection: "My quiet years empower my actions" },
-  { id: 53, ageBand: "50+", currentHex: 9, currentName: "The Detail-Oriented (Hex 9)", reflectingHex: 16, reflectingName: "The Enthusiastic (Hex 16)", perspective: "Precision fueled by passion", reflection: "My boundless energy found focus" },
-  { id: 54, ageBand: "50+", currentHex: 5, currentName: "The Patient (Hex 5)", reflectingHex: 35, reflectingName: "The Progressive (Hex 35)", perspective: "Strategic waiting through experience", reflection: "My urgency taught me timing's value" },
-  { id: 55, ageBand: "50+", currentHex: 26, currentName: "The Tamer (Hex 26)", reflectingHex: 45, reflectingName: "The Gatherer (Hex 45)", perspective: "Focusing collected resources", reflection: "My accumulation phase taught discernment" },
-  { id: 56, ageBand: "50+", currentHex: 11, currentName: "The Harmonious (Hex 11)", reflectingHex: 12, reflectingName: "The Stagnant (Hex 12)", perspective: "Creating flow through past obstacles", reflection: "My paralysis became my teacher" },
-  { id: 57, ageBand: "50+", currentHex: 10, currentName: "The Confident (Hex 10)", reflectingHex: 15, reflectingName: "The Modest (Hex 15)", perspective: "Assurance rooted in humility", reflection: "My quiet beginnings anchor my presence" },
-  { id: 58, ageBand: "50+", currentHex: 58, currentName: "The Joyous (Hex 58)", reflectingHex: 52, reflectingName: "The Still (Hex 52)", perspective: "Engagement fueled by inner peace", reflection: "My meditation practice feeds my vitality" },
-  { id: 59, ageBand: "50+", currentHex: 39, currentName: "The Instigator (Hex 39)", reflectingHex: 38, reflectingName: "The Challenger (Hex 38)", perspective: "Provoking thoughtful change", reflection: "My opposition taught me constructive disruption" },
-  { id: 60, ageBand: "50+", currentHex: 54, currentName: "The Achiever (Hex 54)", reflectingHex: 53, reflectingName: "The Pioneer (Hex 53)", perspective: "Completion honors exploration", reflection: "My wandering youth informs my results" },
-  { id: 61, ageBand: "50+", currentHex: 62, currentName: "The Meticulous (Hex 62)", reflectingHex: 61, reflectingName: "The Enigma (Hex 61)", perspective: "Analysis preserving mystery", reflection: "My fascination with secrets taught precision" },
-  { id: 62, ageBand: "50+", currentHex: 60, currentName: "The Restrained (Hex 60)", reflectingHex: 56, reflectingName: "The Excited (Hex 56)", perspective: "Discipline informed by energy", reflection: "My restless past taught me focus" },
-  { id: 63, ageBand: "50+", currentHex: 41, currentName: "The Dreamer (Hex 41)", reflectingHex: 31, reflectingName: "The Guide (Hex 31)", perspective: "Imagination grounded in reality", reflection: "My leadership experience fuels visions" },
-  { id: 64, ageBand: "50+", currentHex: 19, currentName: "The Seeker (Hex 19)", reflectingHex: 33, reflectingName: "The Reserved (Hex 33)", perspective: "Exploration rooted in inner wisdom", reflection: "My solitude became my compass" }
+
+  { id: 1, ageBand: "0-50", fromHex: 13, fromName: "The Listener (Hex 13)", toHex: 7, toName: "The Leader (Hex 7)", process: "Developing leadership while retaining empathy", perspective: "Learning when to guide vs. listen" },
+
+  { id: 2, ageBand: "0-50", fromHex: 49, fromName: "The Revolutionist (Hex 49)", toHex: 4, toName: "The Systemizer (Hex 4)", process: "Channeling rebellion into structural change", perspective: "Balancing idealism with practicality" },
+
+  { id: 3, ageBand: "0-50", fromHex: 30, fromName: "The Visionary (Hex 30)", toHex: 29, toName: "The Committed (Hex 29)", process: "Grounding ideas in sustained action", perspective: "Discovering patience through passion" },
+
+  { id: 4, ageBand: "0-50", fromHex: 55, fromName: "The Abundant (Hex 55)", toHex: 59, toName: "The Harmonizer (Hex 59)", process: "Transforming resources into unity", perspective: "Learning true wealth is collective" },
+
+  { id: 5, ageBand: "0-50", fromHex: 37, fromName: "The Familial (Hex 37)", toHex: 40, toName: "The Liberator (Hex 40)", process: "Evolving community bonds into autonomy", perspective: "Exploring freedom within relationships" },
+
+  { id: 6, ageBand: "0-50", fromHex: 63, fromName: "The Doubter (Hex 63)", toHex: 64, toName: "The Clarifier (Hex 64)", process: "Refining skepticism into discernment", perspective: "Developing critical thinking" },
+
+  { id: 7, ageBand: "0-50", fromHex: 22, fromName: "The Charismatic (Hex 22)", toHex: 47, toName: "The Insightful (Hex 47)", process: "Deepening charm into wisdom", perspective: "Moving beyond superficiality" },
+
+  { id: 8, ageBand: "0-50", fromHex: 36, fromName: "The Crisis Manager (Hex 36)", toHex: 6, toName: "The Mediator (Hex 6)", process: "Evolving reaction into prevention", perspective: "Learning proactive peacemaking" },
+
+  { id: 9, ageBand: "0-50", fromHex: 25, fromName: "The Innocent (Hex 25)", toHex: 46, toName: "The Determined (Hex 46)", process: "Maturing naivety into resilience", perspective: "Building strength through experience" },
+
+  { id: 10, ageBand: "0-50", fromHex: 17, fromName: "The Follower (Hex 17)", toHex: 18, toName: "The Reformer (Hex 18)", process: "Growing loyalty into constructive change", perspective: "Learning when to support vs. challenge" },
+
+  { id: 11, ageBand: "0-50", fromHex: 21, fromName: "The Controller (Hex 21)", toHex: 48, toName: "The Deep Thinker (Hex 48)", process: "Transforming authority into contemplation", perspective: "Discovering power in reflection" },
+
+  { id: 12, ageBand: "0-50", fromHex: 51, fromName: "The Shocking (Hex 51)", toHex: 57, toName: "The Gentle Penetrator (Hex 57)", process: "Channeling disruption into subtle influence", perspective: "Learning lasting change requires patience" },
+
+  { id: 13, ageBand: "0-50", fromHex: 42, fromName: "The Completer (Hex 42)", toHex: 32, toName: "The Consistent (Hex 32)", process: "Evolving finalization into maintenance", perspective: "Understanding completion is cyclical" },
+
+  { id: 14, ageBand: "0-50", fromHex: 50, fromName: "The Responsible (Hex 50)", toHex: 3, toName: "The Innovative (Hex 3)", process: "Balancing duty with creativity", perspective: "Discovering tradition can fuel progress" },
+
+  { id: 15, ageBand: "0-50", fromHex: 27, fromName: "The Nurturer (Hex 27)", toHex: 28, toName: "The Visionary Risk-Taker (Hex 28)", process: "Transforming care into bold action", perspective: "Learning to balance caution with courage" },
+
+  { id: 16, ageBand: "0-50", fromHex: 24, fromName: "The Returner (Hex 24)", toHex: 44, toName: "The Alert (Hex 44)", process: "Evolving reflection into preparedness", perspective: "Using history to anticipate futures" },
+
+  { id: 17, ageBand: "0-50", fromHex: 1, fromName: "The Creative (Hex 1)", toHex: 2, toName: "The Receptive (Hex 2)", process: "Balancing initiation with adaptation", perspective: "Learning creation requires flexibility" },
+
+  { id: 18, ageBand: "0-50", fromHex: 23, fromName: "The Transformer (Hex 23)", toHex: 43, toName: "The Insightful Decider (Hex 43)", process: "Channeling chaos into decisive action", perspective: "Finding clarity amidst upheaval" },
+
+  { id: 19, ageBand: "0-50", fromHex: 14, fromName: "The Prosperous (Hex 14)", toHex: 8, toName: "The Unifier (Hex 8)", process: "Transforming wealth into community", perspective: "Learning prosperity is collective" },
+
+  { id: 20, ageBand: "0-50", fromHex: 20, fromName: "The Contemplative (Hex 20)", toHex: 34, toName: "The Powerful (Hex 34)", process: "Grounding thought into action", perspective: "Discovering reflection enables influence" },
+
+  { id: 21, ageBand: "0-50", fromHex: 16, fromName: "The Enthusiastic (Hex 16)", toHex: 9, toName: "The Detail-Oriented (Hex 9)", process: "Focusing energy into precision", perspective: "Learning big visions need small steps" },
+
+  { id: 22, ageBand: "0-50", fromHex: 35, fromName: "The Progressive (Hex 35)", toHex: 5, toName: "The Patient (Hex 5)", process: "Balancing speed with timing", perspective: "Discovering progress requires pauses" },
+
+  { id: 23, ageBand: "0-50", fromHex: 45, fromName: "The Gatherer (Hex 45)", toHex: 26, toName: "The Tamer (Hex 26)", process: "Transforming collection into focus", perspective: "Learning abundance needs direction" },
+
+  { id: 24, ageBand: "0-50", fromHex: 12, fromName: "The Stagnant (Hex 12)", toHex: 11, toName: "The Harmonious (Hex 11)", process: "Breaking paralysis through balance", perspective: "Discovering flow overcomes obstacles" },
+
+  { id: 25, ageBand: "0-50", fromHex: 15, fromName: "The Modest (Hex 15)", toHex: 10, toName: "The Confident (Hex 10)", process: "Building self-assurance from humility", perspective: "Learning quiet strength becomes visible" },
+
+  { id: 26, ageBand: "0-50", fromHex: 52, fromName: "The Still (Hex 52)", toHex: 58, toName: "The Joyous (Hex 58)", process: "Transforming meditation into engagement", perspective: "Discovering inner peace fuels action" },
+
+  { id: 27, ageBand: "0-50", fromHex: 38, fromName: "The Challenger (Hex 38)", toHex: 39, toName: "The Instigator (Hex 39)", process: "Channeling opposition into provocation", perspective: "Learning to spark needed change" },
+
+  { id: 28, ageBand: "0-50", fromHex: 53, fromName: "The Pioneer (Hex 53)", toHex: 54, toName: "The Achiever (Hex 54)", process: "Grounding exploration into results", perspective: "Balancing novelty with completion" },
+
+  { id: 29, ageBand: "0-50", fromHex: 61, fromName: "The Enigma (Hex 61)", toHex: 62, toName: "The Meticulous (Hex 62)", process: "Transforming mystery into analysis", perspective: "Discovering clarity in complexity" },
+
+  { id: 30, ageBand: "0-50", fromHex: 56, fromName: "The Excited (Hex 56)", toHex: 60, toName: "The Restrained (Hex 60)", process: "Channeling energy into discipline", perspective: "Learning focus amplifies impact" },
+
+  { id: 31, ageBand: "0-50", fromHex: 31, fromName: "The Guide (Hex 31)", toHex: 41, toName: "The Dreamer (Hex 41)", process: "Balancing leadership with imagination", perspective: "Discovering vision informs direction" },
+
+  { id: 32, ageBand: "0-50", fromHex: 33, fromName: "The Reserved (Hex 33)", toHex: 19, toName: "The Seeker (Hex 19)", process: "Transforming introspection into exploration", perspective: "Learning internal wisdom drives action" },
+
+  { id: 33, ageBand: "50+", currentHex: 7, currentName: "The Leader (Hex 7)", reflectingHex: 13, reflectingName: "The Listener (Hex 13)", perspective: "Guiding through earned authority", reflection: "My listening phase taught me true leadership serves" },
+
+  { id: 34, ageBand: "50+", currentHex: 4, currentName: "The Systemizer (Hex 4)", reflectingHex: 49, reflectingName: "The Revolutionist (Hex 49)", perspective: "Maintaining humane systems", reflection: "My rebellious youth ensures these structures stay ethical" },
+
+  { id: 35, ageBand: "50+", currentHex: 29, currentName: "The Committed (Hex 29)", reflectingHex: 30, reflectingName: "The Visionary (Hex 30)", perspective: "Sustaining effort through purpose", reflection: "My early passion still fuels this work" },
+
+  { id: 36, ageBand: "50+", currentHex: 59, currentName: "The Harmonizer (Hex 59)", reflectingHex: 55, reflectingName: "The Abundant (Hex 55)", perspective: "Resolving conflicts through understanding", reflection: "My experience with wealth taught true value" },
+
+  { id: 37, ageBand: "50+", currentHex: 40, currentName: "The Liberator (Hex 40)", reflectingHex: 37, reflectingName: "The Familial (Hex 37)", perspective: "Championing freedom with compassion", reflection: "My family roots ground my advocacy" },
+
+  { id: 38, ageBand: "50+", currentHex: 64, currentName: "The Clarifier (Hex 64)", reflectingHex: 63, reflectingName: "The Doubter (Hex 63)", perspective: "Resolving complexity systematically", reflection: "My skepticism trained my discernment" },
+
+  { id: 39, ageBand: "50+", currentHex: 47, currentName: "The Insightful (Hex 47)", reflectingHex: 22, reflectingName: "The Charismatic (Hex 22)", perspective: "Sharing wisdom authentically", reflection: "My charm evolved into meaningful presence" },
+
+  { id: 40, ageBand: "50+", currentHex: 6, currentName: "The Mediator (Hex 6)", reflectingHex: 36, reflectingName: "The Crisis Manager (Hex 36)", perspective: "Preventing conflicts proactively", reflection: "My crisis experience taught prevention's value" },
+
+  { id: 41, ageBand: "50+", currentHex: 46, currentName: "The Determined (Hex 46)", reflectingHex: 25, reflectingName: "The Innocent (Hex 25)", perspective: "Persisting with childlike wonder", reflection: "My naivety became resilient optimism" },
+
+  { id: 42, ageBand: "50+", currentHex: 18, currentName: "The Reformer (Hex 18)", reflectingHex: 17, reflectingName: "The Follower (Hex 17)", perspective: "Improving systems respectfully", reflection: "My loyalty taught me how to change carefully" },
+
+  { id: 43, ageBand: "50+", currentHex: 48, currentName: "The Deep Thinker (Hex 48)", reflectingHex: 21, reflectingName: "The Controller (Hex 21)", perspective: "Understanding through contemplation", reflection: "My need for control revealed deeper truths" },
+
+  { id: 44, ageBand: "50+", currentHex: 57, currentName: "The Gentle Penetrator (Hex 57)", reflectingHex: 51, reflectingName: "The Shocking (Hex 51)", perspective: "Effecting change through subtlety", reflection: "My disruptive past taught patience" },
+
+  { id: 45, ageBand: "50+", currentHex: 32, currentName: "The Consistent (Hex 32)", reflectingHex: 42, reflectingName: "The Completer (Hex 42)", perspective: "Maintaining through cycles", reflection: "My completions taught me about renewal" },
+
+  { id: 46, ageBand: "50+", currentHex: 3, currentName: "The Innovative (Hex 3)", reflectingHex: 50, reflectingName: "The Responsible (Hex 50)", perspective: "Creating within boundaries", reflection: "My sense of duty fuels creative solutions" },
+
+  { id: 47, ageBand: "50+", currentHex: 28, currentName: "The Visionary Risk-Taker (Hex 28)", reflectingHex: 27, reflectingName: "The Nurturer (Hex 27)", perspective: "Bold action informed by care", reflection: "My nurturing past grounds my daring" },
+
+  { id: 48, ageBand: "50+", currentHex: 44, currentName: "The Alert (Hex 44)", reflectingHex: 24, reflectingName: "The Returner (Hex 24)", perspective: "Vigilance informed by history", reflection: "My reflections taught me anticipation" },
+
+  { id: 49, ageBand: "50+", currentHex: 2, currentName: "The Receptive (Hex 2)", reflectingHex: 1, reflectingName: "The Creative (Hex 1)", perspective: "Adapting through foundational wisdom", reflection: "My creative spark lives in my flexibility" },
+
+  { id: 50, ageBand: "50+", currentHex: 43, currentName: "The Insightful Decider (Hex 43)", reflectingHex: 23, reflectingName: "The Transformer (Hex 23)", perspective: "Decisiveness born from chaos", reflection: "My turbulent past sharpened my clarity" },
+
+  { id: 51, ageBand: "50+", currentHex: 8, currentName: "The Unifier (Hex 8)", reflectingHex: 14, reflectingName: "The Prosperous (Hex 14)", perspective: "Building community through resources", reflection: "My wealth became a tool for connection" },
+
+  { id: 52, ageBand: "50+", currentHex: 34, currentName: "The Powerful (Hex 34)", reflectingHex: 20, reflectingName: "The Contemplative (Hex 20)", perspective: "Strength informed by reflection", reflection: "My quiet years empower my actions" },
+
+  { id: 53, ageBand: "50+", currentHex: 9, currentName: "The Detail-Oriented (Hex 9)", reflectingHex: 16, reflectingName: "The Enthusiastic (Hex 16)", perspective: "Precision fueled by passion", reflection: "My boundless energy found focus" },
+
+  { id: 54, ageBand: "50+", currentHex: 5, currentName: "The Patient (Hex 5)", reflectingHex: 35, reflectingName: "The Progressive (Hex 35)", perspective: "Strategic waiting through experience", reflection: "My urgency taught me timing's value" },
+
+  { id: 55, ageBand: "50+", currentHex: 26, currentName: "The Tamer (Hex 26)", reflectingHex: 45, reflectingName: "The Gatherer (Hex 45)", perspective: "Focusing collected resources", reflection: "My accumulation phase taught discernment" },
+
+  { id: 56, ageBand: "50+", currentHex: 11, currentName: "The Harmonious (Hex 11)", reflectingHex: 12, reflectingName: "The Stagnant (Hex 12)", perspective: "Creating flow through past obstacles", reflection: "My paralysis became my teacher" },
+
+  { id: 57, ageBand: "50+", currentHex: 10, currentName: "The Confident (Hex 10)", reflectingHex: 15, reflectingName: "The Modest (Hex 15)", perspective: "Assurance rooted in humility", reflection: "My quiet beginnings anchor my presence" },
+
+  { id: 58, ageBand: "50+", currentHex: 58, currentName: "The Joyous (Hex 58)", reflectingHex: 52, reflectingName: "The Still (Hex 52)", perspective: "Engagement fueled by inner peace", reflection: "My meditation practice feeds my vitality" },
+
+  { id: 59, ageBand: "50+", currentHex: 39, currentName: "The Instigator (Hex 39)", reflectingHex: 38, reflectingName: "The Challenger (Hex 38)", perspective: "Provoking thoughtful change", reflection: "My opposition taught me constructive disruption" },
+
+  { id: 60, ageBand: "50+", currentHex: 54, currentName: "The Achiever (Hex 54)", reflectingHex: 53, reflectingName: "The Pioneer (Hex 53)", perspective: "Completion honors exploration", reflection: "My wandering youth informs my results" },
+
+  { id: 61, ageBand: "50+", currentHex: 62, currentName: "The Meticulous (Hex 62)", reflectingHex: 61, reflectingName: "The Enigma (Hex 61)", perspective: "Analysis preserving mystery", reflection: "My fascination with secrets taught precision" },
+
+  { id: 62, ageBand: "50+", currentHex: 60, currentName: "The Restrained (Hex 60)", reflectingHex: 56, reflectingName: "The Excited (Hex 56)", perspective: "Discipline informed by energy", reflection: "My restless past taught me focus" },
+
+  { id: 63, ageBand: "50+", currentHex: 41, currentName: "The Dreamer (Hex 41)", reflectingHex: 31, reflectingName: "The Guide (Hex 31)", perspective: "Imagination grounded in reality", reflection: "My leadership experience fuels visions" },
+
+  { id: 64, ageBand: "50+", currentHex: 19, currentName: "The Seeker (Hex 19)", reflectingHex: 33, reflectingName: "The Reserved (Hex 33)", perspective: "Exploration rooted in inner wisdom", reflection: "My solitude became my compass" }
+
 ];
 
 
-      // Global user session object.
-      let userSession = {};
-      // Event listeners for buttons.
-      document.getElementById("forge-identity").addEventListener("click", forgeIdentity);
-      document.getElementById("rename-character").addEventListener("click", renameCharacter);
-      // pushToTelegram helper function.
-      function pushToTelegram(message) {
-        const telegramBotToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
-        const telegramChatId = "-1002185533073";
-        fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: telegramChatId,
-            text: message
-          })
-        })
-          .then(response => response.json())
-          .then(data => console.log("Telegram response:", data))
-          .catch(error => console.error("Error sending to Telegram:", error));
-      }
-    </script>
-  </body>
+
+      // Global user session object.
+
+      let userSession = {};
+
+      // Event listeners for buttons.
+
+      document.getElementById("forge-identity").addEventListener("click", forgeIdentity);
+
+      document.getElementById("rename-character").addEventListener("click", renameCharacter);
+
+      // pushToTelegram helper function.
+
+      function pushToTelegram(message) {
+
+        const telegramBotToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
+
+        const telegramChatId = "-1002185533073";
+
+        fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+
+          method: "POST",
+
+          headers: { "Content-Type": "application/json" },
+
+          body: JSON.stringify({
+
+            chat_id: telegramChatId,
+
+            text: message
+
+          })
+
+        })
+
+          .then(response => response.json())
+
+          .then(data => console.log("Telegram response:", data))
+
+          .catch(error => console.error("Error sending to Telegram:", error));
+
+      }
+
+    </script>
+
+  </body>
+
+</html>
+
+
+
+
+
+
