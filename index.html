@@ -723,6 +723,7 @@ ${journeyDetails}
           // Matrix:*\n${hexagramMatrixInfo}`;
 
 
+          
           const message = getTelegramMessage(); // Use the new function
 
           const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
@@ -740,23 +741,13 @@ ${journeyDetails}
             )}`;
 
           
-          fetch(telegramURL)
-
-            .then((response) => {
-
-              if (response.ok) {
-
-                alert("Character details sent to Telegram!");
-
-              } else {
-
-                alert(
-
-                  "Failed to send to Telegram. Please check your bot token and chat ID."
-
-                );
-
-              }
+document.getElementById('telegram-button').addEventListener('click', function() {
+    fetch(telegramURL)
+        .then(response => {
+            if (response.ok) {
+                alert('Character details sent to Telegram!');
+                resetRollSession(); // Reset on successful send
+            }
 
             })
 
