@@ -1100,15 +1100,13 @@ userSession.coreTraits = [
 
         }
 
-        const suffixPool =
+    const suffixPool =
+      gender === "ewe"
+        ? ["ia", "elle", "ora", "yn", "ala", "ani", "isha", "esa", "zwe", "ata"]
+        : ["on", "ath", "orn", "rak", "thos", "ilo", "ano", "uka", "oko", "ezi"];
+        
+    nameParts.push(suffixPool[Math.floor(Math.random() * suffixPool.length)]);
 
-          gender === "ewe"
-
-            ? ["ia", "elle", "ora", "yn", "ala"]
-
-            : ["on", "ath", "orn", "rak", "thos"];
-
-        nameParts.push(suffixPool[Math.floor(Math.random() * suffixPool.length)]);
 
         const fullName = nameParts.join("");
 
