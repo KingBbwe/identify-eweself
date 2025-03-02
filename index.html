@@ -741,7 +741,7 @@ ${journeyDetails}
             )}`;
 
           
-document.getElementById('telegram-button').addEventListener('click', function() {
+
     fetch(telegramURL)
         .then(response => {
             if (response.ok) {
@@ -1100,13 +1100,13 @@ userSession.coreTraits = [
 
         }
 
-    const suffixPool =
-          gender === "ewe"
-            ? ["ia", "elle", "ora", "yn", "ala"]
-            : ["on", "ath", "orn", "rak", "thos"];
-        nameParts.push(suffixPool[Math.floor(Math.random() * suffixPool.length)]);
-        const fullName = nameParts.join("");
-        userSession.name = fullName;
+        const suffixPool =
+      gender === "ewe"
+        ? ["ia", "elle", "ora", "yn", "ala", "ani", "isha", "esa", "zwe", "ata"]
+        : ["on", "ath", "orn", "rak", "thos", "ilo", "ani", "uka", "oko", "ezi"];
+    nameParts.push(suffixPool[Math.floor(Math.random() * suffixPool.length)]);
+    const fullName = nameParts.join("");
+    userSession.name = fullName;
 
         // Update result area with new name (this may be overwritten by forgeIdentity later).
 
