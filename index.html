@@ -739,14 +739,6 @@ ${journeyDetails}
 
             )}`;
 
-          document.getElementById('telegram-button').addEventListener('click', function() {
-    fetch(telegramURL)
-        .then(response => {
-            if (response.ok) {
-                alert('Character details sent to Telegram!');
-                resetRollSession(); // Reset on successful send
-            }
-
           
           fetch(telegramURL)
 
@@ -768,6 +760,13 @@ ${journeyDetails}
 
             })
 
+document.getElementById('telegram-button').addEventListener('click', function() {
+    fetch(telegramURL)
+        .then(response => {
+            if (response.ok) {
+                alert('Character details sent to Telegram!');
+                resetRollSession(); // Reset on successful send
+            }
             .catch((error) => {
 
               console.error("Telegram send error:", error);
