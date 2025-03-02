@@ -741,12 +741,12 @@ ${journeyDetails}
             )}`;
 
           
-
+document.getElementById('telegram-button').addEventListener('click', function() {
     fetch(telegramURL)
         .then(response => {
             if (response.ok) {
                 alert('Character details sent to Telegram!');
-                resetRollSession();
+                resetRollSession(); 
               } else {
                 alert(
                   "Failed to send message to Telegram.  Check the console for errors."
