@@ -309,7 +309,8 @@
       }
     </style>
   </head>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <body>
     <nav>
       <strong>The Chronicles of Auld Ewe - Identity Forge</strong>
@@ -323,7 +324,7 @@
         <input type="checkbox" id="shake-toggle" />
         <span id="shake-status">Disabled</span>
       </div>
-
+<div id="telegram-preview" style="display: none;"></div>
       <!-- Telegram Button -->
       <button id="telegram-button">
         <i class="fab fa-telegram"></i> Send to Telegram
@@ -349,7 +350,9 @@
           <div class="conscious"></div>
           <div class="unconscious"></div>
         </div>
-
+<div id="preview">
+  <!-- Your generated content should be inside this div -->
+</div>
         <h3>Character Journey</h3>
         <div class="journey-path">
           <div id="trajectory"></div>
@@ -671,14 +674,6 @@ ${journeyDetails}
 
       // Telegram button event 
 
-document
-
-        .getElementById("telegram-button")
-
-        .addEventListener("click", function () {
-
-const message = getTelegramMessage(); // Use the new function
-
 
               // const characterName =
 
@@ -725,62 +720,56 @@ const message = getTelegramMessage(); // Use the new function
           // Traits:*\n${coreTraitsInfo}\n\n*Character Journey:*\n${journeyPathInfo}\n\n*Hexagram
 
           // Matrix:*\n${hexagramMatrixInfo}`;
+
+document.getElementById("telegram-button").addEventListener("click", async function () {
+  const message = getTelegramMessage();
+  
+  // --- PDF Generation ---
+  const opt = {
+    margin: 10,
+    filename: 'CharacterDetails.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { 
+      scale: 2,
+      // Add windowWidth to ensure proper rendering
+      windowWidth: document.documentElement.offsetWidth
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  try {
+    // Ensure we're using a proper DOM reference
+    const elementToPrint = document.getElementById('preview'); // Make sure this ID exists in your HTML
     
-          // --- Step 1: Generate A6 PDF ---
- 
-
-  // --- Step 1: Generate A4 PDF with multi-page support ---
-  const { jsPDF } = window.jspdf;  // Ensure jsPDF is loaded (should be included in the <head>)
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4'
-  });
-  doc.setFontSize(10);
-  
-  // Define margins and calculate the text width (A4 width is about 210mm)
-  const margin = 10;
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const textWidth = pageWidth - margin * 2;
-  
-  // Split the text into lines that fit within the available width
-  const lines = doc.splitTextToSize(message, textWidth);
-  
-  // Loop through the lines, adding new pages when vertical space is exceeded
-  let verticalOffset = margin;
-  lines.forEach((line) => {
-    if (verticalOffset > pageHeight - margin) {
-      doc.addPage();
-      verticalOffset = margin;
+    if (!elementToPrint) {
+      throw new Error('Preview element not found');
     }
-    doc.text(line, margin, verticalOffset);
-    verticalOffset += 7;  // Adjust this value for desired line spacing
-  });
-  
-  // Save (download) the PDF file
-  doc.save("CharacterDetails.pdf");
-  alert("PDF downloaded successfully!");
 
-  // --- Step 2: Send the Message to Telegram ---
+    // Initialize html2pdf properly
+    const pdfExport = html2pdf().set(opt).from(elementToPrint);
+    await pdfExport.save();
+    alert("PDF downloaded successfully!");
+  } catch (error) {
+    console.error("PDF generation failed:", error);
+    alert("PDF download failed! Please ensure the content is loaded.");
+    return;
+  }
+
+
+  // --- Telegram Integration ---
   const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
   const chatId = "-1002185533073";
   const telegramURL = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&text=${encodeURIComponent(message)}`;
 
-  fetch(telegramURL)
-    .then(response => {
-      if (response.ok) {
-        alert("Character details sent to Telegram!");
-        resetRollSession();
-      } else {
-        alert("Failed to send message to Telegram. Check the console for errors.");
-        console.error("Telegram API Error:", response);
-      }
-    })
-    .catch((error) => {
-      console.error("Telegram send error:", error);
-      alert("Telegram send error. Please try again.");
-    });
+  try {
+    const response = await fetch(telegramURL);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    alert("Character details sent to Telegram!");
+    resetRollSession();
+  } catch (error) {
+    console.error("Telegram send error:", error);
+    alert("Telegram send error. Please try again.");
+  }
 });
 
 
@@ -789,11 +778,11 @@ function updateRollSession() {
     const now = Date.now();
     let sessionData = localStorage.getItem('idForgeSession');
     sessionData = sessionData ? JSON.parse(sessionData) : null;
-    
+
     if (!sessionData || (now - sessionData.firstRollTime) > 86400000) {
         sessionData = { firstRollTime: now, rollCount: 0 };
     }
-    
+
     sessionData.rollCount++;
     localStorage.setItem('idForgeSession', JSON.stringify(sessionData));
     return sessionData.rollCount;
@@ -807,15 +796,15 @@ function resetRollSession() {
       // Unified forgeIdentity function – used by both shake and button streams.
 
 function forgeIdentity() {
-	// Session tracking and penalty calculation
-	const rollCount = updateRollSession();
-	const penalty = rollCount > 2 ? rollCount - 2 : 0; 
+        // Session tracking and penalty calculation
+        const rollCount = updateRollSession();
+        const penalty = rollCount > 2 ? rollCount - 2 : 0; 
 
-	// Existing identity generation logic
-	let name = generateName();
-	if (!name || name.trim() === "") {
-    	name = "Unnamed One";
-	}
+        // Existing identity generation logic
+        let name = generateName();
+        if (!name || name.trim() === "") {
+            name = "Unnamed One";
+        }
 
 
         // Update the result area with name and hexagram info.
@@ -841,8 +830,8 @@ function forgeIdentity() {
   // Select a random lineage.
 
 // Add penalty display to heritage section
-	const lineage = randomElement(lineages);
-	const effectiveSurplus = lineage.surplus - penalty; // Penalty application
+        const lineage = randomElement(lineages);
+        const effectiveSurplus = lineage.surplus - penalty; // Penalty application
 
 userSession.lineage = lineage;
 
