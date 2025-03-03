@@ -723,47 +723,46 @@ ${journeyDetails}
           // Matrix:*\n${hexagramMatrixInfo}`;
 
 
-          
-          const message = getTelegramMessage(); // Use the new function
+  
+  const message = getTelegramMessage();
 
-          const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
+  // --- Step 1: Generate A6 PDF ---
+  const { jsPDF } = window.jspdf;  // Ensure jsPDF is loaded (e.g., via a <script> in the head)
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: [105, 148]
+  });
+  doc.setFontSize(10);
+  const lines = doc.splitTextToSize(message, 95);
+  doc.text(lines, 5, 10);
 
-          const chatId = "-1002185533073";
+  // Save the PDF file (triggers an immediate download)
+  doc.save("CharacterDetails.pdf");
+  alert("PDF downloaded successfully!");
 
-          const telegramURL =
+  // --- Step 2: Send the Message to Telegram ---
+  const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
+  const chatId = "-1002185533073";
+  const telegramURL = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&text=${encodeURIComponent(message)}`;
 
-            `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&` +
+  fetch(telegramURL)
+    .then(response => {
+      if (response.ok) {
+        alert("Character details sent to Telegram!");
+        resetRollSession();
+      } else {
+        alert("Failed to send message to Telegram. Check the console for errors.");
+        console.error("Telegram API Error:", response);
+      }
+    })
+    .catch((error) => {
+      console.error("Telegram send error:", error);
+      alert("Telegram send error. Please try again.");
+    });
+});
 
-            `text=${encodeURIComponent(
 
-              message
-
-            )}`;
-
-          
-
-    fetch(telegramURL)
-        .then(response => {
-            if (response.ok) {
-                alert('Character details sent to Telegram!');
-                resetRollSession(); 
-              } else {
-                alert(
-                  "Failed to send message to Telegram.  Check the console for errors."
-                );
-                console.error("Telegram API Error:", data);
-              }
-            })
-
-            .catch((error) => {
-
-              console.error("Telegram send error:", error);
-
-              alert("Telegram send error. Please try again.");
-
-            });
-
-        });
 
 // --- SURPLUS TRACKING FUNCTIONS ---
 function updateRollSession() {
@@ -788,15 +787,15 @@ function resetRollSession() {
       // Unified forgeIdentity function – used by both shake and button streams.
 
 function forgeIdentity() {
-    // Session tracking and penalty calculation
-    const rollCount = updateRollSession();
-    const penalty = rollCount > 2 ? rollCount - 2 : 0; 
+    // Session tracking and penalty calculation
+    const rollCount = updateRollSession();
+    const penalty = rollCount > 2 ? rollCount - 2 : 0; 
 
-    // Existing identity generation logic
-    let name = generateName();
-    if (!name || name.trim() === "") {
-        name = "Unnamed One";
-    }
+    // Existing identity generation logic
+    let name = generateName();
+    if (!name || name.trim() === "") {
+        name = "Unnamed One";
+    }
 
 
         // Update the result area with name and hexagram info.
@@ -822,8 +821,8 @@ function forgeIdentity() {
   // Select a random lineage.
 
 // Add penalty display to heritage section
-    const lineage = randomElement(lineages);
-    const effectiveSurplus = lineage.surplus - penalty; // Penalty application
+    const lineage = randomElement(lineages);
+    const effectiveSurplus = lineage.surplus - penalty; // Penalty application
 
 userSession.lineage = lineage;
 
@@ -2082,3 +2081,4 @@ const trajectories = [
       }
     </script>
   </body>
+</html>
