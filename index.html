@@ -793,18 +793,17 @@ ${journeyDetails}
 
           // Matrix:*\n${hexagramMatrixInfo}`;
 
-// Build the PDF content dynamically from live DOM data.
+// Build the PDF content dynamically from the live page data.
 function buildPdfContent() {
-  // Retrieve dynamic content from various sections.
+  // Retrieve dynamic content from the page.
   const generatedName = document.querySelector("#result .generated-name")?.innerText || "N/A";
   const heritageHTML = document.getElementById("heritage-result")?.innerHTML || "";
   const soulPatternHTML = document.getElementById("soul-pattern")?.innerHTML || "";
   const coreTraitsHTML = document.querySelector(".core-traits")?.innerHTML || "";
   const journeyHTML = document.getElementById("trajectory")?.innerHTML || "";
-  // Use a more specific selector for the Hexagram Matrix details.
-  const hexagramMatrixHTML = document.querySelector(".hexagram-matrix .hexagram-matrix-description")?.outerHTML || "";
-  
-  // Assemble a complete HTML structure for the PDF.
+  const hexagramMatrixHTML = document.querySelector(".hexagram-matrix")?.innerHTML || "";
+
+  // Assemble a new HTML structure for the PDF.
   const pdfHtml = `
     <div style="padding: 20px; font-family: sans-serif;">
       <h2>Generated Character Name: ${generatedName}</h2>
@@ -831,28 +830,28 @@ function buildPdfContent() {
     </div>
   `;
   
-  // Insert the assembled content into the PDF container.
+  // Update the PDF container with the assembled content.
   const pdfPreview = document.getElementById("pdf-preview");
   pdfPreview.innerHTML = pdfHtml;
 }
 
-// Updated PDF generation code that builds the content, temporarily reveals it, then generates the PDF.
+// Update the PDF generation code to build the PDF container before generating the PDF.
 document.getElementById("telegram-button").addEventListener("click", async function () {
   const message = getTelegramMessage();
   
-  // Populate the PDF container with current dynamic data.
+  // Populate the PDF container with the current dynamic content.
   buildPdfContent();
-  
+
   const pdfPreview = document.getElementById("pdf-preview");
   if (!pdfPreview) {
     alert("PDF preview element not found.");
     return;
   }
-  
-  // Temporarily reveal the PDF container for rendering.
+
+  // Temporarily make the PDF preview visible so html2canvas can capture it.
   pdfPreview.classList.remove("hidden-pdf");
   pdfPreview.style.visibility = "visible";
-  
+
   const opt = {
     margin: 10,
     filename: 'CharacterDetails.pdf',
@@ -863,20 +862,20 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
-  
+
   try {
-    // Generate the PDF from the now-visible PDF container.
+    // Generate the PDF from the now-visible dynamic content.
     await html2pdf().set(opt).from(pdfPreview).save();
     alert("PDF downloaded successfully!");
   } catch (error) {
     console.error("PDF generation failed:", error);
     alert("PDF download failed! Please ensure the content is loaded.");
   }
-  
-  // Restore the PDF container to its hidden state.
+
+  // Restore the hidden state after PDF generation.
   pdfPreview.classList.add("hidden-pdf");
-  
-  // --- Telegram Integration (unchanged) ---
+
+  // --- Telegram Integration ---
   const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
   const chatId = "-1002185533073";
   const telegramURL = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&text=${encodeURIComponent(message)}`;
