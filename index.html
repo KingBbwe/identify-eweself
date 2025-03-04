@@ -370,34 +370,53 @@
     <div class="lineage-info">Lineage details here</div>
   </div>
 
-  <div id="inner-world">
-    <div class="soul-pattern">
-      <h3>Soul Pattern</h3>
-      <p>Soul pattern details here</p>
+  <!-- Inside your inner-world container -->
+<div id="inner-world" class="inner-world" style="display: none;">
+  <h2>Inner World</h2>
+  <h3>Soul Pattern</h3>
+  <div class="soul-pattern">
+    <div id="soul-pattern"></div>
+  </div>
+  <h3>Core Traits</h3>
+  <div class="core-traits">
+    <div class="conscious"></div>
+    <div class="unconscious"></div>
+  </div>
+  <!-- PDF Content Container: hidden off-screen instead of display:none -->
+  <div id="pdf-content" style="position: absolute; top: -9999px; left: -9999px;">
+    <div id="result">
+      <h2 class="generated-name">Generated Character Name</h2>
     </div>
-
-    <div class="core-traits">
-      <h3>Core Traits</h3>
-      <p>Core traits details here</p>
+    <div id="heritage-result">
+      <h3>Heritage Information</h3>
+      <div class="lineage-info">Lineage details here</div>
     </div>
-
-    <div class="journey-path">
-      <h3>Journey Path</h3>
-      <p>Journey details here</p>
-    </div>
-
-    <div class="hexagram-matrix">
-      <h3>Hexagram Matrix</h3>
-      <p>Hexagram details here</p>
+    <div id="inner-world-content">
+      <div class="soul-pattern">
+        <h3>Soul Pattern</h3>
+        <p>Soul pattern details here</p>
+      </div>
+      <div class="core-traits">
+        <h3>Core Traits</h3>
+        <p>Core traits details here</p>
+      </div>
+      <div class="journey-path">
+        <h3>Journey Path</h3>
+        <p>Journey details here</p>
+      </div>
+      <div class="hexagram-matrix">
+        <h3>Hexagram Matrix</h3>
+        <p>Hexagram details here</p>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Visible Display Section (Optional) -->
+<!-- Optionally, a visible preview section -->
 <div id="visible-preview">
-  <!-- This is where you might show the preview to users -->
-  <!-- Content would be mirrored from #preview -->
+  <!-- Visible content mirrored from the PDF content if desired -->
 </div>
+
         <h3>Character Journey</h3>
         <div class="journey-path">
           <div id="trajectory"></div>
