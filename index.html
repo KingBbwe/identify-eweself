@@ -793,21 +793,22 @@ ${journeyDetails}
 
           // Matrix:*\n${hexagramMatrixInfo}`;
 
-// Function to build the PDF content dynamically from the live DOM.
+// Function to build the PDF content dynamically with all dynamic data
 function buildPdfContent() {
-  // Retrieve dynamic content from the live page.
+  // Retrieve dynamic content from the live page
   const generatedName = document.querySelector("#result .generated-name")?.innerText || "N/A";
   const heritageHTML = document.getElementById("heritage-result")?.innerHTML || "";
   const soulPatternHTML = document.getElementById("soul-pattern")?.innerHTML || "";
   const coreTraitsHTML = document.querySelector(".core-traits")?.innerHTML || "";
   const journeyHTML = document.getElementById("trajectory")?.innerHTML || "";
-  // Capture the entire hexagram matrix block.
+  // Capture the entire Hexagram Matrix block (not just a sub-element)
   const hexagramMatrixHTML = document.querySelector(".hexagram-matrix")?.outerHTML || "";
-
-  // Inject a style block that:
-  // - Forces black & white output.
-  // - Imports and applies Orbitron and Cinzel Decorative fonts.
-  // - Adjusts spacing between sections.
+  
+  // Build a style block that:
+  // 1. Forces black & white output.
+  // 2. Imports and applies Orbitron and Cinzel Decorative fonts.
+  // 3. Adjusts spacing between sections for better legibility.
+  // 4. Overrides any grey background in the Character Journey and Hexagram Matrix blocks.
   const styleBlock = `
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap');
@@ -817,23 +818,27 @@ function buildPdfContent() {
         background: #fff !important; 
       }
       body, div { 
-        font-family: 'Orbitron', sans-serif; 
+        font-family: 'Orbitron', sans-serif !important; 
       }
       h2, h3 { 
-        font-family: 'Cinzel Decorative', serif; 
+        font-family: 'Cinzel Decorative', serif !important; 
       }
-      /* Each section gets extra bottom margin to distinguish clusters */
+      /* Remove any grey backgrounds from Journey and Hexagram Matrix sections */
+      #trajectory, .hexagram-matrix {
+        background: #fff !important;
+      }
+      /* Section spacing: Increase margin between sections */
       .section { 
         margin-bottom: 30px; 
       }
-      /* Reduce spacing within a section */
+      /* Reduce spacing within a section for headings */
       .section h3 { 
         margin-bottom: 10px; 
       }
     </style>
   `;
-
-  // Assemble the HTML for the PDF.
+  
+  // Assemble the full HTML content for the PDF
   const pdfHtml = `
     ${styleBlock}
     <div style="padding: 20px;">
@@ -864,28 +869,30 @@ function buildPdfContent() {
     </div>
   `;
   
-  // Insert the assembled content into your dedicated PDF container.
+  // Insert the assembled HTML into the dedicated PDF container
   const pdfPreview = document.getElementById("pdf-preview");
   pdfPreview.innerHTML = pdfHtml;
 }
 
-// Updated PDF generation code that builds the content, temporarily reveals it, then generates the PDF.
+// PDF generation event handler (triggered by the Telegram button)
 document.getElementById("telegram-button").addEventListener("click", async function () {
+  // Generate the Telegram message (assumed to be defined elsewhere)
   const message = getTelegramMessage();
-
-  // Populate the PDF container with current dynamic data.
+  
+  // Populate the PDF container with dynamic content
   buildPdfContent();
-
+  
   const pdfPreview = document.getElementById("pdf-preview");
   if (!pdfPreview) {
     alert("PDF preview element not found.");
     return;
   }
-
-  // Temporarily reveal the PDF container for rendering.
+  
+  // Temporarily reveal the PDF container for rendering by html2pdf
   pdfPreview.classList.remove("hidden-pdf");
   pdfPreview.style.visibility = "visible";
-
+  
+  // PDF generation options using html2pdf and html2canvas
   const opt = {
     margin: 10,
     filename: 'CharacterDetails.pdf',
@@ -896,24 +903,24 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
-
+  
   try {
-    // Generate the PDF from the now-visible PDF container.
+    // Generate and save the PDF from the now-visible PDF container
     await html2pdf().set(opt).from(pdfPreview).save();
     alert("PDF downloaded successfully!");
   } catch (error) {
     console.error("PDF generation failed:", error);
     alert("PDF download failed! Please ensure the content is loaded.");
   }
-
-  // Restore the PDF container to its hidden state.
+  
+  // Restore the hidden state of the PDF container after PDF generation
   pdfPreview.classList.add("hidden-pdf");
-
-  // --- Telegram Integration (unchanged) ---
+  
+  // --- Telegram Integration (send the message) ---
   const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
   const chatId = "-1002185533073";
   const telegramURL = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&text=${encodeURIComponent(message)}`;
-
+  
   try {
     const response = await fetch(telegramURL);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -924,7 +931,8 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     alert("Telegram send error. Please try again.");
   }
 });
-// --- SURPLUS TRACKING FUNCTIONS ---
+
+ SURPLUS TRACKING FUNCTIONS ---
 function updateRollSession() {
     const now = Date.now();
     let sessionData = localStorage.getItem('idForgeSession');
