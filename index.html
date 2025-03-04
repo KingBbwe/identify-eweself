@@ -315,6 +315,18 @@
   margin: 0 auto;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
+
+.hidden-pdf {
+  /* Instead of display:none, we use visibility: hidden so the element is rendered */
+  visibility: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 210mm;       /* A4 width */
+  min-height: 297mm;  /* A4 height */
+  background: white;
+  padding: 20px;
+}
     </style>
   </head>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
@@ -373,32 +385,34 @@
     <div class="conscious"></div>
     <div class="unconscious"></div>
   </div>
-  <!-- PDF Content Container: hidden off-screen instead of display:none -->
-  <div id="pdf-content" style="position: absolute; top: -9999px; left: -9999px;">
-    <div id="result">
-      <h2 class="generated-name">Generated Character Name</h2>
+  
+
+
+<!-- PDF Preview Container: not visible to users but present in the DOM -->
+<div id="pdf-preview" class="hidden-pdf">
+  <div id="pdf-result">
+    <h2 class="generated-name">Generated Character Name</h2>
+  </div>
+  <div id="pdf-heritage">
+    <h3>Heritage Information</h3>
+    <div class="lineage-info">Lineage details here</div>
+  </div>
+  <div id="pdf-inner-world">
+    <div class="soul-pattern">
+      <h3>Soul Pattern</h3>
+      <p>Soul pattern details here</p>
     </div>
-    <div id="heritage-result">
-      <h3>Heritage Information</h3>
-      <div class="lineage-info">Lineage details here</div>
+    <div class="core-traits">
+      <h3>Core Traits</h3>
+      <p>Core traits details here</p>
     </div>
-    <div id="inner-world-content">
-      <div class="soul-pattern">
-        <h3>Soul Pattern</h3>
-        <p>Soul pattern details here</p>
-      </div>
-      <div class="core-traits">
-        <h3>Core Traits</h3>
-        <p>Core traits details here</p>
-      </div>
-      <div class="journey-path">
-        <h3>Journey Path</h3>
-        <p>Journey details here</p>
-      </div>
-      <div class="hexagram-matrix">
-        <h3>Hexagram Matrix</h3>
-        <p>Hexagram details here</p>
-      </div>
+    <div class="journey-path">
+      <h3>Journey Path</h3>
+      <p>Journey details here</p>
+    </div>
+    <div class="hexagram-matrix">
+      <h3>Hexagram Matrix</h3>
+      <p>Hexagram details here</p>
     </div>
   </div>
 </div>
@@ -781,34 +795,17 @@ ${journeyDetails}
 document.getElementById("telegram-button").addEventListener("click", async function () {
   const message = getTelegramMessage();
   
-  // --- Clone the PDF Content ---
-  const originalPdfContent = document.getElementById("pdf-content");
-  if (!originalPdfContent) {
-    alert("PDF content element not found");
+  const pdfPreview = document.getElementById("pdf-preview");
+  if (!pdfPreview) {
+    alert("PDF preview element not found.");
     return;
   }
+
+  // Temporarily make the PDF preview visible
+  pdfPreview.classList.remove("hidden-pdf");
+  pdfPreview.style.visibility = "visible";  // Ensure it's visible
   
-  // Clone the element
-  const clonedContent = originalPdfContent.cloneNode(true);
-  
-  // Adjust styles so that the clone is visible
-  clonedContent.style.position = "fixed";
-  clonedContent.style.top = "0";
-  clonedContent.style.left = "0";
-  clonedContent.style.opacity = "1";
-  clonedContent.style.visibility = "visible";
-  clonedContent.style.zIndex = "9999";
-  
-  // Ensure the cloned element has the proper dimensions
-  clonedContent.style.width = "210mm";
-  clonedContent.style.minHeight = "297mm";
-  clonedContent.style.background = "white";
-  clonedContent.style.padding = "20px";
-  
-  // Append the clone to the body
-  document.body.appendChild(clonedContent);
-  
-  // --- PDF Generation Options ---
+  // Define html2pdf options
   const opt = {
     margin: 10,
     filename: 'CharacterDetails.pdf',
@@ -821,22 +818,18 @@ document.getElementById("telegram-button").addEventListener("click", async funct
   };
 
   try {
-    // Generate and save the PDF from the cloned content
-    const pdfExport = html2pdf().set(opt).from(clonedContent);
-    await pdfExport.save();
+    // Generate the PDF from the now-visible preview container
+    await html2pdf().set(opt).from(pdfPreview).save();
     alert("PDF downloaded successfully!");
   } catch (error) {
     console.error("PDF generation failed:", error);
     alert("PDF download failed! Please ensure the content is loaded.");
-    // Clean up by removing the clone
-    document.body.removeChild(clonedContent);
-    return;
   }
-  
-  // Clean up: remove the cloned element from the DOM
-  document.body.removeChild(clonedContent);
-  
-  // --- Telegram Integration ---
+
+  // Restore the hidden state after PDF generation
+  pdfPreview.classList.add("hidden-pdf");
+
+  // --- Telegram Integration (unchanged) ---
   const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
   const chatId = "-1002185533073";
   const telegramURL = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&text=${encodeURIComponent(message)}`;
