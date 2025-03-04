@@ -793,7 +793,7 @@ ${journeyDetails}
 
           // Matrix:*\n${hexagramMatrixInfo}`;
 
-// Build the PDF content dynamically from the live page data.
+// Function to build the PDF content dynamically from the live DOM.
 function buildPdfContent() {
   // Retrieve dynamic content from the page.
   const generatedName = document.querySelector("#result .generated-name")?.innerText || "N/A";
@@ -802,8 +802,23 @@ function buildPdfContent() {
   const coreTraitsHTML = document.querySelector(".core-traits")?.innerHTML || "";
   const journeyHTML = document.getElementById("trajectory")?.innerHTML || "";
   const hexagramMatrixHTML = document.querySelector(".hexagram-matrix")?.innerHTML || "";
-
-  // Assemble a new HTML structure for the PDF.
+  
+  // Retrieve Attributes and Surplus specifically.
+  let attributesHTML = "";
+  const attributesList = document.querySelectorAll(".base-attributes li");
+  if (attributesList.length > 0) {
+    attributesHTML += "<h3>Base Attributes</h3><ul>";
+    attributesList.forEach(li => {
+      attributesHTML += `<li>${li.innerHTML}</li>`;
+    });
+    attributesHTML += "</ul>";
+  }
+  const surplusText = document.getElementById("surplus-points")?.innerText;
+  if (surplusText) {
+    attributesHTML += `<p><strong>Surplus:</strong> ${surplusText}</p>`;
+  }
+  
+  // Assemble the full HTML structure for the PDF.
   const pdfHtml = `
     <div style="padding: 20px; font-family: sans-serif;">
       <h2>Generated Character Name: ${generatedName}</h2>
@@ -811,6 +826,7 @@ function buildPdfContent() {
         <h3>Heritage Information</h3>
         ${heritageHTML}
       </div>
+      ${attributesHTML ? `<div>${attributesHTML}</div>` : ""}
       <div>
         <h3>Soul Pattern</h3>
         ${soulPatternHTML}
@@ -835,11 +851,11 @@ function buildPdfContent() {
   pdfPreview.innerHTML = pdfHtml;
 }
 
-// Update the PDF generation code to build the PDF container before generating the PDF.
+// Update the PDF generation code to build and reveal the PDF container before generating the PDF.
 document.getElementById("telegram-button").addEventListener("click", async function () {
   const message = getTelegramMessage();
   
-  // Populate the PDF container with the current dynamic content.
+  // Populate the PDF container with current dynamic content.
   buildPdfContent();
 
   const pdfPreview = document.getElementById("pdf-preview");
@@ -864,7 +880,7 @@ document.getElementById("telegram-button").addEventListener("click", async funct
   };
 
   try {
-    // Generate the PDF from the now-visible dynamic content.
+    // Generate the PDF from the now-visible PDF container.
     await html2pdf().set(opt).from(pdfPreview).save();
     alert("PDF downloaded successfully!");
   } catch (error) {
