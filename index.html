@@ -793,32 +793,18 @@ ${journeyDetails}
 
           // Matrix:*\n${hexagramMatrixInfo}`;
 
-// Function to build the PDF content dynamically from the live DOM.
+// Build the PDF content dynamically from live DOM data.
 function buildPdfContent() {
-  // Retrieve dynamic content from the page.
+  // Retrieve dynamic content from various sections.
   const generatedName = document.querySelector("#result .generated-name")?.innerText || "N/A";
   const heritageHTML = document.getElementById("heritage-result")?.innerHTML || "";
   const soulPatternHTML = document.getElementById("soul-pattern")?.innerHTML || "";
   const coreTraitsHTML = document.querySelector(".core-traits")?.innerHTML || "";
   const journeyHTML = document.getElementById("trajectory")?.innerHTML || "";
-  const hexagramMatrixHTML = document.querySelector(".hexagram-matrix")?.innerHTML || "";
+  // Use a more specific selector for the Hexagram Matrix details.
+  const hexagramMatrixHTML = document.querySelector(".hexagram-matrix .hexagram-matrix-description")?.outerHTML || "";
   
-  // Retrieve Attributes and Surplus specifically.
-  let attributesHTML = "";
-  const attributesList = document.querySelectorAll(".base-attributes li");
-  if (attributesList.length > 0) {
-    attributesHTML += "<h3>Base Attributes</h3><ul>";
-    attributesList.forEach(li => {
-      attributesHTML += `<li>${li.innerHTML}</li>`;
-    });
-    attributesHTML += "</ul>";
-  }
-  const surplusText = document.getElementById("surplus-points")?.innerText;
-  if (surplusText) {
-    attributesHTML += `<p><strong>Surplus:</strong> ${surplusText}</p>`;
-  }
-  
-  // Assemble the full HTML structure for the PDF.
+  // Assemble a complete HTML structure for the PDF.
   const pdfHtml = `
     <div style="padding: 20px; font-family: sans-serif;">
       <h2>Generated Character Name: ${generatedName}</h2>
@@ -826,7 +812,6 @@ function buildPdfContent() {
         <h3>Heritage Information</h3>
         ${heritageHTML}
       </div>
-      ${attributesHTML ? `<div>${attributesHTML}</div>` : ""}
       <div>
         <h3>Soul Pattern</h3>
         ${soulPatternHTML}
@@ -846,28 +831,28 @@ function buildPdfContent() {
     </div>
   `;
   
-  // Update the PDF container with the assembled content.
+  // Insert the assembled content into the PDF container.
   const pdfPreview = document.getElementById("pdf-preview");
   pdfPreview.innerHTML = pdfHtml;
 }
 
-// Update the PDF generation code to build and reveal the PDF container before generating the PDF.
+// Updated PDF generation code that builds the content, temporarily reveals it, then generates the PDF.
 document.getElementById("telegram-button").addEventListener("click", async function () {
   const message = getTelegramMessage();
   
-  // Populate the PDF container with current dynamic content.
+  // Populate the PDF container with current dynamic data.
   buildPdfContent();
-
+  
   const pdfPreview = document.getElementById("pdf-preview");
   if (!pdfPreview) {
     alert("PDF preview element not found.");
     return;
   }
-
-  // Temporarily make the PDF preview visible so html2canvas can capture it.
+  
+  // Temporarily reveal the PDF container for rendering.
   pdfPreview.classList.remove("hidden-pdf");
   pdfPreview.style.visibility = "visible";
-
+  
   const opt = {
     margin: 10,
     filename: 'CharacterDetails.pdf',
@@ -878,7 +863,7 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
-
+  
   try {
     // Generate the PDF from the now-visible PDF container.
     await html2pdf().set(opt).from(pdfPreview).save();
@@ -887,11 +872,11 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     console.error("PDF generation failed:", error);
     alert("PDF download failed! Please ensure the content is loaded.");
   }
-
-  // Restore the hidden state after PDF generation.
+  
+  // Restore the PDF container to its hidden state.
   pdfPreview.classList.add("hidden-pdf");
-
-  // --- Telegram Integration ---
+  
+  // --- Telegram Integration (unchanged) ---
   const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
   const chatId = "-1002185533073";
   const telegramURL = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&text=${encodeURIComponent(message)}`;
