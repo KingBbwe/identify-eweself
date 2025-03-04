@@ -729,8 +729,7 @@ function buildPdfContent() {
   const coreTraitsHTML = document.querySelector(".core-traits")?.innerHTML || "";
   const journeyHTML = document.getElementById("trajectory")?.innerHTML || "";
   // Capture the entire Hexagram Matrix block (not just a sub-element)
-  const hexagramMatrixHTML = document.querySelector(".hexagram-matrix")?.outerHTML || "";
-  
+  const hexagramMatrixHTML = document.querySelector(".hexagram-matrix .hexagram-matrix-description")?.outerHTML || "";
   // Build a style block that:
   // 1. Forces black & white output.
   // 2. Imports and applies Orbitron and Cinzel Decorative fonts.
