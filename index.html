@@ -788,19 +788,21 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { 
       scale: 2,
-      // Use the window's width for proper rendering
+      // Add windowWidth to ensure proper rendering
       windowWidth: document.documentElement.offsetWidth
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
   try {
-    // Select the uniquely identified PDF content container
-    const elementToPrint = document.getElementById('pdf-content');
+    // Ensure we're using a proper DOM reference
+    const elementToPrint = document.getElementById('preview'); // Make sure this ID exists in your HTML
+    
     if (!elementToPrint) {
-      throw new Error('PDF content element not found');
+      throw new Error('Preview element not found');
     }
-    // Generate and save the PDF
+
+    // Initialize html2pdf properly
     const pdfExport = html2pdf().set(opt).from(elementToPrint);
     await pdfExport.save();
     alert("PDF downloaded successfully!");
@@ -810,11 +812,12 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     return;
   }
 
+
   // --- Telegram Integration ---
   const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
   const chatId = "-1002185533073";
   const telegramURL = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&text=${encodeURIComponent(message)}`;
-  
+
   try {
     const response = await fetch(telegramURL);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -825,6 +828,7 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     alert("Telegram send error. Please try again.");
   }
 });
+
 
 
 // --- SURPLUS TRACKING FUNCTIONS ---
