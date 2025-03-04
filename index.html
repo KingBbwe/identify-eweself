@@ -869,6 +869,61 @@ function buildPdfContent() {
   pdfPreview.innerHTML = pdfHtml;
 }
 
+// Updated PDF generation code that builds the content, temporarily reveals it, then generates the PDF.
+document.getElementById("telegram-button").addEventListener("click", async function () {
+  const message = getTelegramMessage();
+
+  // Populate the PDF container with current dynamic data.
+  buildPdfContent();
+
+  const pdfPreview = document.getElementById("pdf-preview");
+  if (!pdfPreview) {
+    alert("PDF preview element not found.");
+    return;
+  }
+
+  // Temporarily reveal the PDF container for rendering.
+  pdfPreview.classList.remove("hidden-pdf");
+  pdfPreview.style.visibility = "visible";
+
+  const opt = {
+    margin: 10,
+    filename: 'CharacterDetails.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { 
+      scale: 2,
+      windowWidth: document.documentElement.offsetWidth
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  try {
+    // Generate the PDF from the now-visible PDF container.
+    await html2pdf().set(opt).from(pdfPreview).save();
+    alert("PDF downloaded successfully!");
+  } catch (error) {
+    console.error("PDF generation failed:", error);
+    alert("PDF download failed! Please ensure the content is loaded.");
+  }
+
+  // Restore the PDF container to its hidden state.
+  pdfPreview.classList.add("hidden-pdf");
+
+  // --- Telegram Integration (unchanged) ---
+  const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
+  const chatId = "-1002185533073";
+  const telegramURL = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&text=${encodeURIComponent(message)}`;
+
+  try {
+    const response = await fetch(telegramURL);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    alert("Character details sent to Telegram!");
+    resetRollSession();
+  } catch (error) {
+    console.error("Telegram send error:", error);
+    alert("Telegram send error. Please try again.");
+  }
+});
 // --- SURPLUS TRACKING FUNCTIONS ---
 function updateRollSession() {
     const now = Date.now();
