@@ -795,117 +795,79 @@ ${journeyDetails}
 
 // Function to build the PDF content dynamically from the live DOM.
 function buildPdfContent() {
-  // Retrieve dynamic content from various sections.
+  // Retrieve dynamic content from the live page.
   const generatedName = document.querySelector("#result .generated-name")?.innerText || "N/A";
   const heritageHTML = document.getElementById("heritage-result")?.innerHTML || "";
   const soulPatternHTML = document.getElementById("soul-pattern")?.innerHTML || "";
   const coreTraitsHTML = document.querySelector(".core-traits")?.innerHTML || "";
   const journeyHTML = document.getElementById("trajectory")?.innerHTML || "";
-  const hexagramMatrixHTML = document.querySelector(".hexagram-matrix .hexagram-matrix-description")?.outerHTML || "";
+  // Capture the entire hexagram matrix block.
+  const hexagramMatrixHTML = document.querySelector(".hexagram-matrix")?.outerHTML || "";
 
-  // Prepend a CSS style block that forces black & white output
+  // Inject a style block that:
+  // - Forces black & white output.
+  // - Imports and applies Orbitron and Cinzel Decorative fonts.
+  // - Adjusts spacing between sections.
   const styleBlock = `
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
       * { 
         color: #000 !important; 
         background: #fff !important; 
       }
-      h2, h3 { 
-        border: none !important; 
+      body, div { 
+        font-family: 'Orbitron', sans-serif; 
       }
-      /* You can add more rules here if needed */
+      h2, h3 { 
+        font-family: 'Cinzel Decorative', serif; 
+      }
+      /* Each section gets extra bottom margin to distinguish clusters */
+      .section { 
+        margin-bottom: 30px; 
+      }
+      /* Reduce spacing within a section */
+      .section h3 { 
+        margin-bottom: 10px; 
+      }
     </style>
   `;
 
-  // Assemble a complete HTML structure for the PDF.
+  // Assemble the HTML for the PDF.
   const pdfHtml = `
     ${styleBlock}
-    <div style="padding: 20px; font-family: sans-serif;">
-      <h2>Generated Character Name: ${generatedName}</h2>
-      <div>
+    <div style="padding: 20px;">
+      <div class="section">
+        <h2>Generated Character Name:</h2>
+        <div>${generatedName}</div>
+      </div>
+      <div class="section">
         <h3>Heritage Information</h3>
-        ${heritageHTML}
+        <div>${heritageHTML}</div>
       </div>
-      <div>
+      <div class="section">
         <h3>Soul Pattern</h3>
-        ${soulPatternHTML}
+        <div>${soulPatternHTML}</div>
       </div>
-      <div>
+      <div class="section">
         <h3>Core Traits</h3>
-        ${coreTraitsHTML}
+        <div>${coreTraitsHTML}</div>
       </div>
-      <div>
+      <div class="section">
         <h3>Character Journey</h3>
-        ${journeyHTML}
+        <div>${journeyHTML}</div>
       </div>
-      <div>
+      <div class="section">
         <h3>Hexagram Matrix</h3>
-        ${hexagramMatrixHTML}
+        <div>${hexagramMatrixHTML}</div>
       </div>
     </div>
   `;
-
-  // Update the PDF container with the assembled content.
+  
+  // Insert the assembled content into your dedicated PDF container.
   const pdfPreview = document.getElementById("pdf-preview");
   pdfPreview.innerHTML = pdfHtml;
 }
-
-// Update the PDF generation code to build and reveal the PDF container before generating the PDF.
-document.getElementById("telegram-button").addEventListener("click", async function () {
-  const message = getTelegramMessage();
-  
-  // Populate the PDF container with current dynamic content.
-  buildPdfContent();
-
-  const pdfPreview = document.getElementById("pdf-preview");
-  if (!pdfPreview) {
-    alert("PDF preview element not found.");
-    return;
-  }
-
-  // Temporarily make the PDF preview visible so html2canvas can capture it.
-  pdfPreview.classList.remove("hidden-pdf");
-  pdfPreview.style.visibility = "visible";
-
-  const opt = {
-    margin: 10,
-    filename: 'CharacterDetails.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { 
-      scale: 2,
-      windowWidth: document.documentElement.offsetWidth
-    },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-
-  try {
-    // Generate the PDF from the now-visible PDF container.
-    await html2pdf().set(opt).from(pdfPreview).save();
-    alert("PDF downloaded successfully!");
-  } catch (error) {
-    console.error("PDF generation failed:", error);
-    alert("PDF download failed! Please ensure the content is loaded.");
-  }
-
-  // Restore the hidden state after PDF generation.
-  pdfPreview.classList.add("hidden-pdf");
-
-  // --- Telegram Integration ---
-  const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
-  const chatId = "-1002185533073";
-  const telegramURL = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&text=${encodeURIComponent(message)}`;
-  
-  try {
-    const response = await fetch(telegramURL);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    alert("Character details sent to Telegram!");
-    resetRollSession();
-  } catch (error) {
-    console.error("Telegram send error:", error);
-    alert("Telegram send error. Please try again.");
-  }
-});
-
 
 // --- SURPLUS TRACKING FUNCTIONS ---
 function updateRollSession() {
