@@ -783,73 +783,55 @@ function getTelegramMessage() {
   }
 }
 
-// Function to build the PDF content dynamically
+// Build the PDF content dynamically from live DOM data.
 function buildPdfContent() {
   try {
-    // Retrieve dynamic content from the live page
-    const generatedName = safeGetText("#result .generated-name");
-    const heritageHTML = safeGetHTML("#heritage-result");
-    const soulPatternHTML = safeGetHTML("#inner-world .soul-pattern");
-    const coreTraitsHTML = safeGetHTML("#inner-world .core-traits");
-    const journeyHTML = safeGetHTML("#inner-world .journey-path");
-    const hexagramMatrixHTML = safeGetHTML("#inner-world .hexagram-matrix");
+    // Retrieve dynamic content from various sections with more robust selection
+    const generatedName = document.querySelector("#result .generated-name")?.innerText || "N/A";
+    const heritageHTML = document.getElementById("heritage-result")?.innerHTML || "";
+    const soulPatternHTML = document.getElementById("soul-pattern")?.innerHTML || "";
+    const coreTraitsHTML = document.querySelector(".core-traits")?.innerHTML || "";
+    const journeyHTML = document.getElementById("trajectory")?.innerHTML || "";
+    const hexagramMatrixHTML = document.querySelector(".hexagram-matrix .hexagram-matrix-description")?.outerHTML || "";
 
-    // Style block for PDF formatting
-    const styleBlock = `
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-        * { 
-          color: #000 !important; 
-          background: #fff !important; 
-        }
-        body, div { 
-          font-family: 'Orbitron', sans-serif !important; 
-        }
-        h2, h3 { 
-          font-family: 'Cinzel Decorative', serif !important; 
-        }
-        .section { 
-          margin-bottom: 30px; 
-        }
-        .section h3 { 
-          margin-bottom: 10px; 
-        }
-      </style>
-    `;
-
-    // Assemble the full HTML content for the PDF
+    // Assemble a complete HTML structure for the PDF with added safety checks
     const pdfHtml = `
-      ${styleBlock}
-      <div style="padding: 20px;">
-        <div class="section">
-          <h2>Generated Character Name:</h2>
-          <div>${generatedName}</div>
-        </div>
-        <div class="section">
-          <h3>Heritage Information</h3>
-          <div>${heritageHTML}</div>
-        </div>
-        <div class="section">
-          <h3>Soul Pattern</h3>
-          <div>${soulPatternHTML}</div>
-        </div>
-        <div class="section">
-          <h3>Core Traits</h3>
-          <div>${coreTraitsHTML}</div>
-        </div>
-        <div class="section">
-          <h3>Character Journey</h3>
-          <div>${journeyHTML}</div>
-        </div>
-        <div class="section">
-          <h3>Hexagram Matrix</h3>
-          <div>${hexagramMatrixHTML}</div>
-        </div>
+      <div style="padding: 20px; font-family: sans-serif;">
+        <h2>Generated Character Name: ${generatedName}</h2>
+        ${heritageHTML ? `
+          <div>
+            <h3>Heritage Information</h3>
+            ${heritageHTML}
+          </div>
+        ` : ''}
+        ${soulPatternHTML ? `
+          <div>
+            <h3>Soul Pattern</h3>
+            ${soulPatternHTML}
+          </div>
+        ` : ''}
+        ${coreTraitsHTML ? `
+          <div>
+            <h3>Core Traits</h3>
+            ${coreTraitsHTML}
+          </div>
+        ` : ''}
+        ${journeyHTML ? `
+          <div>
+            <h3>Character Journey</h3>
+            ${journeyHTML}
+          </div>
+        ` : ''}
+        ${hexagramMatrixHTML ? `
+          <div>
+            <h3>Hexagram Matrix</h3>
+            ${hexagramMatrixHTML}
+          </div>
+        ` : ''}
       </div>
     `;
 
-    // Insert the assembled HTML into the dedicated PDF container
+    // Insert the assembled content into the PDF container with error handling
     const pdfPreview = document.getElementById("pdf-preview");
     if (pdfPreview) {
       pdfPreview.innerHTML = pdfHtml;
@@ -861,13 +843,22 @@ function buildPdfContent() {
   }
 }
 
-// PDF generation and Telegram send event handler
+// Telegram button event handler with added error handling and timeouts
 document.getElementById("telegram-button")?.addEventListener("click", async function () {
+  // Disable the button immediately to prevent multiple clicks
+  this.disabled = true;
+  
   try {
-    // Generate the Telegram message
-    const message = getTelegramMessage();
+    // Ensure message generation doesn't break the entire process
+    let message;
+    try {
+      message = getTelegramMessage();
+    } catch (messageError) {
+      console.error("Failed to generate Telegram message:", messageError);
+      message = "Unable to generate character details.";
+    }
 
-    // Populate the PDF container with dynamic content
+    // Populate the PDF container with current dynamic data
     buildPdfContent();
 
     const pdfPreview = document.getElementById("pdf-preview");
@@ -879,49 +870,65 @@ document.getElementById("telegram-button")?.addEventListener("click", async func
     pdfPreview.classList.remove("hidden-pdf");
     pdfPreview.style.visibility = "visible";
 
-    // PDF generation options
     const opt = {
       margin: 10,
       filename: 'CharacterDetails.pdf',
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { 
         scale: 2,
-        windowWidth: document.documentElement.offsetWidth
+        windowWidth: document.documentElement.offsetWidth,
+        // Add a timeout to prevent hanging
+        timeout: 10000
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    // Generate and save PDF
-    await html2pdf().set(opt).from(pdfPreview).save();
+    // Use Promise.race to add a timeout to PDF generation
+    await Promise.race([
+      html2pdf().set(opt).from(pdfPreview).save(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("PDF generation timed out")), 15000)
+      )
+    ]);
+
     alert("PDF downloaded successfully!");
 
-    // Send to Telegram
+    // Telegram sending with timeout
     const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
     const chatId = "-1002185533073";
     const telegramURL = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&text=${encodeURIComponent(message)}`;
 
-    const response = await fetch(telegramURL);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const telegramResponse = await Promise.race([
+      fetch(telegramURL),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Telegram send timed out")), 10000)
+      )
+    ]);
+
+    if (!telegramResponse.ok) {
+      throw new Error(`HTTP error! status: ${telegramResponse.status}`);
     }
-    
+
     alert("Character details sent to Telegram!");
     
-    // Reset the session (assuming this function exists)
+    // Reset the session safely
     if (typeof resetRollSession === 'function') {
       resetRollSession();
     }
 
   } catch (error) {
-    console.error("Error in Telegram/PDF process:", error);
+    console.error("Operation failed:", error);
     alert(`Operation failed: ${error.message}. Please try again.`);
   } finally {
-    // Ensure PDF preview is hidden after process
+    // Ensure PDF preview is hidden and button is re-enabled
     const pdfPreview = document.getElementById("pdf-preview");
     if (pdfPreview) {
       pdfPreview.classList.add("hidden-pdf");
       pdfPreview.style.visibility = "hidden";
     }
+    
+    // Re-enable the button
+    this.disabled = false;
   }
 });
 
