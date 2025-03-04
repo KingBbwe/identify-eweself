@@ -795,38 +795,37 @@ ${journeyDetails}
 
 // Function to build the PDF content dynamically from the live DOM.
 function buildPdfContent() {
-  // Retrieve dynamic content from the page.
+  // Retrieve dynamic content from various sections.
   const generatedName = document.querySelector("#result .generated-name")?.innerText || "N/A";
   const heritageHTML = document.getElementById("heritage-result")?.innerHTML || "";
   const soulPatternHTML = document.getElementById("soul-pattern")?.innerHTML || "";
   const coreTraitsHTML = document.querySelector(".core-traits")?.innerHTML || "";
   const journeyHTML = document.getElementById("trajectory")?.innerHTML || "";
-  const hexagramMatrixHTML = document.querySelector(".hexagram-matrix")?.innerHTML || "";
-  
-  // Retrieve Attributes and Surplus specifically.
-  let attributesHTML = "";
-  const attributesList = document.querySelectorAll(".base-attributes li");
-  if (attributesList.length > 0) {
-    attributesHTML += "<h3>Base Attributes</h3><ul>";
-    attributesList.forEach(li => {
-      attributesHTML += `<li>${li.innerHTML}</li>`;
-    });
-    attributesHTML += "</ul>";
-  }
-  const surplusText = document.getElementById("surplus-points")?.innerText;
-  if (surplusText) {
-    attributesHTML += `<p><strong>Surplus:</strong> ${surplusText}</p>`;
-  }
-  
-  // Assemble the full HTML structure for the PDF.
+  const hexagramMatrixHTML = document.querySelector(".hexagram-matrix .hexagram-matrix-description")?.outerHTML || "";
+
+  // Prepend a CSS style block that forces black & white output
+  const styleBlock = `
+    <style>
+      * { 
+        color: #000 !important; 
+        background: #fff !important; 
+      }
+      h2, h3 { 
+        border: none !important; 
+      }
+      /* You can add more rules here if needed */
+    </style>
+  `;
+
+  // Assemble a complete HTML structure for the PDF.
   const pdfHtml = `
+    ${styleBlock}
     <div style="padding: 20px; font-family: sans-serif;">
       <h2>Generated Character Name: ${generatedName}</h2>
       <div>
         <h3>Heritage Information</h3>
         ${heritageHTML}
       </div>
-      ${attributesHTML ? `<div>${attributesHTML}</div>` : ""}
       <div>
         <h3>Soul Pattern</h3>
         ${soulPatternHTML}
@@ -845,7 +844,7 @@ function buildPdfContent() {
       </div>
     </div>
   `;
-  
+
   // Update the PDF container with the assembled content.
   const pdfPreview = document.getElementById("pdf-preview");
   pdfPreview.innerHTML = pdfHtml;
