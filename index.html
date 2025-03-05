@@ -1118,11 +1118,10 @@ document.getElementById("more-details").addEventListener("click", function () {
   var sp = userSession.soulPattern;
   // Build the HTML content with improved formatting and full details.
   var detailsHtml = `
-    <h2 style="border-bottom: 2px solid #ccc; padding-bottom: 0.5em;">Profile Details</h2>
-    <p><strong>Profile ID:</strong> ${sp.profileId || "N/A"}</p>
-    <p><strong>Name:</strong> ${sp.name || "N/A"}</p>
+    <h2 style="border-bottom: 2px solid #ccc; padding-bottom: 0.5em;">Soul Pattern & Profile Details</h2>
+    <p><strong>Personality Profile:</strong> ${sp.profileId || "N/A"}</p>
+    <p><strong>Profile Name:</strong> ${sp.name || "N/A"}</p>
     <p><strong>Soul Pattern:</strong> ${sp.soulPattern || "N/A"}</p>
-    <p><strong>Fraction:</strong> ${sp.profileId || "N/A"}</p>
     
     <h3 style="margin-top:1em;">Archetypes</h3>
     <p><strong>Conscious:</strong> ${sp.archetypes && sp.archetypes.conscious ? sp.archetypes.conscious : "N/A"}</p>
@@ -1164,11 +1163,6 @@ document.getElementById("more-details").addEventListener("click", function () {
     <h3 style="margin-top:1em;">Summary Traits</h3>
     <p>${sp.summaryTraits ? sp.summaryTraits.join("; ") : "N/A"}</p>
     
-    <h3 style="margin-top:1em;">Optional Names</h3>
-    <p>${sp.optionalNames ? sp.optionalNames.join(", ") : "N/A"}</p>
-    
-    <h3 style="margin-top:1em;">Classed Titles</h3>
-    <p>${sp.classedTitles ? sp.classedTitles.join(", ") : "N/A"}</p>
   `;
   document.getElementById("details-content").innerHTML = detailsHtml;
 
