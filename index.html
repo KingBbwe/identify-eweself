@@ -937,7 +937,11 @@ function resetRollSession() {
 
       // Unified forgeIdentity function – used by both shake and button streams.
 
+// --- Forge Identity Function with Extended Soul Pattern Integration ---
 function forgeIdentity() {
+  // (Assume userSession is defined globally; do not re‑declare if already present)
+  console.log("Forging new identity...");
+  
   // Session tracking and penalty calculation
   const rollCount = updateRollSession();
   const penalty = rollCount > 2 ? rollCount - 2 : 0;
@@ -1015,29 +1019,41 @@ function forgeIdentity() {
     });
   });
   
-  // ----- Soul Pattern Integration with Extended Dataset -----
-  // Generate a soul pattern from your local array of soulPatterns
-  const generatedSoulPattern = randomElement(soulPatterns);
-  let matchingProfile = null;
-  // Check that soulProfiles is defined and then perform a case-insensitive match
-  if (typeof soulProfiles !== 'undefined' && soulProfiles.length > 0) {
-    matchingProfile = soulProfiles.find(profile =>
-      profile.soulPattern.toLowerCase() === generatedSoulPattern.pattern.toLowerCase()
-    );
-  }
-  if (matchingProfile) {
-    userSession.soulPattern = matchingProfile;
-  } else {
-    console.warn("No matching extended profile found for soul pattern:", generatedSoulPattern.pattern);
-    userSession.soulPattern = generatedSoulPattern;
+  // ----- Soul Pattern Integration -----
+  // Ensure that soulPatterns exists
+  if (!soulPatterns || soulPatterns.length === 0) {
+    console.error("Error: soulPatterns dataset is missing or empty");
+    return;
   }
   
-  // Display minimal soul pattern info in the visible area
+  // Generate a soul pattern from the local array
+  const generatedSoulPattern = randomElement(soulPatterns);
+  console.log("Generated soul pattern:", generatedSoulPattern);
+  
+  // Check if the extended dataset (soulProfiles) exists
+  if (!soulProfiles || soulProfiles.length === 0) {
+    console.warn("Warning: soulProfiles dataset is missing or empty");
+  }
+  
+  // Find a matching soul profile using a case-insensitive match
+  const matchingProfile = soulProfiles.find(profile =>
+    profile.soulPattern.toLowerCase() === generatedSoulPattern.pattern.toLowerCase()
+  );
+  
+  if (matchingProfile) {
+    console.log("Matched soul profile:", matchingProfile);
+    userSession.soulPattern = matchingProfile;
+  } else {
+    console.warn("No matching profile found for:", generatedSoulPattern.pattern);
+    userSession.soulPattern = generatedSoulPattern; // Fallback to basic data
+  }
+  
+  // Display basic soul pattern information in the visible area
   document.getElementById("soul-pattern").innerHTML = `
     <div style="color: var(--near-white);">
       ${userSession.soulPattern.soulPattern || userSession.soulPattern.pattern}
     </div>
-    <p class="orbitron-bold-blue">Personality Profile: ${userSession.soulPattern.name || userSession.soulPattern.profile || ""}</p>
+    <p class="orbitron-bold-blue">Personality Profile: ${userSession.soulPattern.name || "N/A"}</p>
   `;
   
   // ----- Core Traits Generation -----
@@ -1091,6 +1107,29 @@ function forgeIdentity() {
   // Display the inner world section
   document.getElementById("inner-world").style.display = "block";
 }
+
+// --- "More" Button Event Listener for Extended Soul Pattern Details ---
+document.getElementById("more-details").addEventListener("click", function () {
+  console.log("More button clicked. Fetching extended details...");
+  
+  if (!userSession.soulPattern) {
+    console.error("Error: userSession.soulPattern is undefined");
+    document.getElementById("details-content").innerHTML = "Error: No soul pattern available.";
+    return;
+  }
+  
+  // Use a "details" property if available; otherwise, show a default message.
+  const details = userSession.soulPattern.details || "No additional details available for this soul pattern.";
+  document.getElementById("details-content").innerHTML = `<p>${details}</p>`;
+  
+  // Show the modal
+  document.getElementById("details-modal").style.display = "block";
+});
+
+// --- Event Listener to Close the Modal ---
+document.getElementById("close-modal").addEventListener("click", function () {
+  document.getElementById("details-modal").style.display = "none";
+});
 
       // allocatePoint: Called when a plus-pill is clicked.
 
