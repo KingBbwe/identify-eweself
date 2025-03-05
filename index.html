@@ -1108,33 +1108,73 @@ function forgeIdentity() {
   document.getElementById("inner-world").style.display = "block";
 }
 
-// --- "More" Button Event Listener for Extended Soul Pattern Details ---
 document.getElementById("more-details").addEventListener("click", function () {
   console.log("More button clicked. Fetching extended details...");
-  console.log("Full userSession:", userSession);
-
   if (!userSession || !userSession.soulPattern) {
     console.error("Error: userSession.soulPattern is undefined");
-    document.getElementById("details-content").innerHTML = "Error: No soul pattern available. Generate a character first.";
+    document.getElementById("details-content").innerHTML = "<p>Error: No soul pattern available. Generate a character first.</p>";
     return;
   }
-  // Build a details summary if no pre-existing 'details' property exists
-  const details = userSession.soulPattern.details ||
-    ("Key Questions: " + (userSession.soulPattern.roleplayGuide?.keyQuestions || []).join("; ") + "<br>" +
-     "Signature Moments: " + (userSession.soulPattern.roleplayGuide?.signatureMoments || []).join("; ") + "<br>" +
-     "Growth Conflict: " + (userSession.soulPattern.growthConflict?.internalTensions || []).join("; ") + "<br>" +
-     "Summary Traits: " + (userSession.soulPattern.summaryTraits || []).join("; ")) ||
-    "No additional details available for this soul pattern.";
-
-  document.getElementById("details-content").innerHTML = `
-    <h3>${userSession.soulPattern.pattern || 'Soul Pattern'}</h3>
-    <p class="personality-profile">Personality Profile: ${userSession.soulPattern.name || userSession.soulPattern.profile || "N/A"}</p>
-    <div class="soul-pattern-details">${details}</div>
+  var sp = userSession.soulPattern;
+  // Build the HTML content with improved formatting and full details.
+  var detailsHtml = `
+    <h2 style="border-bottom: 2px solid #ccc; padding-bottom: 0.5em;">Profile Details</h2>
+    <p><strong>Profile ID:</strong> ${sp.profileId || "N/A"}</p>
+    <p><strong>Name:</strong> ${sp.name || "N/A"}</p>
+    <p><strong>Soul Pattern:</strong> ${sp.soulPattern || "N/A"}</p>
+    <p><strong>Fraction:</strong> ${sp.profileId || "N/A"}</p>
+    
+    <h3 style="margin-top:1em;">Archetypes</h3>
+    <p><strong>Conscious:</strong> ${sp.archetypes && sp.archetypes.conscious ? sp.archetypes.conscious : "N/A"}</p>
+    <p><strong>Unconscious:</strong> ${sp.archetypes && sp.archetypes.unconscious ? sp.archetypes.unconscious : "N/A"}</p>
+    
+    <h3 style="margin-top:1em;">Essence</h3>
+    <p>${sp.essence || "N/A"}</p>
+    
+    <h3 style="margin-top:1em;">Pattern Dance</h3>
+    <p><strong>Conscious:</strong> ${sp.patternDance && sp.patternDance.conscious ? sp.patternDance.conscious : "N/A"}</p>
+    <p><strong>Unconscious:</strong> ${sp.patternDance && sp.patternDance.unconscious ? sp.patternDance.unconscious : "N/A"}</p>
+    
+    <h3 style="margin-top:1em;">Character Expression</h3>
+    <p><strong>Core Drive:</strong> ${sp.characterExpression && sp.characterExpression.coreDrive ? sp.characterExpression.coreDrive : "N/A"}</p>
+    <p><strong>Natural Habitat:</strong> ${sp.characterExpression && sp.characterExpression.naturalHabitat ? sp.characterExpression.naturalHabitat.join(", ") : "N/A"}</p>
+    <p><strong>Behavioral Patterns:</strong> ${sp.characterExpression && sp.characterExpression.behavioralPatterns ? sp.characterExpression.behavioralPatterns.join("; ") : "N/A"}</p>
+    
+    <h3 style="margin-top:1em;">Roleplay Guide</h3>
+    <p><strong>Key Questions:</strong></p>
+    ${sp.roleplayGuide && sp.roleplayGuide.keyQuestions ? "<ul>" + sp.roleplayGuide.keyQuestions.map(q => `<li>${q}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    <p><strong>Signature Moments:</strong></p>
+    ${sp.roleplayGuide && sp.roleplayGuide.signatureMoments ? "<ul>" + sp.roleplayGuide.signatureMoments.map(m => `<li>${m}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    <p><strong>Character Voice:</strong></p>
+    ${sp.roleplayGuide && sp.roleplayGuide.characterVoice ? "<ul>" + sp.roleplayGuide.characterVoice.map(v => `<li>${v}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    
+    <h3 style="margin-top:1em;">Growth Conflict</h3>
+    <p><strong>Internal Tensions:</strong> ${sp.growthConflict && sp.growthConflict.internalTensions ? sp.growthConflict.internalTensions.join("; ") : "N/A"}</p>
+    <p><strong>Development Paths:</strong> ${sp.growthConflict && sp.growthConflict.developmentPaths ? sp.growthConflict.developmentPaths.join(" → ") : "N/A"}</p>
+    <p><strong>Crisis Points:</strong> ${sp.growthConflict && sp.growthConflict.crisisPoints ? sp.growthConflict.crisisPoints.join("; ") : "N/A"}</p>
+    
+    <h3 style="margin-top:1em;">Gameplay Tips</h3>
+    <p><strong>Strong Scenes:</strong></p>
+    ${sp.gameplayTips && sp.gameplayTips.strongScenes ? "<ul>" + sp.gameplayTips.strongScenes.map(s => `<li>${s}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    <p><strong>Relationships:</strong></p>
+    ${sp.gameplayTips && sp.gameplayTips.relationships ? "<ul>" + sp.gameplayTips.relationships.map(r => `<li>${r}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    <p><strong>Adventure Hooks:</strong></p>
+    ${sp.gameplayTips && sp.gameplayTips.adventureHooks ? "<ul>" + sp.gameplayTips.adventureHooks.map(a => `<li>${a}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    
+    <h3 style="margin-top:1em;">Summary Traits</h3>
+    <p>${sp.summaryTraits ? sp.summaryTraits.join("; ") : "N/A"}</p>
+    
+    <h3 style="margin-top:1em;">Optional Names</h3>
+    <p>${sp.optionalNames ? sp.optionalNames.join(", ") : "N/A"}</p>
+    
+    <h3 style="margin-top:1em;">Classed Titles</h3>
+    <p>${sp.classedTitles ? sp.classedTitles.join(", ") : "N/A"}</p>
   `;
+  document.getElementById("details-content").innerHTML = detailsHtml;
 
-  // Show the modal
-  const modal = document.getElementById("details-modal");
-  const modalContent = document.getElementById("details-content");
+  // Show the modal with a fade-in effect
+  var modal = document.getElementById("details-modal");
+  var modalContent = document.getElementById("details-content");
   if (modal) {
     modal.style.display = "block";
     modalContent.style.opacity = "0";
