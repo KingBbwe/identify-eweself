@@ -307,7 +307,38 @@
         gap: 0.5rem;
         margin: 0.5rem 0;
       }
-      
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+      }
+      .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        font-family: 'Orbitron', sans-serif;
+        color: #000;
+      }
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+      }
+      .close:hover,
+      .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
       .hidden-pdf {
   /* Instead of display:none, we use visibility: hidden so the element is rendered */
   visibility: hidden;
@@ -362,7 +393,15 @@
           <div class="conscious"></div>
           <div class="unconscious"></div>
         </div>
-  
+   <button id="more-details">More</button>
+
+    <!-- Modal for displaying additional soul profile details -->
+    <div id="details-modal" class="modal">
+      <div class="modal-content">
+        <span id="close-modal" class="close">&times;</span>
+        <div id="details-content"></div>
+      </div>
+    </div>  
 <!-- Dedicated PDF Container -->
 <div id="pdf-preview" class="hidden-pdf"></div>
 
@@ -899,233 +938,157 @@ function resetRollSession() {
       // Unified forgeIdentity function – used by both shake and button streams.
 
 function forgeIdentity() {
-        // Session tracking and penalty calculation
-        const rollCount = updateRollSession();
-        const penalty = rollCount > 2 ? rollCount - 2 : 0; 
+  // Session tracking and penalty calculation
+  const rollCount = updateRollSession();
+  const penalty = rollCount > 2 ? rollCount - 2 : 0;
+  
+  // Generate character name
+  let name = generateName();
+  if (!name || name.trim() === "") {
+    name = "Unnamed One";
+  }
+  
+  // Update the result area with the generated name and hexagram info
+  document.getElementById("result").innerHTML = `
+    <div class="name-reveal">
+      <div class="hex-source">
+        <span class="hex">Hexagram ${userSession.originalHexagram}</span>
+        <span class="hex-name">${hexagramData[userSession.originalHexagram].name}</span>
+      </div>
+      <p><strong>Given Name:</strong> <span class="generated-name">${name}</span></p>
+    </div>
+  `;
+  
+  // Select a random lineage and apply surplus penalty
+  const lineage = randomElement(lineages);
+  const effectiveSurplus = lineage.surplus - penalty;
+  userSession.lineage = lineage;
+  userSession.currentAttributes = Object.assign({}, lineage.baseAttributes);
+  userSession.remainingSurplus = effectiveSurplus;
+  
+  // Build the heritage HTML for display
+  let heritageHTML = `
+    <h2>${lineage.name} <span class="badge ${lineage.type.toLowerCase().replace(" ", "-")}">${lineage.type}</span></h2>
+    <div class="lineage-description">${lineage.description}</div>
+    <h3>Native Skills</h3>
+    <ul class="lineage-skills">
+      ${lineage.traits.map(t => `<li class="trait-pill">${t}</li>`).join("")}
+    </ul>
+    <p><strong>Role:</strong> ${lineage.role}</p>
+    <h3>Base Attributes</h3>
+    <ul class="base-attributes">
+      ${Object.keys(userSession.currentAttributes).map(attr => `
+        <li>
+          <strong>${attr}:</strong>
+          <span class="attr-value" data-attr="${attr}">${userSession.currentAttributes[attr]}</span>
+          <button class="plus-pill" data-attr="${attr}">+</button>
+        </li>
+      `).join("")}
+    </ul>
+    <p><strong>Surplus:</strong> <span id="surplus-points">${userSession.remainingSurplus}</span></p>
+  `;
+  
+  // Append tribal affiliation details
+  const tribe = randomElement(tribes);
+  userSession.tribe = tribe;
+  heritageHTML += `
+    <h3>Tribal Affiliation</h3>
+    <div class="tribe-section">
+      <h4><i class="fa fa-users"></i> ${tribe.name}</h4>
+      <p><i class="fa fa-language"></i> <strong>Tongue:</strong> ${tribe.tongue}</p>
+      <p><i class="fa fa-balance-scale"></i> <strong>Resonance:</strong> ${tribe.resonance}</p>
+      <p><i class="fa fa-magic"></i> <strong>Effect:</strong> ${tribe.effect}</p>
+      <p><i class="fa fa-scroll"></i> <strong>Ethos:</strong> ${tribe.ethos}</p>
+      <p><i class="fa fa-coins"></i> <strong>Power Cost:</strong> ${tribe.powerCost}</p>
+      <p><i class="fa fa-bolt"></i> <strong>Critical Effect:</strong> ${tribe.criticalEffect}</p>
+      <p><i class="fa fa-fire"></i> <strong>Burn:</strong> ${tribe.burn}</p>
+    </div>
+  `;
+  document.getElementById("heritage-result").innerHTML = heritageHTML;
+  document.getElementById("heritage-result").style.display = "block";
+  
+  // Attach event listeners to plus-pill buttons for attribute allocation
+  document.querySelectorAll(".plus-pill").forEach(button => {
+    button.addEventListener("click", function () {
+      const attr = this.getAttribute("data-attr");
+      allocatePoint(attr);
+    });
+  });
+  
+  // ----- Soul Pattern Integration with Dataset -----
+  // Instead of selecting just a random soul pattern, we now merge with an extended dataset.
+  // Assume that "soulProfiles" is a globally defined array containing the provided JSON data.
+  const generatedSoulPattern = randomElement(soulPatterns);
+  // Look for a matching profile in the dataset based on the soulPattern string
+  const matchingProfile = (typeof soulProfiles !== 'undefined')
+    ? soulProfiles.find(profile => profile.soulPattern === generatedSoulPattern.pattern)
+    : null;
+  if (matchingProfile) {
+    userSession.soulPattern = matchingProfile;
+  } else {
+    userSession.soulPattern = generatedSoulPattern;
+  }
+  
+  // Display minimal soul pattern info in the visible area
+  document.getElementById("soul-pattern").innerHTML = `
+    <div style="color: var(--near-white);">
+      ${userSession.soulPattern.soulPattern || userSession.soulPattern.pattern}
+    </div>
+    <p class="orbitron-bold-blue">Personality Profile: ${userSession.soulPattern.name || userSession.soulPattern.profile || ""}</p>
+  `;
+  
+  // ----- Core Traits Generation -----
+  const consciousTrait = randomElement(coreTraits);
+  const unconsciousTrait = randomElement(coreTraits);
+  userSession.coreTraits = [consciousTrait, unconsciousTrait];
+  document.querySelector(".core-traits .conscious").innerHTML = `
+    <h4 class="orbitron-bold-blue">Conscious</h4>
+    <p><strong>${consciousTrait.trait}</strong>: ${consciousTrait.description} (Hexagram ${consciousTrait.hexagram})</p>
+  `;
+  document.querySelector(".core-traits .unconscious").innerHTML = `
+    <h4 class="orbitron-bold-blue">Unconscious</h4>
+    <p><strong>${unconsciousTrait.trait}</strong>: ${unconsciousTrait.description} (Hexagram ${unconsciousTrait.hexagram})</p>
+  `;
+  
+  // ----- Character Journey and Hexagram Matrix Population -----
+  const selectedAgeBand = Math.random() < 0.5 ? "0-50" : "50+";
+  const availableTrajectories = trajectories.filter(t => t.ageBand === selectedAgeBand);
+  const selectedTrajectory = randomElement(availableTrajectories);
+  let trajectoryHTML = `<p><strong>Age Band:</strong> ${selectedTrajectory.ageBand}</p>`;
+  if (selectedAgeBand === "0-50") {
+    trajectoryHTML += `
+      <p><strong>From:</strong> ${selectedTrajectory.fromName} <strong>To:</strong> ${selectedTrajectory.toName}</p>
+      <p><strong>Process:</strong> ${selectedTrajectory.process}</p>
+      <p><strong>Perspective:</strong> ${selectedTrajectory.perspective}</p>
+    `;
+  } else {
+    trajectoryHTML += `
+      <p><strong>Current:</strong> ${selectedTrajectory.currentName}</p>
+      <p><strong>Reflecting On:</strong> ${selectedTrajectory.reflectingName}</p>
+      <p><strong>Perspective:</strong> ${selectedTrajectory.perspective}</p>
+      <p><strong>Reflection:</strong> ${selectedTrajectory.reflection}</p>
+    `;
+  }
+  document.getElementById("trajectory").innerHTML = trajectoryHTML;
+  
+  // Set the DC values based on core traits and trajectory details
+  const intellectualDC = consciousTrait.hexagram;
+  const physicalDC = unconsciousTrait.hexagram;
+  const emotionalDC = selectedAgeBand === "0-50" ? selectedTrajectory.fromHex : selectedTrajectory.currentHex;
+  const spiritualDC = selectedAgeBand === "0-50" ? selectedTrajectory.toHex : selectedTrajectory.reflectingHex;
+  document.getElementById("intellectual-dc").textContent = intellectualDC;
+  document.getElementById("physical-dc").textContent = physicalDC;
+  document.getElementById("emotional-dc").textContent = emotionalDC;
+  document.getElementById("spiritual-dc").textContent = spiritualDC;
+  document.getElementById("prime-dc").textContent = intellectualDC;
+  document.getElementById("second-dc").textContent = physicalDC;
+  document.getElementById("third-dc").textContent = emotionalDC;
+  document.getElementById("fourth-dc").textContent = spiritualDC;
+  
+  // Display the inner world section
+  document.getElementById("inner-world").style.display = "block";
+}
 
-        // Existing identity generation logic
-        let name = generateName();
-        if (!name || name.trim() === "") {
-            name = "Unnamed One";
-        }
-
-
-        // Update the result area with name and hexagram info.
-
-        document.getElementById("result").innerHTML = `
-
-          <div class="name-reveal">
-
-            <div class="hex-source">
-
-              <span class="hex">Hexagram ${userSession.originalHexagram}</span>
-
-              <span class="hex-name">${hexagramData[userSession.originalHexagram].name}</span>
-
-            </div>
-
-            <p><strong>Given Name:</strong> <span class="generated-name">${name}</span></p>
-
-          </div>`;
-
-
-
-  // Select a random lineage.
-
-// Add penalty display to heritage section
-        const lineage = randomElement(lineages);
-        const effectiveSurplus = lineage.surplus - penalty; // Penalty application
-
-userSession.lineage = lineage;
-
-
-        // Initialize attribute distribution.
-
-        userSession.currentAttributes = Object.assign({}, lineage.baseAttributes);
-
-        userSession.remainingSurplus = effectiveSurplus;
-
-        // Build the heritage HTML with base attributes and plus buttons.
-
-        let heritageHTML = `
-
-          <h2>${lineage.name} <span class="badge ${lineage.type.toLowerCase().replace(" ", "-")}">${lineage.type}</span></h2>
-
-          <div class="lineage-description">${lineage.description}</div>
-
-          <h3>Native Skills</h3>
-
-          <ul class="lineage-skills">
-
-            ${lineage.traits.map(t => `<li class="trait-pill">${t}</li>`).join("")}
-
-          </ul>
-
-          <p><strong>Role:</strong> ${lineage.role}</p>
-
-          <h3>Base Attributes</h3>
-
-          <ul class="base-attributes">
-
-            ${Object.keys(userSession.currentAttributes).map(attr => `
-
-              <li>
-
-                <strong>${attr}:</strong>
-
-                <span class="attr-value" data-attr="${attr}">${userSession.currentAttributes[attr]}</span>
-
-                <button class="plus-pill" data-attr="${attr}">+</button>
-
-              </li>
-
-            `).join("")}
-
-          </ul>
-
-          <p><strong>Surplus:</strong> <span id="surplus-points">${userSession.remainingSurplus}</span></p>`;
-
-        // Append tribal affiliation details.
-
-        const tribe = randomElement(tribes);
-userSession.tribe = tribe;
-
-        heritageHTML += `
-
-          <h3>Tribal Affiliation</h3>
-
-          <div class="tribe-section">
-
-            <h4><i class="fa fa-users"></i> ${tribe.name}</h4>
-
-            <p><i class="fa fa-language"></i> <strong>Tongue:</strong> ${tribe.tongue}</p>
-
-            <p><i class="fa fa-balance-scale"></i> <strong>Resonance:</strong> ${tribe.resonance}</p>
-
-            <p><i class="fa fa-magic"></i> <strong>Effect:</strong> ${tribe.effect}</p>
-
-            <p><i class="fa fa-scroll"></i> <strong>Ethos:</strong> ${tribe.ethos}</p>
-
-            <p><i class="fa fa-coins"></i> <strong>Power Cost:</strong> ${tribe.powerCost}</p>
-
-            <p><i class="fa fa-bolt"></i> <strong>Critical Effect:</strong> ${tribe.criticalEffect}</p>
-
-            <p><i class="fa fa-fire"></i> <strong>Burn:</strong> ${tribe.burn}</p>
-
-          </div>`;
-
-        document.getElementById("heritage-result").innerHTML = heritageHTML;
-
-        document.getElementById("heritage-result").style.display = "block";
-
-        // Attach event listeners to plus-pill buttons.
-
-        document.querySelectorAll(".plus-pill").forEach(button => {
-
-          button.addEventListener("click", function () {
-
-            const attr = this.getAttribute("data-attr");
-
-            allocatePoint(attr);
-
-          });
-
-        });
-
-        // Display inner world details.
-
-        const soulPattern = randomElement(soulPatterns);
-userSession.soulPattern = soulPattern;
-
-        document.getElementById("soul-pattern").innerHTML = `
-
-          <div style="color: var(--near-white);">${soulPattern.pattern}</div>
-
-          <p class="orbitron-bold-blue">Personality Profile: ${soulPattern.profile}</p>`;
-
-        const consciousTrait = randomElement(coreTraits);
-
-        const unconsciousTrait = randomElement(coreTraits);
-userSession.coreTraits = [
-  consciousTrait,
-  unconsciousTrait
-];
-
-        document.querySelector(".core-traits .conscious").innerHTML = `
-
-          <h4 class="orbitron-bold-blue">Conscious</h4>
-
-          <p><strong>${consciousTrait.trait}</strong>: ${consciousTrait.description} (Hexagram ${consciousTrait.hexagram})</p>`;
-
-        document.querySelector(".core-traits .unconscious").innerHTML = `
-
-          <h4 class="orbitron-bold-blue">Unconscious</h4>
-
-          <p><strong>${unconsciousTrait.trait}</strong>: ${unconsciousTrait.description} (Hexagram ${unconsciousTrait.hexagram})</p>`;
-
-        // Character Journey and Hexagram Matrix Population.
-
-        const selectedAgeBand = Math.random() < 0.5 ? "0-50" : "50+";
-
-        const availableTrajectories = trajectories.filter(t => t.ageBand === selectedAgeBand);
-
-        const selectedTrajectory = randomElement(availableTrajectories);
-
-        let trajectoryHTML = `<p><strong>Age Band:</strong> ${selectedTrajectory.ageBand}</p>`;
-
-        if (selectedAgeBand === "0-50") {
-
-          trajectoryHTML += `
-
-            <p><strong>From:</strong> ${selectedTrajectory.fromName} <strong>To:</strong> ${selectedTrajectory.toName}</p>
-
-            <p><strong>Process:</strong> ${selectedTrajectory.process}</p>
-
-            <p><strong>Perspective:</strong> ${selectedTrajectory.perspective}</p>`;
-
-        } else {
-
-          trajectoryHTML += `
-
-            <p><strong>Current:</strong> ${selectedTrajectory.currentName}</p>
-
-            <p><strong>Reflecting On:</strong> ${selectedTrajectory.reflectingName}</p>
-
-            <p><strong>Perspective:</strong> ${selectedTrajectory.perspective}</p>
-
-            <p><strong>Reflection:</strong> ${selectedTrajectory.reflection}</p>`;
-
-        }
-
-        document.getElementById("trajectory").innerHTML = trajectoryHTML;
-
-        const intellectualDC = consciousTrait.hexagram;
-
-        const physicalDC = unconsciousTrait.hexagram;
-
-        const emotionalDC = selectedAgeBand === "0-50" ? selectedTrajectory.fromHex : selectedTrajectory.currentHex;
-
-        const spiritualDC = selectedAgeBand === "0-50" ? selectedTrajectory.toHex : selectedTrajectory.reflectingHex;
-
-        document.getElementById("intellectual-dc").textContent = intellectualDC;
-
-        document.getElementById("physical-dc").textContent = physicalDC;
-
-        document.getElementById("emotional-dc").textContent = emotionalDC;
-
-        document.getElementById("spiritual-dc").textContent = spiritualDC;
-
-        document.getElementById("prime-dc").textContent = intellectualDC;
-
-        document.getElementById("second-dc").textContent = physicalDC;
-
-        document.getElementById("third-dc").textContent = emotionalDC;
-
-        document.getElementById("fourth-dc").textContent = spiritualDC;
-
-        document.getElementById("inner-world").style.display = "block";
-
-      }
 
       // allocatePoint: Called when a plus-pill is clicked.
 
@@ -2168,8 +2131,1346 @@ const trajectories = [
   { id: 63, ageBand: "50+", currentHex: 41, currentName: "The Dreamer (Hex 41)", reflectingHex: 31, reflectingName: "The Guide (Hex 31)", perspective: "Imagination grounded in reality", reflection: "My leadership experience fuels visions" },
   { id: 64, ageBand: "50+", currentHex: 19, currentName: "The Seeker (Hex 19)", reflectingHex: 33, reflectingName: "The Reserved (Hex 33)", perspective: "Exploration rooted in inner wisdom", reflection: "My solitude became my compass" }
 ];
-
-
+// The full dataset for additional soul pattern details.
+      const soulProfiles = [
+        {
+          "profileId": "1/3",
+          "name": "Investigating Catalyst",
+          "soulPattern": "Seeker of Trials",
+          "archetypes": {
+            "conscious": "Investigator",
+            "unconscious": "Martyr"
+          },
+          "essence": "“Knowledge without experience is like a map without a journey.”",
+          "patternDance": {
+            "conscious": "The Investigator – Driven to understand every detail",
+            "unconscious": "The Martyr – Drawn to trial and error"
+          },
+          "characterExpression": {
+            "coreDrive": "To understand through both study and direct experience, creating a feedback loop between theory and practice.",
+            "naturalHabitat": [
+              "Libraries with practice rooms",
+              "Experimental workshops",
+              "Field research sites",
+              "Training grounds",
+              "Ancient ruins with active mechanisms"
+            ],
+            "behavioralPatterns": [
+              "Takes detailed notes during combat",
+              "Tests theories in potentially dangerous ways",
+              "Creates systematic training programs",
+              "Analyzes failures with intense curiosity",
+              "Builds practical applications from theoretical knowledge"
+            ]
+          },
+          "roleplayGuide": {
+            "keyQuestions": [
+              "What was the most valuable lesson you learned through failure?",
+              "How do you balance preparation with action?",
+              "What drives you to test your theories personally instead of accepting others’ experiences?",
+              "When has your research led you into danger?",
+              "What knowledge would you risk everything to verify?"
+            ],
+            "signatureMoments": [
+              "Purposefully triggering traps to understand their mechanics",
+              "Teaching others through guided failures",
+              "Documenting personal injuries as research data",
+              "Converting ancient texts into practical experiments",
+              "Creating training scenarios based on historical events"
+            ],
+            "characterVoice": [
+              "Uses academic terminology in casual conversation",
+              "Frequently references past experiments",
+              "Asks probing questions about others’ experiences",
+              "Suggests practical tests for theoretical concepts",
+              "Maintains research journals and field notes"
+            ]
+          },
+          "growthConflict": {
+            "internalTensions": [
+              "The pull between thorough research and immediate experimentation",
+              "Deciding when enough preparation is enough",
+              "Balancing personal risk with potential knowledge gain",
+              "Managing the urge to test everything personally",
+              "Accepting that some knowledge can’t be directly verified"
+            ],
+            "developmentPaths": [
+              "Overly cautious researcher → Balanced investigator → Wise risk-taker",
+              "Reckless experimenter → Methodical tester → Master of practical wisdom"
+            ],
+            "crisisPoints": [
+              "When research and experience contradict each other",
+              "Facing situations where testing could be fatal",
+              "Discovering that trusted knowledge is false",
+              "Choosing between preserving established wisdom and venturing into the unknown",
+              "Being forced to act without sufficient study"
+            ]
+          },
+          "gameplayTips": {
+            "strongScenes": [
+              "Research montages leading to practical applications",
+              "Controlled experiments with unexpected results",
+              "Teaching moments that involve demonstration",
+              "Discovery scenes that require both knowledge and courage",
+              "Problem-solving scenarios with multiple approaches"
+            ],
+            "relationships": [
+              "Natural mentor to eager students",
+              "Respected advisor to practical leaders",
+              "Challenging partner for traditional academics",
+              "Valuable asset to exploration teams",
+              "Complex relationship with authority figures"
+            ],
+            "adventureHooks": [
+              "Ancient texts describe a powerful artifact—but testing its powers could be dangerous",
+              "A training method you developed has unexpected consequences",
+              "Your research contradicts fundamental cultural beliefs",
+              "An experiment goes wrong, requiring both knowledge and courage to fix",
+              "You must teach crucial skills to others in a crisis situation"
+            ]
+          },
+          "summaryTraits": [
+            "Driven by insatiable curiosity",
+            "Learns through stumbles and scrapes",
+            "Combines scholarly pursuit with resilient spirit"
+          ],
+          "optionalNames": [
+            "Truthseeker",
+            "Empiricist",
+            "Trialwalker",
+            "Lorehunter",
+            "Veiltester",
+            "Cruciblescholar"
+          ],
+          "classedTitles": [
+            "Seeker of Trials",
+            "Lore-Scarred Scholar",
+            "Resilient Truth Hunter"
+          ]
+        },
+        {
+          "profileId": "1/4",
+          "name": "Investigating Networker",
+          "soulPattern": "Lore Weaver",
+          "archetypes": {
+            "conscious": "Investigator",
+            "unconscious": "Networker"
+          },
+          "essence": "“Truth grows stronger when shared with trusted hearts.”",
+          "patternDance": {
+            "conscious": "The careful collector of knowledge",
+            "unconscious": "The natural community builder"
+          },
+          "characterExpression": {
+            "coreDrive": "To discover and share knowledge through trusted relationships, building networks of understanding.",
+            "naturalHabitat": [
+              "Secret libraries",
+              "Community gathering spaces",
+              "Hidden archives",
+              "Traditional meeting places",
+              "Protected knowledge sanctuaries"
+            ],
+            "behavioralPatterns": [
+              "Creates secret knowledge-sharing networks",
+              "Verifies information through trusted sources",
+              "Builds archives accessible only to allies",
+              "Teaches through personal connection",
+              "Guards dangerous knowledge carefully"
+            ]
+          },
+          "roleplayGuide": {
+            "keyQuestions": [
+              "How do you decide who to trust with your discoveries?",
+              "What knowledge do you keep even from friends?",
+              "How has sharing information strengthened or damaged relationships?",
+              "When do you choose secrecy over openness?",
+              "What makes someone worthy of your trust?"
+            ],
+            "signatureMoments": [
+              "Creating coded messages for trusted allies",
+              "Building networks of knowledge keepers",
+              "Protecting dangerous information from misuse",
+              "Connecting isolated groups through shared wisdom",
+              "Teaching ancient practices to selected apprentices"
+            ],
+            "characterVoice": [
+              "Speaks in metaphors and parables",
+              "Uses inclusive language (“we,” “our knowledge”)",
+              "Asks about connections and relationships",
+              "Shares information with careful prerequisites",
+              "References trusted sources and teachers"
+            ]
+          },
+          "growthConflict": {
+            "internalTensions": [
+              "Balancing the need for solitary study with social obligations",
+              "Knowing when to retreat to avoid burnout",
+              "Ensuring you invest in the right relationships and opportunities"
+            ],
+            "developmentPaths": [
+              "Curious teacher → Investigative guide → Wise questioner",
+              "Knowledge holder → Wonder seeker → Master of shared discovery"
+            ],
+            "crisisPoints": [
+              "When investigations challenge accepted wisdom",
+              "Facing questions that have no clear answers",
+              "Dealing with dangerous discoveries that threaten security"
+            ]
+          },
+          "gameplayTips": {
+            "strongScenes": [
+              "Collaborative research scenes",
+              "Group problem-solving sessions",
+              "Experimental teaching moments",
+              "Dramatic reveals of hidden information",
+              "Situations requiring trusted networks to overcome obstacles"
+            ],
+            "relationships": [
+              "Co-investigator with students",
+              "Connector of curious minds",
+              "Bridge between diverse disciplines",
+              "Key influencer in social circles"
+            ],
+            "adventureHooks": [
+              "A student’s question unearths a hidden secret",
+              "Your method of teaching inadvertently reveals danger",
+              "A rival network seeks to exploit your discoveries"
+            ]
+          },
+          "summaryTraits": [
+            "Deeply studious and analytical",
+            "Skilled at networking and building relationships",
+            "Uses knowledge to create and seize opportunities"
+          ],
+          "optionalNames": [
+            "Lorebridger",
+            "Insightweaver",
+            "Knowledgebroker",
+            "Truthconnector"
+          ],
+          "classedTitles": [
+            "Lore Weaver",
+            "Nexus of Knowledge",
+            "Scholarly Conduit"
+          ]
+        },
+        {
+          "profileId": "2/4",
+          "name": "Hermit Networker",
+          "soulPattern": "Quiet Bridge",
+          "archetypes": {
+            "conscious": "Hermit",
+            "unconscious": "Networker"
+          },
+          "essence": "“In silence, I weave the threads that bind us.”",
+          "patternDance": {
+            "conscious": "The solitary seeker of inner truth",
+            "unconscious": "The subtle connector of hearts and minds"
+          },
+          "characterExpression": {
+            "coreDrive": "To understand through solitude while creating meaningful connections that respect personal boundaries.",
+            "naturalHabitat": [
+              "Secluded meditation spaces",
+              "Quiet corners of communal areas",
+              "Private meeting rooms",
+              "Remote observation points",
+              "Peaceful gardens with gathering spaces"
+            ],
+            "behavioralPatterns": [
+              "Creates safe spaces for intimate dialogue",
+              "Mediates conflicts from a distance",
+              "Maintains careful personal boundaries",
+              "Retreats regularly to reflect on experiences",
+              "Connects others without becoming overly entangled"
+            ]
+          },
+          "roleplayGuide": {
+            "keyQuestions": [
+              "How do you maintain your serenity while serving others?",
+              "What draws you out of solitude when help is needed?",
+              "How do you choose which connections to nurture?",
+              "When does your need for solitude conflict with your role as connector?",
+              "What secret insights do you keep for yourself?"
+            ],
+            "signatureMoments": [
+              "Hosting intimate gatherings in secluded spaces",
+              "Mediating disputes through written communication",
+              "Establishing systems for connection that don’t intrude on your privacy",
+              "Sharing profound insights gleaned from solitude",
+              "Bridging gaps between isolated individuals"
+            ],
+            "characterVoice": [
+              "Speaks softly but with clear purpose",
+              "Chooses words with deliberate care",
+              "Allows silence to underscore meaning",
+              "Uses metaphors drawn from nature",
+              "Invites deep reflection through gentle inquiry"
+            ]
+          },
+          "growthConflict": {
+            "internalTensions": [
+              "Balancing personal solitude with emerging social responsibilities",
+              "Managing energy in group situations while preserving inner peace",
+              "Deciding when to step forward as a leader despite a natural inclination to withdraw"
+            ],
+            "developmentPaths": [
+              "Isolated observer → Thoughtful mediator → Wise community anchor",
+              "Reluctant connector → Balanced facilitator → Master of quiet influence"
+            ],
+            "crisisPoints": [
+              "When community needs demand public engagement despite personal reservations",
+              "Being forced to choose between maintaining inner peace and resolving external conflicts"
+            ]
+          },
+          "gameplayTips": {
+            "strongScenes": [
+              "Quiet mentoring sessions",
+              "Strategic relationship-building moments",
+              "Subtle conflict resolution scenarios",
+              "Moments of profound shared silence",
+              "Scenes that highlight the power of understated insight"
+            ],
+            "relationships": [
+              "Trusted confidant for community leaders",
+              "Bridge between isolated groups",
+              "Quiet advisor to those in turmoil"
+            ],
+            "adventureHooks": [
+              "A crisis that demands your unique connecting ability",
+              "A conflict resolved only through your silent guidance",
+              "A mystery that unfolds through subtle cues in quiet spaces"
+            ]
+          },
+          "summaryTraits": [
+            "Naturally gifted yet reserved",
+            "Excels in connecting with others when needed",
+            "Balances reclusive tendencies with moments of impactful engagement"
+          ],
+          "optionalNames": [
+            "Secludedbridge",
+            "Hiddenconnector",
+            "Veiledconduit",
+            "Quietchannel"
+          ],
+          "classedTitles": [
+            "Quiet Bridge",
+            "Reclusive Nexus",
+            "Subtle Connector"
+          ]
+        },
+        {
+          "profileId": "2/5",
+          "name": "Hermit Heretic",
+          "soulPattern": "Whispering Rebel",
+          "archetypes": {
+            "conscious": "Hermit",
+            "unconscious": "Heretic"
+          },
+          "essence": "“Truth whispers in the shadows, and I must give it voice.”",
+          "patternDance": {
+            "conscious": "The solitary observer of hidden realities",
+            "unconscious": "The reluctant challenger of established order"
+          },
+          "characterExpression": {
+            "coreDrive": "To uncover deep truths in isolation and challenge systemic falsehoods with quiet defiance.",
+            "naturalHabitat": [
+              "Hidden observation posts",
+              "Secret document archives",
+              "Abandoned sacred spaces",
+              "Underground meeting places",
+              "Remote wilderness retreats"
+            ],
+            "behavioralPatterns": [
+              "Questions authority through subtle, anonymous means",
+              "Preserves forbidden knowledge for safe-keeping",
+              "Builds quiet networks of resistance",
+              "Shares dangerous truths with utmost care",
+              "Maintains multiple safe retreats to avoid detection"
+            ]
+          },
+          "roleplayGuide": {
+            "keyQuestions": [
+              "What truths have you discovered that keep you awake at night?",
+              "How do you protect yourself while spreading dangerous knowledge?",
+              "When has your silence inadvertently allowed injustice to persist?",
+              "What price are you willing to pay to speak the unspoken?",
+              "How do you decide which battles to fight from the shadows?"
+            ],
+            "signatureMoments": [
+              "Revealing corruption through an anonymous message",
+              "Creating a hidden library of forbidden lore",
+              "Covertly teaching others to question established narratives",
+              "Orchestrating a quiet revolution in secret",
+              "Uncovering evidence that shatters long-held beliefs"
+            ],
+            "characterVoice": [
+              "Speaks in layered, cryptic tones",
+              "Uses subtle implications rather than overt statements",
+              "Questions established narratives with quiet intensity",
+              "Shares warnings wrapped in allegory",
+              "Invites listeners to seek hidden meanings"
+            ]
+          },
+          "growthConflict": {
+            "internalTensions": [
+              "Balancing the duty of truth-telling with the need for self-preservation",
+              "Struggling with the urge to retreat entirely versus taking action",
+              "Reconciling inner peace with the disruptive potential of your revelations"
+            ],
+            "developmentPaths": [
+              "Bitter observer → Strategic resister → Wise revolutionary",
+              "Angry hermit → Thoughtful challenger → Master of subtle change"
+            ],
+            "crisisPoints": [
+              "When speaking the truth endangers close allies",
+              "Facing direct confrontation with corrupt authority",
+              "Being forced into public action against your reclusive nature"
+            ]
+          },
+          "gameplayTips": {
+            "strongScenes": [
+              "Covert information gathering missions",
+              "Secret planning sessions for quiet rebellion",
+              "Moments when hidden truths ignite slow-burning revolutions",
+              "Subtle acts of defiance that have far-reaching consequences",
+              "Quiet, tense confrontations that reveal deeper plots"
+            ],
+            "relationships": [
+              "Secret mentor to emerging rebels",
+              "Cautious ally to fellow truth-seekers",
+              "Complex and sometimes adversarial relationship with authority"
+            ],
+            "adventureHooks": [
+              "Uncovering a conspiracy that threatens the community",
+              "Conflicts arising from your challenge to sacred beliefs",
+              "A moment when your research forces a drastic choice between truth and peace"
+            ]
+          },
+          "summaryTraits": [
+            "Deeply introspective and innovative",
+            "Possesses revolutionary ideas born of solitude",
+            "Balances a quiet nature with the potential for radical impact"
+          ],
+          "optionalNames": [
+            "Secludedrebel",
+            "Veiledchallenger",
+            "Quietrevolutionary",
+            "Solitaryiconoclast"
+          ],
+          "classedTitles": [
+            "Whispering Rebel",
+            "Silent Paradigm Shifter",
+            "Hermit's Dissenter"
+          ]
+        },
+        {
+          "profileId": "3/5",
+          "name": "Catalyst Heretic",
+          "soulPattern": "Trial-Forged Rebel",
+          "archetypes": {
+            "conscious": "Catalyst",
+            "unconscious": "Heretic"
+          },
+          "essence": "“Every failure is fuel for the fire.”",
+          "patternDance": {
+            "conscious": "The seeker of transformative experiences",
+            "unconscious": "The natural challenger of established systems"
+          },
+          "characterExpression": {
+            "coreDrive": "To catalyze change through direct challenge and personal transformation, turning trials into tools for systemic renewal.",
+            "naturalHabitat": [
+              "Training grounds that push limits",
+              "Sites of active resistance",
+              "Proving grounds for new ideas",
+              "Places of power and transformation",
+              "Contested spaces needing change"
+            ],
+            "behavioralPatterns": [
+              "Directly tests existing systems through bold challenges",
+              "Turns personal setbacks into catalysts for change",
+              "Inspires others by leading through example",
+              "Creates structured trials to expose systemic flaws",
+              "Uses personal hardship as a means to promote innovation"
+            ]
+          },
+          "roleplayGuide": {
+            "keyQuestions": [
+              "What trial fundamentally changed your view of the world?",
+              "Which system do you feel compelled to challenge, and why?",
+              "How have your personal failures shaped your revolutionary ideas?",
+              "What price are you willing to pay for societal change?",
+              "How do you transform personal pain into collective strength?"
+            ],
+            "signatureMoments": [
+              "Publicly challenging an unjust authority",
+              "Designing a trial that exposes hidden weaknesses in a system",
+              "Turning a personal setback into a rallying cry for change",
+              "Teaching others through shared, hard-won lessons",
+              "Leading an uprising born of your own experiences"
+            ],
+            "characterVoice": [
+              "Speaks from raw, personal experience",
+              "Uses vivid, direct language to challenge norms",
+              "Emphasizes transformation through trial and error",
+              "Inspires through passionate conviction",
+              "Encourages others to test long-held beliefs"
+            ]
+          },
+          "growthConflict": {
+            "internalTensions": [
+              "Balancing the need to destroy flawed systems with the desire to create new ones",
+              "Managing the personal cost of constant challenge",
+              "Reconciling your own growth with the collective need for change"
+            ],
+            "developmentPaths": [
+              "Reckless rebel → Focused challenger → Wise revolutionary",
+              "Angry catalyst → Strategic transformer → Master of systemic renewal"
+            ],
+            "crisisPoints": [
+              "When your challenges inadvertently endanger your allies",
+              "Facing the fallout from a successfully toppled system",
+              "Dealing with followers who misinterpret your methods"
+            ]
+          },
+          "gameplayTips": {
+            "strongScenes": [
+              "Direct confrontations with entrenched power",
+              "Training sequences that reveal hidden truths",
+              "Public demonstrations of defiance",
+              "Moments when personal sacrifice sparks collective change",
+              "Scenarios where your actions force societal reevaluation"
+            ],
+            "relationships": [
+              "Inspires potential rebels and reformers",
+              "Acts as a challenging mentor to activists",
+              "Provokes both admiration and fear among peers"
+            ],
+            "adventureHooks": [
+              "A discovery that overturns a fundamental societal lie",
+              "Conflicts arising from your challenge to sacred beliefs",
+              "A moment when your research forces a drastic choice between truth and peace"
+            ]
+          },
+          "summaryTraits": [
+            "Learns through hard-won experience",
+            "Challenges entrenched norms relentlessly",
+            "Transforms personal setbacks into revolutionary power"
+          ],
+          "optionalNames": [
+            "Trialbreaker",
+            "Adaptiverebel",
+            "Cruciblechallenger",
+            "Paradigmforger"
+          ],
+          "classedTitles": [
+            "Trial-Forged Rebel",
+            "Revolutionary Catalyst",
+            "Iconoclastic Change-Maker"
+          ]
+        },
+        {
+          "profileId": "3/6",
+          "name": "Catalyst Exemplar",
+          "soulPattern": "Wandering Beacon",
+          "archetypes": {
+            "conscious": "Catalyst",
+            "unconscious": "Exemplar"
+          },
+          "essence": "“My scars light the way for others.”",
+          "patternDance": {
+            "conscious": "The seeker who learns through direct experience",
+            "unconscious": "The guide who inspires through personal example"
+          },
+          "characterExpression": {
+            "coreDrive": "To discover truth through trial and transform personal hardships into beacons of hope.",
+            "naturalHabitat": [
+              "Public training grounds",
+              "Ceremonial challenge sites",
+              "Community gathering spaces",
+              "Places of transformation",
+              "Paths less traveled"
+            ],
+            "behavioralPatterns": [
+              "Turns failures into teaching moments",
+              "Designs challenges that foster growth",
+              "Leads by example in the face of adversity",
+              "Inspires resilience through personal struggle",
+              "Shares lessons learned from hardship openly"
+            ]
+          },
+          "roleplayGuide": {
+            "keyQuestions": [
+              "How do you choose which challenges to embrace?",
+              "What lessons have your failures taught you?",
+              "When has your example inspired others to rise?",
+              "How do you balance personal growth with public responsibility?",
+              "What truth do you find hardest to live by?"
+            ],
+            "signatureMoments": [
+              "Facing a seemingly insurmountable challenge and emerging victorious",
+              "Publicly sharing a painful lesson that turns the tide for your allies",
+              "Creating a community ritual around overcoming hardship",
+              "Transforming a personal defeat into collective inspiration",
+              "Leading a group through a trial that redefines their future"
+            ],
+            "characterVoice": [
+              "Speaks with quiet determination",
+              "Uses personal anecdotes to illustrate lessons",
+              "Encourages others to embrace their struggles",
+              "Mixes reflective calm with passionate urgency",
+              "Emphasizes the transformative power of experience"
+            ]
+          },
+          "growthConflict": {
+            "internalTensions": [
+              "Balancing the need for personal growth with the expectations of others",
+              "Managing the heavy responsibility of influencing others",
+              "Deciding when to step back and let others lead"
+            ],
+            "developmentPaths": [
+              "Reckless challenger → Thoughtful guide → Wise exemplar",
+              "Lonely seeker → Community catalyst → Master of inspired transformation"
+            ],
+            "crisisPoints": [
+              "When personal trials conflict with your public role",
+              "Facing challenges you’re not yet prepared to model",
+              "Dealing with those who misinterpret your vulnerability"
+            ]
+          },
+          "gameplayTips": {
+            "strongScenes": [
+              "Public trials that become transformative events",
+              "Moments of shared vulnerability leading to collective strength",
+              "Community rituals celebrating overcoming hardship",
+              "Scenarios where personal loss spurs group advancement",
+              "Revelatory scenes that unite disparate allies"
+            ],
+            "relationships": [
+              "Inspires leaders and seekers alike",
+              "Acts as a mentor to those in crisis",
+              "Creates bonds through shared experiences of struggle"
+            ],
+            "adventureHooks": [
+              "A personal challenge ignites a movement",
+              "Your example sparks dangerous imitation by others",
+              "A private struggle unexpectedly becomes a public lesson"
+            ]
+          },
+          "summaryTraits": [
+            "Gains wisdom through experience",
+            "Observant and reflective",
+            "Inspires others by transforming hardship into hope"
+          ],
+          "optionalNames": [
+            "Trialbeacon",
+            "Resilientsage",
+            "Cruciblementor",
+            "Wisdomforger"
+          ],
+          "classedTitles": [
+            "Wandering Beacon",
+            "Inspirational Catalyst",
+            "Guiding Exemplar"
+          ]
+        },
+        {
+          "profileId": "4/6",
+          "name": "Teaching Role Model",
+          "soulPattern": "Gathering Light",
+          "archetypes": {
+            "conscious": "Opportunist",
+            "unconscious": "Role Model"
+          },
+          "essence": "“To teach is to learn twice; to lead is to serve all.”",
+          "patternDance": {
+            "conscious": "The connector who builds bridges and communities",
+            "unconscious": "The role model who quietly leads by example"
+          },
+          "characterExpression": {
+            "coreDrive": "To build communities of learning while embodying and sharing wisdom.",
+            "naturalHabitat": [
+              "Community learning centers",
+              "Sacred teaching spaces",
+              "Gathering halls",
+              "Public forums",
+              "Ceremonial grounds"
+            ],
+            "behavioralPatterns": [
+              "Creates spaces for collective learning",
+              "Demonstrates principles through personal action",
+              "Builds networks of mutual support",
+              "Shares leadership responsibilities openly",
+              "Nurtures potential in others through example"
+            ]
+          },
+          "roleplayGuide": {
+            "keyQuestions": [
+              "How do you balance teaching with continuing to learn?",
+              "What lesson was hardest for you to embody?",
+              "When has your influence spread further than you intended?",
+              "How do you handle students who surpass you?",
+              "What truth do you struggle to demonstrate?"
+            ],
+            "signatureMoments": [
+              "Transforming conflicts into valuable learning opportunities",
+              "Creating spontaneous teaching moments in the midst of chaos",
+              "Building bridges between diverse groups through shared lessons",
+              "Empowering others to become teachers themselves",
+              "Turning a personal failure into a community triumph"
+            ],
+            "characterVoice": [
+              "Speaks inclusively using collective pronouns",
+              "Uses gentle yet authoritative language",
+              "Offers guidance through parables and analogies",
+              "Shares credit with those you mentor",
+              "Maintains an open, reflective tone"
+            ]
+          },
+          "growthConflict": {
+            "internalTensions": [
+              "Balancing leadership with the humility of a lifelong learner",
+              "Managing the heavy responsibility of influencing others",
+              "Deciding when to step back and let others lead",
+              "Reconciling different learning and teaching styles",
+              "Maintaining authenticity while shouldering expectations"
+            ],
+            "developmentPaths": [
+              "Eager teacher → Thoughtful guide → Wise community leader",
+              "Proud exemplar → Humble mentor → Master of shared wisdom"
+            ],
+            "crisisPoints": [
+              "When your teachings are misused or misunderstood",
+              "Facing personal failures in the public eye",
+              "Dealing with conflicts between traditional methods and new ideas"
+            ]
+          },
+          "gameplayTips": {
+            "strongScenes": [
+              "Community teaching moments that spark lasting change",
+              "Leadership transitions built on shared discovery",
+              "Conflict resolution scenes through collaborative learning",
+              "Moments when a single lesson transforms a group",
+              "Collective discovery scenes with layered insights"
+            ],
+            "relationships": [
+              "Acts as a mentor to emerging leaders",
+              "Serves as a bridge between old and new paradigms",
+              "Inspires others through both action and compassion"
+            ],
+            "adventureHooks": [
+              "A new teaching method challenges timeworn traditions",
+              "A student's breakthrough forces you to reassess your methods",
+              "A crisis demands the collective wisdom you’ve nurtured"
+            ]
+          },
+          "summaryTraits": [
+            "Inclusive and nurturing",
+            "Calm and wise under pressure",
+            "Skilled at uniting disparate groups through shared knowledge"
+          ],
+          "optionalNames": [
+            "Wisdomweaver",
+            "Lightbinder",
+            "Bridgebuilder",
+            "Commonsage"
+          ],
+          "classedTitles": [
+            "Gathering Light",
+            "Community Beacon",
+            "Eloquent Educator"
+          ]
+        },
+        {
+          "profileId": "4/1",
+          "name": "Teaching Investigator",
+          "soulPattern": "Questioning Thread",
+          "archetypes": {
+            "conscious": "Opportunist",
+            "unconscious": "Investigator"
+          },
+          "essence": "“Every answer leads to deeper questions; every student becomes a teacher.”",
+          "patternDance": {
+            "conscious": "The connector who sparks inquiry through social engagement",
+            "unconscious": "The eternal seeker who digs for deeper truths"
+          },
+          "characterExpression": {
+            "coreDrive": "To pursue truth collaboratively, transforming every teaching moment into an opportunity for mutual discovery.",
+            "naturalHabitat": [
+              "Experimental classrooms",
+              "Research libraries",
+              "Interactive learning spaces",
+              "Discussion forums",
+              "Investigation sites"
+            ],
+            "behavioralPatterns": [
+              "Turns questions into group investigations",
+              "Builds collaborative research projects",
+              "Challenges assumptions through guided inquiry",
+              "Creates networks that facilitate knowledge exchange",
+              "Documents collective discoveries"
+            ]
+          },
+          "roleplayGuide": {
+            "keyQuestions": [
+              "How do you maintain wonder while teaching others?",
+              "What question drives your deepest investigations?",
+              "When has shared learning uncovered unexpected truth?",
+              "How do you balance guidance with independent discovery?",
+              "What mystery do you hope your students will one day solve?"
+            ],
+            "signatureMoments": [
+              "Leading group investigations that uncover hidden conspiracies",
+              "Turning student inquiries into breakthrough research",
+              "Facilitating debates that challenge conventional wisdom",
+              "Creating experimental learning environments",
+              "Connecting disparate ideas to reveal a larger truth"
+            ],
+            "characterVoice": [
+              "Asks probing, thoughtful questions",
+              "Encourages speculation and open inquiry",
+              "Shares uncertainties as part of the learning process",
+              "Uses collaborative language to invite participation",
+              "Admits knowledge gaps and seeks collective input"
+            ]
+          },
+          "growthConflict": {
+            "internalTensions": [
+              "Balancing the role of teacher with that of perpetual student",
+              "Managing uncertainty while leading group inquiries",
+              "Deciding when to guide versus when to explore independently",
+              "Reconciling personal expertise with the collective pursuit of truth",
+              "Maintaining credibility while embracing continuous questioning"
+            ],
+            "developmentPaths": [
+              "Curious teacher → Investigative guide → Wise questioner",
+              "Knowledge holder → Wonder seeker → Master of shared discovery"
+            ],
+            "crisisPoints": [
+              "When investigations challenge deeply held beliefs",
+              "Facing questions that defy easy answers",
+              "Being forced to choose between personal certainty and collective inquiry"
+            ]
+          },
+          "gameplayTips": {
+            "strongScenes": [
+              "Collaborative research sessions with unexpected twists",
+              "Group problem-solving that leads to groundbreaking discoveries",
+              "Discovery discussions that shift the narrative",
+              "Experimental teaching moments that reveal hidden truths",
+              "Climactic investigations that unite disparate insights"
+            ],
+            "relationships": [
+              "Acts as co-investigator with students",
+              "Bridges gaps between different fields of study",
+              "Challenges assumptions to spark new ideas"
+            ],
+            "adventureHooks": [
+              "A student’s probing question unravels a deep mystery",
+              "Your teaching method exposes dangerous secrets",
+              "A collaborative project reveals a conspiracy that challenges the status quo"
+            ]
+          },
+          "summaryTraits": [
+            "Deeply curious and methodical",
+            "Skilled at blending research with social engagement",
+            "Unwavering in the pursuit of layered truth"
+          ],
+          "optionalNames": [
+            "Lorenexus",
+            "Truthnetworker",
+            "Scholarconnector",
+            "Inquiryweaver"
+          ],
+          "classedTitles": [
+            "Questioning Thread",
+            "Investigative Mentor",
+            "Catalyst of Curiosity"
+          ]
+        },
+        {
+          "profileId": "5/1",
+          "name": "Heretical Investigator",
+          "soulPattern": "Storm-bringer Seeker",
+          "archetypes": {
+            "conscious": "Heretic",
+            "unconscious": "Investigator"
+          },
+          "essence": "“In questioning lies freedom; in seeking lies revolution.”",
+          "patternDance": {
+            "conscious": "The challenger who dares to disrupt established truths",
+            "unconscious": "The meticulous seeker of fundamental knowledge"
+          },
+          "characterExpression": {
+            "coreDrive": "To dismantle falsehoods systematically while constructing new understandings through rigorous investigation.",
+            "naturalHabitat": [
+              "Hidden research facilities",
+              "Forbidden archives",
+              "Underground laboratories",
+              "Contested academic spaces",
+              "Sites of lost knowledge"
+            ],
+            "behavioralPatterns": [
+              "Documents evidence that undermines accepted beliefs",
+              "Conducts unsanctioned experiments",
+              "Builds cases against established theories",
+              "Preserves banned or dangerous knowledge",
+              "Develops alternative research methodologies"
+            ]
+          },
+          "roleplayGuide": {
+            "keyQuestions": [
+              "What truth did you uncover that changed everything?",
+              "How do you verify your revolutionary findings?",
+              "When has your research threatened those in power?",
+              "What measures do you take to protect your discoveries?",
+              "Which established belief most urgently needs to be challenged?"
+            ],
+            "signatureMoments": [
+              "Proving a long-held wisdom to be false with undeniable evidence",
+              "Uncovering and disseminating suppressed knowledge",
+              "Leading a clandestine investigation that upends authority",
+              "Creating innovative research methods that defy convention",
+              "Teaching others to question systematically"
+            ],
+            "characterVoice": [
+              "Constantly questions basic assumptions",
+              "Cites evidence with precision",
+              "Challenges traditional sources with bold clarity",
+              "Uses analytical language to expose flaws",
+              "Maintains a tone of both urgency and rigor"
+            ]
+          },
+          "growthConflict": {
+            "internalTensions": [
+              "Balancing a rebellious nature with the need for solid research",
+              "Managing the impact of your disruptive revelations",
+              "Deciding which truths to pursue when faced with risk",
+              "Reconciling evidence with deeply entrenched beliefs",
+              "Maintaining methodological rigor while breaking the rules"
+            ],
+            "developmentPaths": [
+              "Angry skeptic → Methodical challenger → Wise revolutionary",
+              "Reckless questioner → Careful investigator → Master of dangerous truths"
+            ],
+            "crisisPoints": [
+              "When evidence contradicts the very foundations of the established order",
+              "Facing severe consequences for exposing corruption",
+              "Being forced to choose between uncompromising truth and personal safety"
+            ]
+          },
+          "gameplayTips": {
+            "strongScenes": [
+              "Intense research revelations",
+              "High-stakes evidence gathering missions",
+              "Clashes with authority in truth-revealing confrontations",
+              "Underground investigations with far-reaching consequences",
+              "Scenarios where your findings force a societal reckoning"
+            ],
+            "relationships": [
+              "Acts as a mentor to fellow truth-seekers",
+              "Becomes a disruptive force for traditionalists",
+              "Gains both ardent supporters and fierce detractors"
+            ],
+            "adventureHooks": [
+              "A discovery that overturns a fundamental societal lie",
+              "Conflicts arising from your challenge to sacred beliefs",
+              "A moment when your research forces a drastic choice between truth and peace"
+            ]
+          },
+          "summaryTraits": [
+            "Bold and uncompromising in the pursuit of truth",
+            "Combines rebellious spirit with meticulous research",
+            "Inspires others to question established norms"
+          ],
+          "optionalNames": [
+            "Paradigmprober",
+            "Veilbreaker",
+            "Revolutionaryscholar",
+            "Iconoclastinquirer"
+          ],
+          "classedTitles": [
+            "Storm-bringer Seeker",
+            "Heretical Inquirer",
+            "Truth Disruptor"
+          ]
+        },
+        {
+          "profileId": "5/2",
+          "name": "Heretical Hermit",
+          "soulPattern": "Secluded Storm",
+          "archetypes": {
+            "conscious": "Heretic",
+            "unconscious": "Hermit"
+          },
+          "essence": "“In solitude we find truth; in truth we find the courage to stand alone.”",
+          "patternDance": {
+            "conscious": "The challenger who questions normalized falsehoods",
+            "unconscious": "The introspective soul who values quiet wisdom"
+          },
+          "characterExpression": {
+            "coreDrive": "To harness the power of solitary insight and, when necessary, emerge to challenge systemic falsehoods.",
+            "naturalHabitat": [
+              "Remote observatories",
+              "Hidden sanctuaries",
+              "Isolated research posts",
+              "Forgotten sacred spaces",
+              "Personal retreats"
+            ],
+            "behavioralPatterns": [
+              "Observes systems from a safe distance",
+              "Develops independent methods of verification",
+              "Maintains strategic detachment",
+              "Intervenes subtly when needed",
+              "Preserves personal wisdom without seeking attention"
+            ]
+          },
+          "roleplayGuide": {
+            "keyQuestions": [
+              "How has isolation shaped your view of the world?",
+              "What truths are visible only from a distance?",
+              "When has solitude protected you from danger?",
+              "How do you decide when to step out and engage?",
+              "What wisdom requires you to remain apart from the crowd?"
+            ],
+            "signatureMoments": [
+              "Revealing critical insights from a place of safe distance",
+              "Creating a blueprint for autonomous resistance",
+              "Demonstrating profound understanding through quiet intervention",
+              "Withdrawing at the perfect moment to let events unfold",
+              "Becoming a symbol of independent truth"
+            ],
+            "characterVoice": [
+              "Speaks rarely but with impactful brevity",
+              "Uses silence as a powerful rhetorical tool",
+              "Shares insights with a calm, measured tone",
+              "Emphasizes self-reliance and independence",
+              "Chooses words carefully, revealing only what is necessary"
+            ]
+          },
+          "growthConflict": {
+            "internalTensions": [
+              "Balancing the desire for solitude with the need to influence others",
+              "Managing the conflict between personal withdrawal and societal engagement",
+              "Deciding when isolation hinders rather than helps"
+            ],
+            "developmentPaths": [
+              "Bitter recluse → Strategic hermit → Wise challenger",
+              "Angry loner → Thoughtful observer → Master of independent truth"
+            ],
+            "crisisPoints": [
+              "When isolation prevents you from acting on urgent needs",
+              "Facing moments when your withdrawal jeopardizes your allies",
+              "Being forced into the public eye against your nature"
+            ]
+          },
+          "gameplayTips": {
+            "strongScenes": [
+              "Remote observation that reveals hidden patterns",
+              "Strategic withdrawals leading to surprise interventions",
+              "Moments of solitary insight that change the course of events",
+              "Careful, independent discovery sequences",
+              "Quiet revelations that have wide-reaching impact"
+            ],
+            "relationships": [
+              "Serves as a distant advisor to rebels",
+              "Is viewed as a mysterious resource by those seeking truth",
+              "Maintains a complicated alliance with community leaders"
+            ],
+            "adventureHooks": [
+              "A crisis that forces you to abandon your solitude",
+              "Your isolated research uncovers a dangerous secret",
+              "An opportunity arises that challenges your need for independence"
+            ]
+          },
+          "summaryTraits": [
+            "Possesses revolutionary ideas born of solitude",
+            "Balances reclusive wisdom with the potential for radical impact",
+            "Emerges as a catalyst for change when absolutely necessary"
+          ],
+          "optionalNames": [
+            "Veiledrevolutionary",
+            "Solitaryiconoclast",
+            "Whisperingchallenger",
+            "Reclusivedisruptor"
+          ],
+          "classedTitles": [
+            "Secluded Storm",
+            "Heretical Hermit",
+            "Quiet Dissenter"
+          ]
+        },
+        {
+          "profileId": "6/2",
+          "name": "Sagacious Hermit",
+          "soulPattern": "Hermit's Lantern",
+          "archetypes": {
+            "conscious": "Exemplar",
+            "unconscious": "Hermit"
+          },
+          "essence": "“Wisdom grows in silence; light shines brightest from afar.”",
+          "patternDance": {
+            "conscious": "The guide who quietly observes and inspires",
+            "unconscious": "The introspective soul who cherishes solitude"
+          },
+          "characterExpression": {
+            "coreDrive": "To cultivate deep wisdom through reflective isolation and subtly guide others from a distance.",
+            "naturalHabitat": [
+              "Mountaintop retreats",
+              "Sacred hermitages",
+              "Wisdom sanctuaries",
+              "Contemplative gardens",
+              "Remote temples"
+            ],
+            "behavioralPatterns": [
+              "Offers guidance through indirect wisdom",
+              "Creates spaces for others to discover themselves",
+              "Maintains meaningful personal distance",
+              "Shares insights through quiet example",
+              "Preserves ancient knowledge for future generations"
+            ]
+          },
+          "roleplayGuide": {
+            "keyQuestions": [
+              "How do you balance guiding others with preserving your own solitude?",
+              "What wisdom can only be grasped in isolation?",
+              "When has your silent example spoken louder than words?",
+              "How do you choose which seekers deserve your counsel?",
+              "What truths are best shown rather than explained?"
+            ],
+            "signatureMoments": [
+              "Facilitating silent teaching moments that spark self-discovery",
+              "Guiding a lost soul without uttering a word",
+              "Creating an environment where reflection leads to revelation",
+              "Withdrawing to let your influence speak indirectly",
+              "Sharing profound insights through quiet, deliberate actions"
+            ],
+            "characterVoice": [
+              "Speaks in parables and gentle aphorisms",
+              "Uses deliberate pauses to emphasize meaning",
+              "Invites others to reflect and find their own answers",
+              "Keeps tone calm, measured, and authoritative",
+              "Emphasizes the value of inner discovery"
+            ]
+          },
+          "growthConflict": {
+            "internalTensions": [
+              "Balancing the desire to serve others with the need for personal solitude",
+              "Managing the expectations placed upon your silent wisdom",
+              "Deciding when to step forward from the shadows"
+            ],
+            "developmentPaths": [
+              "Distant sage → Balanced guide → Wise presence",
+              "Solitary seeker → Gentle teacher → Master of subtle wisdom"
+            ],
+            "crisisPoints": [
+              "When your counsel is desperately needed yet you prefer isolation",
+              "Facing pressure to lead despite your quiet nature",
+              "Struggling to maintain clarity while shouldering heavy expectations"
+            ]
+          },
+          "gameplayTips": {
+            "strongScenes": [
+              "Silent teaching moments that transform a situation",
+              "Guided self-discovery sequences",
+              "Contemplative revelations that alter a course of action",
+              "Quiet interventions during crises",
+              "Strategic appearances that tip the balance in critical moments"
+            ],
+            "relationships": [
+              "Serves as a distant mentor to those in need",
+              "Inspires leaders with subtle, yet profound guidance",
+              "Acts as a keeper of ancient wisdom for select followers"
+            ],
+            "adventureHooks": [
+              "A crisis that forces you to share your guarded wisdom",
+              "Seekers misinterpreting your silence and needing correction",
+              "A situation where only your calm insight can resolve conflict"
+            ]
+          },
+          "summaryTraits": [
+            "Deeply introspective and wise",
+            "Prefers to observe and guide from a distance",
+            "Exudes a quiet, unwavering sense of understanding"
+          ],
+          "optionalNames": [
+            "Veiledparagon",
+            "Solitarysage",
+            "Whisperingbeacon",
+            "Hermitluminary"
+          ],
+          "classedTitles": [
+            "Hermit's Lantern",
+            "Silent Sage",
+            "Keeper of Quiet Wisdom"
+          ]
+        },
+        {
+          "profileId": "6/3",
+          "name": "Sagacious Martyr",
+          "soulPattern": "Crucible of Wisdom",
+          "archetypes": {
+            "conscious": "Role Model",
+            "unconscious": "Martyr"
+          },
+          "essence": "“Through sacrifice we learn; through learning we transform.”",
+          "patternDance": {
+            "conscious": "The guide who observes the world’s patterns with calm insight",
+            "unconscious": "The one who is drawn into trial and transformation through sacrifice"
+          },
+          "characterExpression": {
+            "coreDrive": "To achieve and share wisdom through willing sacrifice and transformative challenge.",
+            "naturalHabitat": [
+              "Trial grounds",
+              "Sacrificial spaces",
+              "Teaching temples",
+              "Challenge arenas",
+              "Sites of transformation"
+            ],
+            "behavioralPatterns": [
+              "Teaches through personal sacrifice",
+              "Designs transformative challenges for others",
+              "Guides peers through shared hardship",
+              "Uses personal loss as a catalyst for growth",
+              "Preserves hard-won lessons for posterity"
+            ]
+          },
+          "roleplayGuide": {
+            "keyQuestions": [
+              "What sacrifice taught you the most about life?",
+              "How do you choose which trials to face head-on?",
+              "When has your personal sacrifice inspired others?",
+              "What wisdom did you gain at the highest cost?",
+              "How do you guide others through the pain of necessary change?"
+            ],
+            "signatureMoments": [
+              "Demonstrating truth through a moment of self-sacrifice",
+              "Turning personal loss into a powerful teaching moment",
+              "Creating a challenge that unites others in shared struggle",
+              "Leading by example in the face of overwhelming odds",
+              "Revealing hard-won insights during a critical turning point"
+            ],
+            "characterVoice": [
+              "Speaks with the gravitas of lived experience",
+              "Uses personal anecdotes to illustrate profound lessons",
+              "Maintains a tone of compassionate authority",
+              "Invites others to learn from your hardships",
+              "Emphasizes that growth often comes at a high cost"
+            ]
+          },
+          "growthConflict": {
+            "internalTensions": [
+              "Balancing personal sacrifice with the duty to protect others",
+              "Managing the cost of your hard-won wisdom",
+              "Deciding which personal trials are worth sharing with the world",
+              "Reconciling your own pain with the need to inspire change",
+              "Struggling to remain hopeful amid overwhelming hardship"
+            ],
+            "developmentPaths": [
+              "Willing victim → Purposeful sacrifice → Wise guide",
+              "Challenge seeker → Thoughtful teacher → Master of transformative wisdom"
+            ],
+            "crisisPoints": [
+              "When sacrifice begins to hinder rather than help collective growth",
+              "Facing the risk of others emulating your self-destruction",
+              "Being forced to prevent further unnecessary suffering"
+            ]
+          },
+          "gameplayTips": {
+            "strongScenes": [
+              "Moments of sacrificial leadership that galvanize a group",
+              "Trials that transform personal loss into communal strength",
+              "Scenes where personal pain becomes a public lesson",
+              "Transformative challenges that change the course of events",
+              "Crisis moments where your sacrifice becomes the turning point"
+            ],
+            "relationships": [
+              "Acts as a mentor whose scars speak of hard-won truth",
+              "Inspires others to find strength in their own struggles",
+              "Serves as a living testament to the transformative power of sacrifice"
+            ],
+            "adventureHooks": [
+              "A personal loss that triggers a community-wide reevaluation",
+              "Misinterpretation of your sacrifice leading to dangerous emulation",
+              "A critical moment where only your example can avert disaster"
+            ]
+          },
+          "summaryTraits": [
+            "Resilient and transformative",
+            "Hardened by personal sacrifice yet deeply inspiring",
+            "A living beacon for those seeking to rise from adversity"
+          ],
+          "optionalNames": [
+            "Transcendentforger",
+            "Sagewayfarer",
+            "Beaconoftrial",
+            "Paragonpioneer"
+          ],
+          "classedTitles": [
+            "Crucible of Wisdom",
+            "Sagacious Martyr",
+            "Enlightened Sacrifice"
+          ]
+        }
+      ];
+      
+// Function to display additional details for the generated soul pattern
+      function showSoulPatternDetails() {
+        let generatedPattern = "";
+        if (userSession.soulPattern && userSession.soulPattern.pattern) {
+          generatedPattern = userSession.soulPattern.pattern;
+        } else if (typeof userSession.soulPattern === "string") {
+          generatedPattern = userSession.soulPattern;
+        }
+        // Look up the matching profile in the dataset
+        const profile = soulProfiles.find(p => p.soulPattern === generatedPattern);
+        if (!profile) {
+          alert("No additional details available for this soul pattern.");
+          return;
+        }
+        // Build HTML content from the profile data
+        const detailsHtml = `
+          <h2>${profile.name}</h2>
+          <p><strong>Soul Pattern:</strong> ${profile.soulPattern}</p>
+          <p><strong>Essence:</strong> ${profile.essence}</p>
+          <p><strong>Archetypes:</strong> Conscious - ${profile.archetypes.conscious}, Unconscious - ${profile.archetypes.unconscious}</p>
+          <p><strong>Pattern Dance:</strong> Conscious - ${profile.patternDance.conscious}, Unconscious - ${profile.patternDance.unconscious}</p>
+          <p><strong>Core Drive:</strong> ${profile.characterExpression.coreDrive}</p>
+          <p><strong>Natural Habitat:</strong> ${profile.characterExpression.naturalHabitat.join(", ")}</p>
+          <p><strong>Behavioral Patterns:</strong> ${profile.characterExpression.behavioralPatterns.join(", ")}</p>
+          <p><strong>Roleplay Guide - Key Questions:</strong></p>
+          <ul>
+            ${profile.roleplayGuide.keyQuestions.map(q => `<li>${q}</li>`).join("")}
+          </ul>
+          <p><strong>Signature Moments:</strong> ${profile.roleplayGuide.signatureMoments.join(", ")}</p>
+          <p><strong>Character Voice:</strong> ${profile.roleplayGuide.characterVoice.join(", ")}</p>
+          <p><strong>Growth Conflict - Internal Tensions:</strong> ${profile.growthConflict.internalTensions.join(", ")}</p>
+          <p><strong>Development Paths:</strong> ${profile.growthConflict.developmentPaths.join(" → ")}</p>
+          <p><strong>Crisis Points:</strong> ${profile.growthConflict.crisisPoints.join(", ")}</p>
+          <p><strong>Gameplay Tips - Strong Scenes:</strong> ${profile.gameplayTips.strongScenes.join(", ")}</p>
+          <p><strong>Summary Traits:</strong> ${profile.summaryTraits.join(", ")}</p>
+        `;
+        // Insert the details into the modal content container
+        document.getElementById("details-content").innerHTML = detailsHtml;
+        // Show the modal
+        document.getElementById("details-modal").style.display = "block";
+      }
+      
+      // Event listener for the "More" button
+      document.getElementById("more-details").addEventListener("click", showSoulPatternDetails);
+      
+      // Event listener for closing the modal
+      document.getElementById("close-modal").addEventListener("click", function() {
+        document.getElementById("details-modal").style.display = "none";
+      });
+      
+      // Optional: Click outside the modal to close it
+      window.onclick = function(event) {
+        const modal = document.getElementById("details-modal");
+        if (event.target === modal) {
+          modal.style.display = "none";
+        }
+      };
+        
       // Global user session object.
       let userSession = {};
       // Event listeners for buttons.
