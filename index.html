@@ -769,7 +769,7 @@ function buildPdfContent() {
   const journeyHTML = document.getElementById("trajectory")?.innerHTML || "";
   // Capture the entire Hexagram Matrix block (using its outer HTML)
   hexagramMatrixHTML = document.querySelector(".hexagram-matrix .hexagram-matrix-description")?.outerHTML || "";
-  
+
   // Build a style block that:
   // 1. Forces black & white output.
   // 2. Imports and applies Orbitron and Cinzel Decorative fonts.
@@ -803,7 +803,7 @@ function buildPdfContent() {
       }
     </style>
   `;
-  
+
   // Assemble the full HTML content for the PDF.
   const pdfHtml = `
     ${styleBlock}
@@ -834,7 +834,7 @@ function buildPdfContent() {
       </div>
     </div>
   `;
-  
+
   // Insert the assembled content into the dedicated PDF container.
   const pdfPreview = document.getElementById("pdf-preview");
   pdfPreview.innerHTML = pdfHtml;
@@ -865,20 +865,20 @@ function isIOS() {
 document.getElementById("telegram-button").addEventListener("click", async function () {
   // Generate the Telegram message using your existing function
   const message = getTelegramMessage();
-  
+
   // Populate the PDF container with dynamic content
   buildPdfContent();
-  
+
   const pdfPreview = document.getElementById("pdf-preview");
   if (!pdfPreview) {
     alert("PDF preview element not found.");
     return;
   }
-  
+
   // Temporarily reveal the PDF container for rendering
   pdfPreview.classList.remove("hidden-pdf");
   pdfPreview.style.visibility = "visible";
-  
+
   // PDF generation options
   const opt = {
     margin: 10,
@@ -890,7 +890,7 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
-  
+
   try {
     // Generate and save the PDF from the now-visible container
     await html2pdf().set(opt).from(pdfPreview).save();
@@ -899,10 +899,10 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     console.error("PDF generation failed:", error);
     alert("PDF download failed! Please ensure the content is loaded.");
   }
-  
+
   // Restore the hidden state of the PDF container
   pdfPreview.classList.add("hidden-pdf");
-  
+
   // For iOS, add a delay before sending the Telegram message to ensure that the PDF download doesn't interfere with the fetch request
   if (isIOS()) {
     setTimeout(async () => {
@@ -939,20 +939,18 @@ function resetRollSession() {
 
 // --- Forge Identity Function with Extended Soul Pattern Integration ---
 function forgeIdentity() {
-  // (Assume userSession is defined globally; do not re‑declare if already present)
   console.log("Forging new identity...");
-  
-  // Session tracking and penalty calculation
+  // (Assume userSession is defined globally.)
   const rollCount = updateRollSession();
   const penalty = rollCount > 2 ? rollCount - 2 : 0;
-  
+
   // Generate character name
   let name = generateName();
   if (!name || name.trim() === "") {
     name = "Unnamed One";
   }
-  
-  // Update the result area with the generated name and hexagram info
+
+  // Update the result area with generated name and hexagram info
   document.getElementById("result").innerHTML = `
     <div class="name-reveal">
       <div class="hex-source">
@@ -962,14 +960,14 @@ function forgeIdentity() {
       <p><strong>Given Name:</strong> <span class="generated-name">${name}</span></p>
     </div>
   `;
-  
+
   // Select a random lineage and apply surplus penalty
   const lineage = randomElement(lineages);
   const effectiveSurplus = lineage.surplus - penalty;
   userSession.lineage = lineage;
   userSession.currentAttributes = Object.assign({}, lineage.baseAttributes);
   userSession.remainingSurplus = effectiveSurplus;
-  
+
   // Build the heritage HTML for display
   let heritageHTML = `
     <h2>${lineage.name} <span class="badge ${lineage.type.toLowerCase().replace(" ", "-")}">${lineage.type}</span></h2>
@@ -991,7 +989,7 @@ function forgeIdentity() {
     </ul>
     <p><strong>Surplus:</strong> <span id="surplus-points">${userSession.remainingSurplus}</span></p>
   `;
-  
+
   // Append tribal affiliation details
   const tribe = randomElement(tribes);
   userSession.tribe = tribe;
@@ -1010,7 +1008,7 @@ function forgeIdentity() {
   `;
   document.getElementById("heritage-result").innerHTML = heritageHTML;
   document.getElementById("heritage-result").style.display = "block";
-  
+
   // Attach event listeners to plus-pill buttons for attribute allocation
   document.querySelectorAll(".plus-pill").forEach(button => {
     button.addEventListener("click", function () {
@@ -1018,28 +1016,30 @@ function forgeIdentity() {
       allocatePoint(attr);
     });
   });
-  
+
   // ----- Soul Pattern Integration -----
   // Ensure that soulPatterns exists
   if (!soulPatterns || soulPatterns.length === 0) {
     console.error("Error: soulPatterns dataset is missing or empty");
     return;
   }
-  
   // Generate a soul pattern from the local array
   const generatedSoulPattern = randomElement(soulPatterns);
   console.log("Generated soul pattern:", generatedSoulPattern);
   
+  // Extract the base pattern before any dash (if present)
+  const basePattern = generatedSoulPattern.pattern.split(" - ")[0].trim();
+
   // Check if the extended dataset (soulProfiles) exists
   if (!soulProfiles || soulProfiles.length === 0) {
     console.warn("Warning: soulProfiles dataset is missing or empty");
   }
-  
-  // Find a matching soul profile using a case-insensitive match
-  const matchingProfile = soulProfiles.find(profile =>
-    profile.soulPattern.toLowerCase() === generatedSoulPattern.pattern.toLowerCase()
-  );
-  
+  // Find a matching extended profile using case-insensitive comparison on the base pattern
+  const matchingProfile = (soulProfiles && soulProfiles.length > 0) ?
+    soulProfiles.find(profile =>
+      profile.soulPattern.toLowerCase() === basePattern.toLowerCase()
+    ) : null;
+
   if (matchingProfile) {
     console.log("Matched soul profile:", matchingProfile);
     userSession.soulPattern = matchingProfile;
@@ -1053,9 +1053,9 @@ function forgeIdentity() {
     <div style="color: var(--near-white);">
       ${userSession.soulPattern.soulPattern || userSession.soulPattern.pattern}
     </div>
-    <p class="orbitron-bold-blue">Personality Profile: ${userSession.soulPattern.name || "N/A"}</p>
+    <p class="orbitron-bold-blue">Personality Profile: ${userSession.soulPattern.name || userSession.soulPattern.profile || "N/A"}</p>
   `;
-  
+
   // ----- Core Traits Generation -----
   const consciousTrait = randomElement(coreTraits);
   const unconsciousTrait = randomElement(coreTraits);
@@ -1068,7 +1068,7 @@ function forgeIdentity() {
     <h4 class="orbitron-bold-blue">Unconscious</h4>
     <p><strong>${unconsciousTrait.trait}</strong>: ${unconsciousTrait.description} (Hexagram ${unconsciousTrait.hexagram})</p>
   `;
-  
+
   // ----- Character Journey and Hexagram Matrix Population -----
   const selectedAgeBand = Math.random() < 0.5 ? "0-50" : "50+";
   const availableTrajectories = trajectories.filter(t => t.ageBand === selectedAgeBand);
@@ -1089,7 +1089,7 @@ function forgeIdentity() {
     `;
   }
   document.getElementById("trajectory").innerHTML = trajectoryHTML;
-  
+
   // Set the DC values based on core traits and trajectory details
   const intellectualDC = consciousTrait.hexagram;
   const physicalDC = unconsciousTrait.hexagram;
@@ -1103,56 +1103,40 @@ function forgeIdentity() {
   document.getElementById("second-dc").textContent = physicalDC;
   document.getElementById("third-dc").textContent = emotionalDC;
   document.getElementById("fourth-dc").textContent = spiritualDC;
-  
+
   // Display the inner world section
   document.getElementById("inner-world").style.display = "block";
 }
 
-// PLACEMENT INSTRUCTIONS:
-// 1. Replace the existing "More" button event listener block in your main JavaScript file
-// 2. Place this code AFTER the forgeIdentity() function and before any document ready or initialization scripts
-
 // --- "More" Button Event Listener for Extended Soul Pattern Details ---
 document.getElementById("more-details").addEventListener("click", function () {
   console.log("More button clicked. Fetching extended details...");
-  
-  // Comprehensive logging and error handling
   console.log("Full userSession:", userSession);
-  
-  if (!userSession) {
-    console.error("Error: userSession is undefined");
-    document.getElementById("details-content").innerHTML = "Error: Character not generated. Please create a character first.";
-    return;
-  }
-  
-  if (!userSession.soulPattern) {
+
+  if (!userSession || !userSession.soulPattern) {
     console.error("Error: userSession.soulPattern is undefined");
     document.getElementById("details-content").innerHTML = "Error: No soul pattern available. Generate a character first.";
     return;
   }
-  
-  // Prefer details in order of availability
-  const details = 
-    userSession.soulPattern.details || 
-    userSession.soulPattern.description || 
-    userSession.soulPattern.profile || 
+  // Build a details summary if no pre-existing 'details' property exists
+  const details = userSession.soulPattern.details ||
+    ("Key Questions: " + (userSession.soulPattern.roleplayGuide?.keyQuestions || []).join("; ") + "<br>" +
+     "Signature Moments: " + (userSession.soulPattern.roleplayGuide?.signatureMoments || []).join("; ") + "<br>" +
+     "Growth Conflict: " + (userSession.soulPattern.growthConflict?.internalTensions || []).join("; ") + "<br>" +
+     "Summary Traits: " + (userSession.soulPattern.summaryTraits || []).join("; ")) ||
     "No additional details available for this soul pattern.";
-  
-  // Enhanced display with more context
+
   document.getElementById("details-content").innerHTML = `
     <h3>${userSession.soulPattern.pattern || 'Soul Pattern'}</h3>
-    <p class="personality-profile">Personality Profile: ${userSession.soulPattern.name || 'N/A'}</p>
+    <p class="personality-profile">Personality Profile: ${userSession.soulPattern.name || userSession.soulPattern.profile || "N/A"}</p>
     <div class="soul-pattern-details">${details}</div>
   `;
-  
-  // Ensure modal is displayed
+
+  // Show the modal
   const modal = document.getElementById("details-modal");
   const modalContent = document.getElementById("details-content");
-  
   if (modal) {
     modal.style.display = "block";
-    
-    // Optional: Add a fade-in effect
     modalContent.style.opacity = "0";
     setTimeout(() => {
       modalContent.style.transition = "opacity 0.3s ease-in";
@@ -1164,11 +1148,10 @@ document.getElementById("more-details").addEventListener("click", function () {
   }
 });
 
-// Ensure close functionality works with fade-out effect
+// --- Close Modal Event Listener ---
 document.getElementById("close-modal").addEventListener("click", function () {
   const modal = document.getElementById("details-modal");
   const modalContent = document.getElementById("details-content");
-  
   if (modal) {
     modalContent.style.opacity = "0";
     setTimeout(() => {
@@ -1177,7 +1160,6 @@ document.getElementById("close-modal").addEventListener("click", function () {
     }, 300);
   }
 });
-
       // allocatePoint: Called when a plus-pill is clicked.
 
       function allocatePoint(attribute) {
@@ -3500,7 +3482,7 @@ const trajectories = [
           ]
         }
       ];
-      
+
 // Function to display additional details for the generated soul pattern
       function showSoulPatternDetails() {
         let generatedPattern = "";
@@ -3542,15 +3524,15 @@ const trajectories = [
         // Show the modal
         document.getElementById("details-modal").style.display = "block";
       }
-      
+
       // Event listener for the "More" button
       document.getElementById("more-details").addEventListener("click", showSoulPatternDetails);
-      
+
       // Event listener for closing the modal
       document.getElementById("close-modal").addEventListener("click", function() {
         document.getElementById("details-modal").style.display = "none";
       });
-      
+
       // Optional: Click outside the modal to close it
       window.onclick = function(event) {
         const modal = document.getElementById("details-modal");
@@ -3558,7 +3540,7 @@ const trajectories = [
           modal.style.display = "none";
         }
       };
-        
+
       // Global user session object.
       let userSession = {};
       // Event listeners for buttons.
