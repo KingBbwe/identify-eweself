@@ -758,8 +758,68 @@ ${journeyDetails}
 #AuldEwe #FateCast`;
 }
 
+// Helper function to generate the extended soul pattern details HTML
+function generateExtendedSoulPatternDetails(sp) {
+  if (!sp) {
+    return "<p>No extended details available.</p>";
+  }
+  // Build formatted HTML for every field in the extended profile
+  var detailsHtml = `
+    <p><strong>Personality Profile:</strong> ${sp.profileId || "N/A"}</p>
+    <p><strong>Profile Name:</strong> ${sp.name || "N/A"}</p>
+    <p><strong>Soul Pattern:</strong> ${sp.soulPattern || "N/A"}</p>
+    
+    <h4 style="margin-bottom:0.3em;">Archetypes</h4>
+    <p><strong>Conscious:</strong> ${sp.archetypes && sp.archetypes.conscious ? sp.archetypes.conscious : "N/A"}</p>
+    <p><strong>Unconscious:</strong> ${sp.archetypes && sp.archetypes.unconscious ? sp.archetypes.unconscious : "N/A"}</p>
+    
+    <h4 style="margin-bottom:0.3em;">Essence</h4>
+    <p>${sp.essence || "N/A"}</p>
+    
+    <h4 style="margin-bottom:0.3em;">Pattern Dance</h4>
+    <p><strong>Conscious:</strong> ${sp.patternDance && sp.patternDance.conscious ? sp.patternDance.conscious : "N/A"}</p>
+    <p><strong>Unconscious:</strong> ${sp.patternDance && sp.patternDance.unconscious ? sp.patternDance.unconscious : "N/A"}</p>
+    
+    <h4 style="margin-bottom:0.3em;">Character Expression</h4>
+    <p><strong>Core Drive:</strong> ${sp.characterExpression && sp.characterExpression.coreDrive ? sp.characterExpression.coreDrive : "N/A"}</p>
+    <p><strong>Natural Habitat:</strong> ${sp.characterExpression && sp.characterExpression.naturalHabitat ? sp.characterExpression.naturalHabitat.join(", ") : "N/A"}</p>
+    <p><strong>Behavioral Patterns:</strong> ${sp.characterExpression && sp.characterExpression.behavioralPatterns ? sp.characterExpression.behavioralPatterns.join("; ") : "N/A"}</p>
+    
+    <h4 style="margin-bottom:0.3em;">Roleplay Guide</h4>
+    <p><strong>Key Questions:</strong></p>
+    ${sp.roleplayGuide && sp.roleplayGuide.keyQuestions ? "<ul>" + sp.roleplayGuide.keyQuestions.map(q => `<li>${q}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    <p><strong>Signature Moments:</strong></p>
+    ${sp.roleplayGuide && sp.roleplayGuide.signatureMoments ? "<ul>" + sp.roleplayGuide.signatureMoments.map(m => `<li>${m}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    <p><strong>Character Voice:</strong></p>
+    ${sp.roleplayGuide && sp.roleplayGuide.characterVoice ? "<ul>" + sp.roleplayGuide.characterVoice.map(v => `<li>${v}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    
+    <h4 style="margin-bottom:0.3em;">Growth Conflict</h4>
+    <p><strong>Internal Tensions:</strong> ${sp.growthConflict && sp.growthConflict.internalTensions ? sp.growthConflict.internalTensions.join("; ") : "N/A"}</p>
+    <p><strong>Development Paths:</strong> ${sp.growthConflict && sp.growthConflict.developmentPaths ? sp.growthConflict.developmentPaths.join(" → ") : "N/A"}</p>
+    <p><strong>Crisis Points:</strong> ${sp.growthConflict && sp.growthConflict.crisisPoints ? sp.growthConflict.crisisPoints.join("; ") : "N/A"}</p>
+    
+    <h4 style="margin-bottom:0.3em;">Gameplay Tips</h4>
+    <p><strong>Strong Scenes:</strong></p>
+    ${sp.gameplayTips && sp.gameplayTips.strongScenes ? "<ul>" + sp.gameplayTips.strongScenes.map(s => `<li>${s}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    <p><strong>Relationships:</strong></p>
+    ${sp.gameplayTips && sp.gameplayTips.relationships ? "<ul>" + sp.gameplayTips.relationships.map(r => `<li>${r}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    <p><strong>Adventure Hooks:</strong></p>
+    ${sp.gameplayTips && sp.gameplayTips.adventureHooks ? "<ul>" + sp.gameplayTips.adventureHooks.map(a => `<li>${a}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    
+    <h4 style="margin-bottom:0.3em;">Summary Traits</h4>
+    <p>${sp.summaryTraits ? sp.summaryTraits.join("; ") : "N/A"}</p>
+    
+    <h4 style="margin-bottom:0.3em;">Optional Names</h4>
+    <p>${sp.optionalNames ? sp.optionalNames.join(", ") : "N/A"}</p>
+    
+    <h4 style="margin-bottom:0.3em;">Classed Titles</h4>
+    <p>${sp.classedTitles ? sp.classedTitles.join(", ") : "N/A"}</p>
+  `;
+  return detailsHtml;
+}
 
-// Function to build the PDF content dynamically with all dynamic data
+// --- Updated buildPdfContent Function ---
+// This function now builds the complete PDF HTML including the extended soul pattern details.
 function buildPdfContent() {
   // Retrieve dynamic content from the live page.
   const generatedName = document.querySelector("#result .generated-name")?.innerText || "N/A";
@@ -767,14 +827,13 @@ function buildPdfContent() {
   const soulPatternHTML = document.getElementById("soul-pattern")?.innerHTML || "";
   const coreTraitsHTML = document.querySelector(".core-traits")?.innerHTML || "";
   const journeyHTML = document.getElementById("trajectory")?.innerHTML || "";
-  // Capture the entire Hexagram Matrix block (using its outer HTML)
-  hexagramMatrixHTML = document.querySelector(".hexagram-matrix .hexagram-matrix-description")?.outerHTML || "";
+  // Capture the Hexagram Matrix details
+  const hexagramMatrixHTML = document.querySelector(".hexagram-matrix .hexagram-matrix-description")?.outerHTML || "";
+  
+  // Generate the extended soul pattern details from userSession.soulPattern
+  const extendedDetailsHTML = generateExtendedSoulPatternDetails(userSession.soulPattern);
 
-  // Build a style block that:
-  // 1. Forces black & white output.
-  // 2. Imports and applies Orbitron and Cinzel Decorative fonts.
-  // 3. Adjusts spacing between sections for better legibility.
-  // 4. Removes any grey backgrounds from Journey and Hexagram Matrix sections.
+  // Build a style block to enforce black & white output and proper formatting.
   const styleBlock = `
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap');
@@ -786,38 +845,37 @@ function buildPdfContent() {
       body, div { 
         font-family: 'Orbitron', sans-serif !important; 
       }
-      h2, h3 { 
+      h2, h3, h4 { 
         font-family: 'Cinzel Decorative', serif !important; 
       }
-      /* Remove any grey backgrounds from Journey and Hexagram Matrix sections */
-      #trajectory, .hexagram-matrix {
-        background: #fff !important;
+      /* Ensure backgrounds are white */
+      #trajectory, .hexagram-matrix { 
+        background: #fff !important; 
       }
-      /* Section spacing: Increase margin between sections */
+      /* Section spacing */
       .section { 
         margin-bottom: 30px; 
       }
-      /* Reduce spacing within a section for headings */
-      .section h3 { 
+      .section h3, .section h4 { 
         margin-bottom: 10px; 
       }
     </style>
   `;
 
-  // Assemble the full HTML content for the PDF.
+  // Assemble the full PDF HTML content
   const pdfHtml = `
     ${styleBlock}
     <div style="padding: 20px;">
       <div class="section">
-        <h2>Generated Character Name:</h2>
+        <h2>Character Sheet:</h2>
         <div>${generatedName}</div>
       </div>
       <div class="section">
-        <h3>Heritage Information</h3>
+        <h3>Heritage</h3>
         <div>${heritageHTML}</div>
       </div>
       <div class="section">
-        <h3>Soul Pattern</h3>
+        <h3>Soul Pattern (Summary)</h3>
         <div>${soulPatternHTML}</div>
       </div>
       <div class="section">
@@ -832,10 +890,14 @@ function buildPdfContent() {
         <h3>Hexagram Matrix</h3>
         <div>${hexagramMatrixHTML}</div>
       </div>
+      <div class="section">
+        <h3>Extended Soul Pattern Details</h3>
+        <div>${extendedDetailsHTML}</div>
+      </div>
     </div>
   `;
-
-  // Insert the assembled content into the dedicated PDF container.
+  
+  // Insert the assembled content into the dedicated PDF container
   const pdfPreview = document.getElementById("pdf-preview");
   pdfPreview.innerHTML = pdfHtml;
 }
