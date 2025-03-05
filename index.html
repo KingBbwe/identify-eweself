@@ -1015,17 +1015,20 @@ function forgeIdentity() {
     });
   });
   
-  // ----- Soul Pattern Integration with Dataset -----
-  // Instead of selecting just a random soul pattern, we now merge with an extended dataset.
-  // Assume that "soulProfiles" is a globally defined array containing the provided JSON data.
+  // ----- Soul Pattern Integration with Extended Dataset -----
+  // Generate a soul pattern from your local array of soulPatterns
   const generatedSoulPattern = randomElement(soulPatterns);
-  // Look for a matching profile in the dataset based on the soulPattern string
-  const matchingProfile = (typeof soulProfiles !== 'undefined')
-    ? soulProfiles.find(profile => profile.soulPattern === generatedSoulPattern.pattern)
-    : null;
+  let matchingProfile = null;
+  // Check that soulProfiles is defined and then perform a case-insensitive match
+  if (typeof soulProfiles !== 'undefined' && soulProfiles.length > 0) {
+    matchingProfile = soulProfiles.find(profile =>
+      profile.soulPattern.toLowerCase() === generatedSoulPattern.pattern.toLowerCase()
+    );
+  }
   if (matchingProfile) {
     userSession.soulPattern = matchingProfile;
   } else {
+    console.warn("No matching extended profile found for soul pattern:", generatedSoulPattern.pattern);
     userSession.soulPattern = generatedSoulPattern;
   }
   
@@ -1088,7 +1091,6 @@ function forgeIdentity() {
   // Display the inner world section
   document.getElementById("inner-world").style.display = "block";
 }
-
 
       // allocatePoint: Called when a plus-pill is clicked.
 
