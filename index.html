@@ -758,15 +758,17 @@ ${journeyDetails}
 #AuldEwe #FateCast`;
 }
 
-// Helper function to generate the extended soul pattern details HTML
+// Helper: Returns a random element from an array
+function randomElement(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Helper: Generates extended soul pattern details HTML with improved formatting
 function generateExtendedSoulPatternDetails(sp) {
-  if (!sp) {
-    return "<p>No extended details available.</p>";
-  }
-  // Build formatted HTML for every field in the extended profile
-  var detailsHtml = `
-    <p><strong>Personality Profile:</strong> ${sp.profileId || "N/A"}</p>
-    <p><strong>Profile Name:</strong> ${sp.name || "N/A"}</p>
+  if (!sp) return "<p>No extended details available.</p>";
+  return `
+    <p><strong>Profile ID (Fraction):</strong> ${sp.profileId || "N/A"}</p>
+    <p><strong>Name:</strong> ${sp.name || "N/A"}</p>
     <p><strong>Soul Pattern:</strong> ${sp.soulPattern || "N/A"}</p>
     
     <h4 style="margin-bottom:0.3em;">Archetypes</h4>
@@ -815,11 +817,10 @@ function generateExtendedSoulPatternDetails(sp) {
     <h4 style="margin-bottom:0.3em;">Classed Titles</h4>
     <p>${sp.classedTitles ? sp.classedTitles.join(", ") : "N/A"}</p>
   `;
-  return detailsHtml;
 }
 
 // --- Updated buildPdfContent Function ---
-// This function now builds the complete PDF HTML including the extended soul pattern details.
+// This builds the complete PDF content, including extended soul pattern details.
 function buildPdfContent() {
   // Retrieve dynamic content from the live page.
   const generatedName = document.querySelector("#result .generated-name")?.innerText || "N/A";
@@ -827,13 +828,12 @@ function buildPdfContent() {
   const soulPatternHTML = document.getElementById("soul-pattern")?.innerHTML || "";
   const coreTraitsHTML = document.querySelector(".core-traits")?.innerHTML || "";
   const journeyHTML = document.getElementById("trajectory")?.innerHTML || "";
-  // Capture the Hexagram Matrix details
   const hexagramMatrixHTML = document.querySelector(".hexagram-matrix .hexagram-matrix-description")?.outerHTML || "";
   
-  // Generate the extended soul pattern details from userSession.soulPattern
+  // Generate the extended soul pattern details
   const extendedDetailsHTML = generateExtendedSoulPatternDetails(userSession.soulPattern);
 
-  // Build a style block to enforce black & white output and proper formatting.
+  // Build a style block to enforce black & white output and formatting.
   const styleBlock = `
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap');
@@ -848,11 +848,9 @@ function buildPdfContent() {
       h2, h3, h4 { 
         font-family: 'Cinzel Decorative', serif !important; 
       }
-      /* Ensure backgrounds are white */
       #trajectory, .hexagram-matrix { 
         background: #fff !important; 
       }
-      /* Section spacing */
       .section { 
         margin-bottom: 30px; 
       }
@@ -862,16 +860,16 @@ function buildPdfContent() {
     </style>
   `;
 
-  // Assemble the full PDF HTML content
+  // Assemble the full HTML for the PDF.
   const pdfHtml = `
     ${styleBlock}
     <div style="padding: 20px;">
       <div class="section">
-        <h2>Character Sheet:</h2>
+        <h2>Generated Character Name:</h2>
         <div>${generatedName}</div>
       </div>
       <div class="section">
-        <h3>Heritage</h3>
+        <h3>Heritage Information</h3>
         <div>${heritageHTML}</div>
       </div>
       <div class="section">
@@ -897,12 +895,12 @@ function buildPdfContent() {
     </div>
   `;
   
-  // Insert the assembled content into the dedicated PDF container
+  // Insert the assembled content into the dedicated PDF container.
   const pdfPreview = document.getElementById("pdf-preview");
   pdfPreview.innerHTML = pdfHtml;
 }
 
-// Function to send the Telegram message
+// --- Send Telegram Message Helper ---
 async function sendTelegramMessage(message) {
   const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
   const chatId = "-1002185533073";
@@ -918,30 +916,29 @@ async function sendTelegramMessage(message) {
   }
 }
 
-// Helper function to detect if the device is running iOS
+// --- Helper to Detect iOS ---
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
 
-// Main event handler for the Telegram button
+// --- Main Combined Event Handler for PDF Generation & Telegram Send ---
 document.getElementById("telegram-button").addEventListener("click", async function () {
-  // Generate the Telegram message using your existing function
+  // Generate Telegram message
   const message = getTelegramMessage();
-
-  // Populate the PDF container with dynamic content
+  
+  // Build the PDF content (includes extended soul details)
   buildPdfContent();
-
+  
   const pdfPreview = document.getElementById("pdf-preview");
   if (!pdfPreview) {
     alert("PDF preview element not found.");
     return;
   }
-
-  // Temporarily reveal the PDF container for rendering
+  
+  // Temporarily reveal the PDF container for html2pdf
   pdfPreview.classList.remove("hidden-pdf");
   pdfPreview.style.visibility = "visible";
-
-  // PDF generation options
+  
   const opt = {
     margin: 10,
     filename: 'CharacterDetails.pdf',
@@ -952,30 +949,74 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
-
+  
   try {
-    // Generate and save the PDF from the now-visible container
     await html2pdf().set(opt).from(pdfPreview).save();
     alert("PDF downloaded successfully!");
   } catch (error) {
     console.error("PDF generation failed:", error);
     alert("PDF download failed! Please ensure the content is loaded.");
   }
-
-  // Restore the hidden state of the PDF container
+  
+  // Restore hidden state of the PDF container
   pdfPreview.classList.add("hidden-pdf");
-
-  // For iOS, add a delay before sending the Telegram message to ensure that the PDF download doesn't interfere with the fetch request
+  
+  // For iOS, delay sending the Telegram message to avoid conflicts with the PDF download process.
   if (isIOS()) {
     setTimeout(async () => {
       await sendTelegramMessage(message);
-    }, 1000); // 1-second delay (adjust if needed)
+    }, 1000);
   } else {
     await sendTelegramMessage(message);
   }
 });
 
+// --- "More" Button Event Listener for Extended Soul Pattern Details ---
+document.getElementById("more-details").addEventListener("click", function () {
+  console.log("More button clicked. Fetching extended details...");
+  console.log("Full userSession:", userSession);
 
+  if (!userSession || !userSession.soulPattern) {
+    console.error("Error: userSession.soulPattern is undefined");
+    document.getElementById("details-content").innerHTML = "<p>Error: No soul pattern available. Generate a character first.</p>";
+    return;
+  }
+  
+  const detailsHtml = generateExtendedSoulPatternDetails(userSession.soulPattern);
+  document.getElementById("details-content").innerHTML = `
+    <h3>${userSession.soulPattern.pattern || 'Soul Pattern'}</h3>
+    <p class="personality-profile">Personality Profile: ${userSession.soulPattern.name || userSession.soulPattern.profile || "N/A"}</p>
+    <div class="soul-pattern-details">${detailsHtml}</div>
+  `;
+  
+  // Show the modal with fade-in effect
+  const modal = document.getElementById("details-modal");
+  const modalContent = document.getElementById("details-content");
+  if (modal) {
+    modal.style.display = "block";
+    modalContent.style.opacity = "0";
+    setTimeout(() => {
+      modalContent.style.transition = "opacity 0.3s ease-in";
+      modalContent.style.opacity = "1";
+    }, 50);
+  } else {
+    console.error("Modal element not found");
+    alert("Could not open modal. Check console for details.");
+  }
+});
+
+// --- Close Modal Event Listener ---
+document.getElementById("close-modal").addEventListener("click", function () {
+  const modal = document.getElementById("details-modal");
+  const modalContent = document.getElementById("details-content");
+  if (modal) {
+    modalContent.style.opacity = "0";
+    setTimeout(() => {
+      modal.style.display = "none";
+      modalContent.style.opacity = "1";
+    }, 300);
+  }
+});
 
 // --- SURPLUS TRACKING FUNCTIONS ---
 function updateRollSession() {
