@@ -1108,27 +1108,74 @@ function forgeIdentity() {
   document.getElementById("inner-world").style.display = "block";
 }
 
+// PLACEMENT INSTRUCTIONS:
+// 1. Replace the existing "More" button event listener block in your main JavaScript file
+// 2. Place this code AFTER the forgeIdentity() function and before any document ready or initialization scripts
+
 // --- "More" Button Event Listener for Extended Soul Pattern Details ---
 document.getElementById("more-details").addEventListener("click", function () {
   console.log("More button clicked. Fetching extended details...");
   
-  if (!userSession.soulPattern) {
-    console.error("Error: userSession.soulPattern is undefined");
-    document.getElementById("details-content").innerHTML = "Error: No soul pattern available.";
+  // Comprehensive logging and error handling
+  console.log("Full userSession:", userSession);
+  
+  if (!userSession) {
+    console.error("Error: userSession is undefined");
+    document.getElementById("details-content").innerHTML = "Error: Character not generated. Please create a character first.";
     return;
   }
   
-  // Use a "details" property if available; otherwise, show a default message.
-  const details = userSession.soulPattern.details || "No additional details available for this soul pattern.";
-  document.getElementById("details-content").innerHTML = `<p>${details}</p>`;
+  if (!userSession.soulPattern) {
+    console.error("Error: userSession.soulPattern is undefined");
+    document.getElementById("details-content").innerHTML = "Error: No soul pattern available. Generate a character first.";
+    return;
+  }
   
-  // Show the modal
-  document.getElementById("details-modal").style.display = "block";
+  // Prefer details in order of availability
+  const details = 
+    userSession.soulPattern.details || 
+    userSession.soulPattern.description || 
+    userSession.soulPattern.profile || 
+    "No additional details available for this soul pattern.";
+  
+  // Enhanced display with more context
+  document.getElementById("details-content").innerHTML = `
+    <h3>${userSession.soulPattern.pattern || 'Soul Pattern'}</h3>
+    <p class="personality-profile">Personality Profile: ${userSession.soulPattern.name || 'N/A'}</p>
+    <div class="soul-pattern-details">${details}</div>
+  `;
+  
+  // Ensure modal is displayed
+  const modal = document.getElementById("details-modal");
+  const modalContent = document.getElementById("details-content");
+  
+  if (modal) {
+    modal.style.display = "block";
+    
+    // Optional: Add a fade-in effect
+    modalContent.style.opacity = "0";
+    setTimeout(() => {
+      modalContent.style.transition = "opacity 0.3s ease-in";
+      modalContent.style.opacity = "1";
+    }, 50);
+  } else {
+    console.error("Modal element not found");
+    alert("Could not open modal. Check console for details.");
+  }
 });
 
-// --- Event Listener to Close the Modal ---
+// Ensure close functionality works with fade-out effect
 document.getElementById("close-modal").addEventListener("click", function () {
-  document.getElementById("details-modal").style.display = "none";
+  const modal = document.getElementById("details-modal");
+  const modalContent = document.getElementById("details-content");
+  
+  if (modal) {
+    modalContent.style.opacity = "0";
+    setTimeout(() => {
+      modal.style.display = "none";
+      modalContent.style.opacity = "1";
+    }, 300);
+  }
 });
 
       // allocatePoint: Called when a plus-pill is clicked.
