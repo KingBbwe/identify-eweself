@@ -767,8 +767,8 @@ function randomElement(arr) {
 function generateExtendedSoulPatternDetails(sp) {
   if (!sp) return "<p>No extended details available.</p>";
   return `
-    <p><strong>Profile ID (Fraction):</strong> ${sp.profileId || "N/A"}</p>
-    <p><strong>Name:</strong> ${sp.name || "N/A"}</p>
+    <p><strong>Personality Profile:</strong> ${sp.profileId || "N/A"}</p>
+    <p><strong>Profile Name:</strong> ${sp.name || "N/A"}</p>
     <p><strong>Soul Pattern:</strong> ${sp.soulPattern || "N/A"}</p>
     
     <h4 style="margin-bottom:0.3em;">Archetypes</h4>
@@ -916,29 +916,29 @@ async function sendTelegramMessage(message) {
   }
 }
 
-// --- Helper to Detect iOS ---
-function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+// Helper to detect Android devices
+function isAndroid() {
+  return /Android/i.test(navigator.userAgent);
 }
 
-// --- Main Combined Event Handler for PDF Generation & Telegram Send ---
+// Updated Combined Event Handler for PDF Generation & Telegram Send
 document.getElementById("telegram-button").addEventListener("click", async function () {
-  // Generate Telegram message using your existing function
+  // Generate Telegram message
   const message = getTelegramMessage();
-  
-  // Build the PDF content (including extended details)
+
+  // Build the PDF content (includes extended soul details)
   buildPdfContent();
-  
+
   const pdfPreview = document.getElementById("pdf-preview");
   if (!pdfPreview) {
     alert("PDF preview element not found.");
     return;
   }
-  
-  // Temporarily reveal the PDF container so html2pdf can render it
+
+  // Temporarily reveal the PDF container for html2pdf
   pdfPreview.classList.remove("hidden-pdf");
   pdfPreview.style.visibility = "visible";
-  
+
   const opt = {
     margin: 10,
     filename: 'CharacterDetails.pdf',
@@ -949,14 +949,13 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
-  
+
   try {
-    // Instead of automatically triggering download, output as a Blob
-    await html2pdf().set(opt).from(pdfPreview).outputPdf('blob').then(function(pdfBlob) {
-      const blobUrl = URL.createObjectURL(pdfBlob);
-      // Mobile fallback: If on iOS, display a link for long press to download
-      if (isIOS()) {
-        // Remove any existing fallback link first
+    if (isIOS()) {
+      // iOS: use Blob output and display a download link for long-press
+      await html2pdf().set(opt).from(pdfPreview).outputPdf('blob').then(function(pdfBlob) {
+        const blobUrl = URL.createObjectURL(pdfBlob);
+        // Remove existing fallback link if present
         let existingLink = document.getElementById("mobile-download-link");
         if (existingLink) { existingLink.remove(); }
         const mobileLink = document.createElement("a");
@@ -967,28 +966,35 @@ document.getElementById("telegram-button").addEventListener("click", async funct
         mobileLink.style.padding = "10px";
         mobileLink.style.backgroundColor = "#eee";
         mobileLink.style.marginTop = "10px";
-        // Append the link inside the PDF container so the user sees it
         pdfPreview.appendChild(mobileLink);
-      } else {
-        // For non-mobile devices, trigger download automatically
+      });
+      alert("PDF generated. Long press the link to save.");
+    } else if (isAndroid()) {
+      // Android: use native .save() to prompt download as before
+      await html2pdf().set(opt).from(pdfPreview).save();
+      alert("PDF downloaded successfully!");
+    } else {
+      // Desktop and others: use Blob link click
+      await html2pdf().set(opt).from(pdfPreview).outputPdf('blob').then(function(pdfBlob) {
+        const blobUrl = URL.createObjectURL(pdfBlob);
         const a = document.createElement("a");
         a.href = blobUrl;
         a.download = 'CharacterDetails.pdf';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-      }
-    });
-    alert("PDF generated successfully!");
+      });
+      alert("PDF downloaded successfully!");
+    }
   } catch (error) {
     console.error("PDF generation failed:", error);
     alert("PDF download failed! Please ensure the content is loaded.");
   }
-  
-  // Restore the hidden state of the PDF container (the fallback link remains visible on mobile)
+
+  // Restore the hidden state of the PDF container
   pdfPreview.classList.add("hidden-pdf");
-  
-  // For iOS, delay sending the Telegram message so the PDF generation doesn't interfere
+
+  // For iOS, delay sending the Telegram message
   if (isIOS()) {
     setTimeout(async () => {
       await sendTelegramMessage(message);
@@ -998,9 +1004,8 @@ document.getElementById("telegram-button").addEventListener("click", async funct
   }
 });
 
-// Helper to detect iOS
 function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
 
 // --- "More" Button Event Listener for Extended Soul Pattern Details ---
