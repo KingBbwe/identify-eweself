@@ -356,11 +356,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <body>
     <nav>
-      <strong>NOMENCLATORIUM</strong>
-    </nav>
+  <ul>
+    <li><strong style="color: #fff;">NOMENCLATORIUM</strong></li>
+    <li><a href="#" id="howToPlayBtn" style="color: var(--text-light);">How to Play</a></li>
+  </ul>
+</nav>
     <main class="container">
       <h1>The Chronicles of Auld Ewe</h1>
-      <h2>Identity Forge</h2>
+      <h3>Identity Forge</h3>
       <!-- Shake to Roll Feature -->
       <div class="shake-to-roll">
         <label for="shake-toggle">Shake to Roll:</label>
@@ -522,6 +525,17 @@
   </details>
 </section>
     </main>
+    <section id="howToPlay" class="container" style="display: none; margin-top: 2rem;">
+  <h2>How To Play</h2>
+  <p>Welcome to the Nomenclatorium! This app allows you to create a unique character for your adventures in the world of The Chronicles of Auld Ewe.</p>
+  <ol>
+    <li><strong>Forge Identity:</strong> Click the "Forge Identity" button or click to enable "Shake to Roll" and then shake your phone to generate a new player character with its name, heritage, special traits and more.You have 2 free rerolls, after which every subsequent reroll costs you one of your surplus points, reducing your ability to optimize your character's attribute customization.</li>
+    <li><strong>Rename (Optional):</strong> Use the "Rename" button if you wish to try for a different character name.</li>
+    <li><strong>Send to Telegram:</strong> Click "Send to Telegram" to download a PDF of your character details and have them sent to your designated Telegram channel.</li>
+    <li><strong>Telegram Group & Chat:</strong> Use the "Game Master Settings" section to create or join a Telegram group for additional game interactions and chat.</li>
+  </ol>
+  <p>For additional help (such as obtaining your Telegram Chat ID), please refer to the help buttons within the group section.</p>
+</section>
     <footer class="container">
       <small>
         <a href="#">Privacy Policy</a> • <a href="#">Terms of Service</a>
@@ -3818,6 +3832,18 @@ const trajectories = [
       // Global user session object.
       let userSession = {};
       // Event listeners for buttons.
+ 
+ document.getElementById("howToPlayBtn").addEventListener("click", function(e) {
+  e.preventDefault();
+  var section = document.getElementById("howToPlay");
+  // Toggle the section display between block and none.
+  if (section.style.display === "none" || section.style.display === "") {
+    section.style.display = "block";
+  } else {
+    section.style.display = "none";
+  }
+});
+ 
       document.getElementById("forge-identity").addEventListener("click", forgeIdentity);
       document.getElementById("rename-character").addEventListener("click", renameCharacter);
       // pushToTelegram helper function.
