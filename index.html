@@ -794,8 +794,8 @@ ${attributes}
 ⚡ *Critical Effect:* ${userSession.tribe?.criticalEffect || 'N/A'}
 🔥 *Burn:* ${userSession.tribe?.burn || 'N/A'}
 
-🌀 *Soul Pattern:* ${userSession.soulPattern?.pattern || 'N/A'}
-👤 *Personality Profile:* ${userSession.soulPattern?.profile || 'N/A'}
+🌀 *Soul Pattern:* ${userSession.soulPattern?.soulPattern || userSession.soulPattern?.pattern || "N/A"}
+👤 *Personality Profile:* ${userSession.soulPattern?.name || userSession.soulPattern?.profile || userSession.soulPattern?.pattern || "N/A"}
 
 🔍 *Core Traits:*
 ➤ *Conscious:* ${consciousTrait}
