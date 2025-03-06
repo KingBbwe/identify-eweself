@@ -467,6 +467,60 @@
           </div>
         </div>
       </div>
+<!-- Telegram Group & Chat (Initially Collapsed) -->
+<!-- Telegram Group & Chat (Initially Collapsed) -->
+<section id="telegram-group-section" class="container" style="margin-top:2rem;">
+  <details class="chat-manager-details">
+    <summary style="
+      cursor: pointer;
+      font-size: 0.9em;
+      font-weight: bold;
+      padding: 5px 10px;
+      background: #ccc;           /* Medium grey */
+      color: #000;                /* Black text for legibility */
+      border-radius: 15px;
+      display: inline-block;
+      border: 1px solid #aaa;
+      transition: background 0.2s;">
+      Game Master Settings
+    </summary>
+    
+    <div style="padding: 10px; background: #fff; border: 1px solid var(--primary); border-radius: 8px; margin-top: 5px;">
+      <p style="margin: 0 0 10px 0;">
+        Use the options below to create a new Telegram group for your game or join an existing one.
+      </p>
+      
+      <h3 style="margin: 10px 0 5px 0;">Create New Game Group</h3>
+      
+      <div class="input-group" style="margin-bottom: 5px;">
+        <label for="groupName" style="margin-bottom: 2px;">Group Name:</label>
+        <input type="text" id="groupName" placeholder="Enter your group name" style="margin-bottom: 5px;">
+      </div>
+      
+      <div class="input-group" style="margin-bottom: 5px;">
+        <label for="chatId" style="margin-bottom: 2px;">Telegram Chat ID:</label>
+        <input type="text" id="chatId" placeholder="Enter your Telegram chat ID" style="margin-bottom: 5px;">
+        <button onclick="showChatIdInstructions()" style="margin-bottom: 5px;">How to get Chat ID?</button>
+      </div>
+      
+      <button onclick="setupNewGameGroup()" style="margin-bottom: 10px;">Create Game Group</button>
+      
+      <h3 style="margin: 15px 0 5px 0;">Player Settings</h3>
+      
+      <div class="input-group" style="margin-bottom: 5px;">
+        <label for="gmCodeInput" style="margin-bottom: 2px;">GM Code:</label>
+        <input type="text" id="gmCodeInput" placeholder="Enter your GM's code" style="margin-bottom: 5px;">
+      </div>
+      
+      <div class="input-group" style="margin-bottom: 5px;">
+        <label for="playerName" style="margin-bottom: 2px;">Your Name:</label>
+        <input type="text" id="playerName" placeholder="Enter your name" style="margin-bottom: 5px;">
+      </div>
+      
+      <button onclick="joinGameGroup()">Join Game Group</button>
+    </div>
+  </details>
+</section>
     </main>
     <footer class="container">
       <small>
@@ -755,6 +809,77 @@ ${journeyDetails}
 ▫️▫️▫️▫️▫️▫️▫️▫️▫️
 
 #AuldEwe #FateCast`;
+}
+
+
+/******************************************************
+ * Telegram Group & Chat Functions Integration
+ ******************************************************/
+
+// Function to show instructions on how to get a Telegram Chat ID
+function showChatIdInstructions() {
+  alert("To obtain your Telegram Chat ID, please send a message to @userinfobot in Telegram and it will reply with your unique ID.");
+}
+
+// Function to create a new game group on Telegram.
+// This is a stub function—you’ll need to implement backend logic using Telegram Bot API as needed.
+function setupNewGameGroup() {
+  const groupName = document.getElementById("groupName").value.trim();
+  const chatIdInput = document.getElementById("chatId").value.trim();
+  if (!groupName || !chatIdInput) {
+    alert("Please enter both a group name and a Telegram Chat ID.");
+    return;
+  }
+  
+  // Example: Use the group name and chat ID to create the group.
+  // Here you might make a backend call to your server which uses the Telegram Bot API.
+  // For demonstration, we simulate a GM Code generation.
+  const gmCode = Math.random().toString(36).substr(2, 6).toUpperCase();
+  
+  // Display the generated GM Code in the GM Code display area.
+  document.getElementById("gmCodeText").textContent = gmCode;
+  document.getElementById("gmCodeDisplay").style.display = "block";
+  alert("Game Group created successfully. Share the GM Code with your players.");
+}
+
+// Function to join an existing game group using a GM Code.
+function joinGameGroup() {
+  const gmCode = document.getElementById("gmCodeInput").value.trim();
+  const playerName = document.getElementById("playerName").value.trim();
+  if (!gmCode || !playerName) {
+    alert("Please enter both the GM Code and your name.");
+    return;
+  }
+  
+  // Example: Use the GM Code to join the group.
+  // In a real implementation, you might verify the code with your backend and then add the player to the Telegram group.
+  alert(`Player ${playerName} has joined the group with GM Code ${gmCode}.`);
+  // Optionally, update the chat messages area
+  addChatMessage(`System: ${playerName} has joined the game.`);
+}
+
+// Function to send a chat message in the in-app chat (this might also integrate with Telegram's API)
+function sendChatMessage() {
+  const chatInput = document.getElementById("chatInput");
+  const message = chatInput.value.trim();
+  if (!message) return;
+  
+  // For demo, simply append the message to the chatMessages container.
+  addChatMessage(`You: ${message}`);
+  
+  // Clear the input.
+  chatInput.value = "";
+  
+  // Here you could also send the message to your server or directly to a Telegram channel via your bot.
+}
+
+// Helper function to append a message to the chat area.
+function addChatMessage(msg) {
+  const chatMessages = document.getElementById("chatMessages");
+  const msgElem = document.createElement("p");
+  msgElem.textContent = msg;
+  chatMessages.appendChild(msgElem);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 // Helper: Returns a random element from an array
