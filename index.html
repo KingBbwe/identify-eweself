@@ -820,7 +820,7 @@ function generateExtendedSoulPatternDetails(sp) {
 }
 
 // --- Updated buildPdfContent Function ---
-// This builds the complete PDF content, including extended soul pattern details.
+// Function to build the PDF content dynamically with all dynamic data
 function buildPdfContent() {
   // Retrieve dynamic content from the live page.
   const generatedName = document.querySelector("#result .generated-name")?.innerText || "N/A";
@@ -828,12 +828,14 @@ function buildPdfContent() {
   const soulPatternHTML = document.getElementById("soul-pattern")?.innerHTML || "";
   const coreTraitsHTML = document.querySelector(".core-traits")?.innerHTML || "";
   const journeyHTML = document.getElementById("trajectory")?.innerHTML || "";
+  // Capture the entire Hexagram Matrix block (using its outer HTML)
   const hexagramMatrixHTML = document.querySelector(".hexagram-matrix .hexagram-matrix-description")?.outerHTML || "";
-  
-  // Generate the extended soul pattern details
-  const extendedDetailsHTML = generateExtendedSoulPatternDetails(userSession.soulPattern);
 
-  // Build a style block to enforce black & white output and formatting.
+  // Build a style block that:
+  // 1. Forces black & white output.
+  // 2. Imports and applies Orbitron and Cinzel Decorative fonts.
+  // 3. Adjusts spacing between sections for better legibility.
+  // 4. Removes any grey backgrounds from Journey and Hexagram Matrix sections.
   const styleBlock = `
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap');
@@ -845,35 +847,38 @@ function buildPdfContent() {
       body, div { 
         font-family: 'Orbitron', sans-serif !important; 
       }
-      h2, h3, h4 { 
+      h2, h3 { 
         font-family: 'Cinzel Decorative', serif !important; 
       }
-      #trajectory, .hexagram-matrix { 
-        background: #fff !important; 
+      /* Remove any grey backgrounds from Journey and Hexagram Matrix sections */
+      #trajectory, .hexagram-matrix {
+        background: #fff !important;
       }
+      /* Section spacing: Increase margin between sections */
       .section { 
         margin-bottom: 30px; 
       }
-      .section h3, .section h4 { 
+      /* Reduce spacing within a section for headings */
+      .section h3 { 
         margin-bottom: 10px; 
       }
     </style>
   `;
 
-  // Assemble the full HTML for the PDF.
+  // Assemble the full HTML content for the PDF.
   const pdfHtml = `
     ${styleBlock}
     <div style="padding: 20px;">
       <div class="section">
-        <h2>Character Sheet:</h2>
+        <h2>Generated Character Name:</h2>
         <div>${generatedName}</div>
       </div>
       <div class="section">
-        <h3>Heritage</h3>
+        <h3>Heritage Information</h3>
         <div>${heritageHTML}</div>
       </div>
       <div class="section">
-        <h3>Soul Pattern (Summary)</h3>
+        <h3>Soul Pattern</h3>
         <div>${soulPatternHTML}</div>
       </div>
       <div class="section">
@@ -888,19 +893,15 @@ function buildPdfContent() {
         <h3>Hexagram Matrix</h3>
         <div>${hexagramMatrixHTML}</div>
       </div>
-      <div class="section">
-        <h3>Extended Soul Pattern Details</h3>
-        <div>${extendedDetailsHTML}</div>
-      </div>
     </div>
   `;
-  
+
   // Insert the assembled content into the dedicated PDF container.
   const pdfPreview = document.getElementById("pdf-preview");
   pdfPreview.innerHTML = pdfHtml;
 }
 
-// --- Send Telegram Message Helper ---
+// Function to send the Telegram message
 async function sendTelegramMessage(message) {
   const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
   const chatId = "-1002185533073";
@@ -909,24 +910,24 @@ async function sendTelegramMessage(message) {
     const response = await fetch(telegramURL);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     alert("Character details sent to Telegram!");
-    resetRollSession();
+    resetRollSession();  // You might have this defined elsewhere
   } catch (error) {
     console.error("Telegram send error:", error);
     alert("Telegram send error. Please try again.");
   }
 }
 
-// Helper to detect Android devices
-function isAndroid() {
-  return /Android/i.test(navigator.userAgent);
+// Helper function to detect if the device is running iOS
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
 
-// Updated Combined Event Handler for PDF Generation & Telegram Send
+// Main event handler for the Telegram button
 document.getElementById("telegram-button").addEventListener("click", async function () {
-  // Generate Telegram message
-  const message = getTelegramMessage();
+  // Generate the Telegram message using your existing function
+  const message = getTelegramMessage(); // Must be defined elsewhere
 
-  // Build the PDF content (includes extended soul details)
+  // Populate the PDF container with dynamic content
   buildPdfContent();
 
   const pdfPreview = document.getElementById("pdf-preview");
@@ -935,10 +936,11 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     return;
   }
 
-  // Temporarily reveal the PDF container for html2pdf
+  // Temporarily reveal the PDF container for rendering
   pdfPreview.classList.remove("hidden-pdf");
   pdfPreview.style.visibility = "visible";
 
+  // PDF generation options
   const opt = {
     margin: 10,
     filename: 'CharacterDetails.pdf',
@@ -951,41 +953,9 @@ document.getElementById("telegram-button").addEventListener("click", async funct
   };
 
   try {
-    if (isIOS()) {
-      // iOS: use Blob output and display a download link for long-press
-      await html2pdf().set(opt).from(pdfPreview).outputPdf('blob').then(function(pdfBlob) {
-        const blobUrl = URL.createObjectURL(pdfBlob);
-        // Remove existing fallback link if present
-        let existingLink = document.getElementById("mobile-download-link");
-        if (existingLink) { existingLink.remove(); }
-        const mobileLink = document.createElement("a");
-        mobileLink.href = blobUrl;
-        mobileLink.id = "mobile-download-link";
-        mobileLink.textContent = "Long press here to save your PDF";
-        mobileLink.style.display = "block";
-        mobileLink.style.padding = "10px";
-        mobileLink.style.backgroundColor = "#eee";
-        mobileLink.style.marginTop = "10px";
-        pdfPreview.appendChild(mobileLink);
-      });
-      alert("PDF generated. Long press the link to save.");
-    } else if (isAndroid()) {
-      // Android: use native .save() to prompt download as before
-      await html2pdf().set(opt).from(pdfPreview).save();
-      alert("PDF downloaded successfully!");
-    } else {
-      // Desktop and others: use Blob link click
-      await html2pdf().set(opt).from(pdfPreview).outputPdf('blob').then(function(pdfBlob) {
-        const blobUrl = URL.createObjectURL(pdfBlob);
-        const a = document.createElement("a");
-        a.href = blobUrl;
-        a.download = 'CharacterDetails.pdf';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      });
-      alert("PDF downloaded successfully!");
-    }
+    // Generate and save the PDF from the now-visible container
+    await html2pdf().set(opt).from(pdfPreview).save();
+    alert("PDF downloaded successfully!");
   } catch (error) {
     console.error("PDF generation failed:", error);
     alert("PDF download failed! Please ensure the content is loaded.");
@@ -994,18 +964,19 @@ document.getElementById("telegram-button").addEventListener("click", async funct
   // Restore the hidden state of the PDF container
   pdfPreview.classList.add("hidden-pdf");
 
-  // For iOS, delay sending the Telegram message
+  // For iOS, add a delay before sending the Telegram message to ensure that 
+  // the PDF download doesn't interfere with the fetch request
   if (isIOS()) {
     setTimeout(async () => {
       await sendTelegramMessage(message);
-    }, 1000);
+    }, 1000); // 1-second delay (adjust if needed)
   } else {
     await sendTelegramMessage(message);
   }
 });
 
 function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
 
 // --- "More" Button Event Listener for Extended Soul Pattern Details ---
@@ -1018,14 +989,14 @@ document.getElementById("more-details").addEventListener("click", function () {
     document.getElementById("details-content").innerHTML = "<p>Error: No soul pattern available. Generate a character first.</p>";
     return;
   }
-  
+
   const detailsHtml = generateExtendedSoulPatternDetails(userSession.soulPattern);
   document.getElementById("details-content").innerHTML = `
     <h3>${userSession.soulPattern.pattern || 'Soul Pattern'}</h3>
     <p class="personality-profile">Personality Profile: ${userSession.soulPattern.name || userSession.soulPattern.profile || "N/A"}</p>
     <div class="soul-pattern-details">${detailsHtml}</div>
   `;
-  
+
   // Show the modal with fade-in effect
   const modal = document.getElementById("details-modal");
   const modalContent = document.getElementById("details-content");
@@ -1166,7 +1137,7 @@ function forgeIdentity() {
   // Generate a soul pattern from the local array
   const generatedSoulPattern = randomElement(soulPatterns);
   console.log("Generated soul pattern:", generatedSoulPattern);
-  
+
   // Extract the base pattern before any dash (if present)
   const basePattern = generatedSoulPattern.pattern.split(" - ")[0].trim();
 
@@ -1187,7 +1158,7 @@ function forgeIdentity() {
     console.warn("No matching profile found for:", generatedSoulPattern.pattern);
     userSession.soulPattern = generatedSoulPattern; // Fallback to basic data
   }
-  
+
   // Display basic soul pattern information in the visible area
   document.getElementById("soul-pattern").innerHTML = `
     <div style="color: var(--near-white);">
