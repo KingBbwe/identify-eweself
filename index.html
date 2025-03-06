@@ -763,64 +763,138 @@ function randomElement(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// Helper: Generates extended soul pattern details HTML with improved formatting
+/******************************************************
+ * 1. Extended Soul Pattern Details: Helper Function
+ ******************************************************/
 function generateExtendedSoulPatternDetails(sp) {
-  if (!sp) return "<p>No extended details available.</p>";
+  if (!sp) {
+    return "<p>No extended details available.</p>";
+  }
+  // Build HTML for every extended field
   return `
-    <p><strong>Personality Profile:</strong> ${sp.profileId || "N/A"}</p>
-    <p><strong>Profile Name:</strong> ${sp.name || "N/A"}</p>
+    <p><strong>Profile ID (Fraction):</strong> ${sp.profileId || "N/A"}</p>
+    <p><strong>Name:</strong> ${sp.name || "N/A"}</p>
     <p><strong>Soul Pattern:</strong> ${sp.soulPattern || "N/A"}</p>
     
     <h4 style="margin-bottom:0.3em;">Archetypes</h4>
-    <p><strong>Conscious:</strong> ${sp.archetypes && sp.archetypes.conscious ? sp.archetypes.conscious : "N/A"}</p>
-    <p><strong>Unconscious:</strong> ${sp.archetypes && sp.archetypes.unconscious ? sp.archetypes.unconscious : "N/A"}</p>
+    <p><strong>Conscious:</strong> ${sp.archetypes?.conscious || "N/A"}</p>
+    <p><strong>Unconscious:</strong> ${sp.archetypes?.unconscious || "N/A"}</p>
     
     <h4 style="margin-bottom:0.3em;">Essence</h4>
     <p>${sp.essence || "N/A"}</p>
     
     <h4 style="margin-bottom:0.3em;">Pattern Dance</h4>
-    <p><strong>Conscious:</strong> ${sp.patternDance && sp.patternDance.conscious ? sp.patternDance.conscious : "N/A"}</p>
-    <p><strong>Unconscious:</strong> ${sp.patternDance && sp.patternDance.unconscious ? sp.patternDance.unconscious : "N/A"}</p>
+    <p><strong>Conscious:</strong> ${sp.patternDance?.conscious || "N/A"}</p>
+    <p><strong>Unconscious:</strong> ${sp.patternDance?.unconscious || "N/A"}</p>
     
     <h4 style="margin-bottom:0.3em;">Character Expression</h4>
-    <p><strong>Core Drive:</strong> ${sp.characterExpression && sp.characterExpression.coreDrive ? sp.characterExpression.coreDrive : "N/A"}</p>
-    <p><strong>Natural Habitat:</strong> ${sp.characterExpression && sp.characterExpression.naturalHabitat ? sp.characterExpression.naturalHabitat.join(", ") : "N/A"}</p>
-    <p><strong>Behavioral Patterns:</strong> ${sp.characterExpression && sp.characterExpression.behavioralPatterns ? sp.characterExpression.behavioralPatterns.join("; ") : "N/A"}</p>
+    <p><strong>Core Drive:</strong> ${sp.characterExpression?.coreDrive || "N/A"}</p>
+    <p><strong>Natural Habitat:</strong> ${
+      sp.characterExpression?.naturalHabitat
+        ? sp.characterExpression.naturalHabitat.join(", ")
+        : "N/A"
+    }</p>
+    <p><strong>Behavioral Patterns:</strong> ${
+      sp.characterExpression?.behavioralPatterns
+        ? sp.characterExpression.behavioralPatterns.join("; ")
+        : "N/A"
+    }</p>
     
     <h4 style="margin-bottom:0.3em;">Roleplay Guide</h4>
     <p><strong>Key Questions:</strong></p>
-    ${sp.roleplayGuide && sp.roleplayGuide.keyQuestions ? "<ul>" + sp.roleplayGuide.keyQuestions.map(q => `<li>${q}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    ${
+      sp.roleplayGuide?.keyQuestions
+        ? "<ul>" +
+          sp.roleplayGuide.keyQuestions.map(q => `<li>${q}</li>`).join("") +
+          "</ul>"
+        : "<p>N/A</p>"
+    }
     <p><strong>Signature Moments:</strong></p>
-    ${sp.roleplayGuide && sp.roleplayGuide.signatureMoments ? "<ul>" + sp.roleplayGuide.signatureMoments.map(m => `<li>${m}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    ${
+      sp.roleplayGuide?.signatureMoments
+        ? "<ul>" +
+          sp.roleplayGuide.signatureMoments.map(m => `<li>${m}</li>`).join("") +
+          "</ul>"
+        : "<p>N/A</p>"
+    }
     <p><strong>Character Voice:</strong></p>
-    ${sp.roleplayGuide && sp.roleplayGuide.characterVoice ? "<ul>" + sp.roleplayGuide.characterVoice.map(v => `<li>${v}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    ${
+      sp.roleplayGuide?.characterVoice
+        ? "<ul>" +
+          sp.roleplayGuide.characterVoice.map(v => `<li>${v}</li>`).join("") +
+          "</ul>"
+        : "<p>N/A</p>"
+    }
     
     <h4 style="margin-bottom:0.3em;">Growth Conflict</h4>
-    <p><strong>Internal Tensions:</strong> ${sp.growthConflict && sp.growthConflict.internalTensions ? sp.growthConflict.internalTensions.join("; ") : "N/A"}</p>
-    <p><strong>Development Paths:</strong> ${sp.growthConflict && sp.growthConflict.developmentPaths ? sp.growthConflict.developmentPaths.join(" → ") : "N/A"}</p>
-    <p><strong>Crisis Points:</strong> ${sp.growthConflict && sp.growthConflict.crisisPoints ? sp.growthConflict.crisisPoints.join("; ") : "N/A"}</p>
+    <p><strong>Internal Tensions:</strong> ${
+      sp.growthConflict?.internalTensions
+        ? sp.growthConflict.internalTensions.join("; ")
+        : "N/A"
+    }</p>
+    <p><strong>Development Paths:</strong> ${
+      sp.growthConflict?.developmentPaths
+        ? sp.growthConflict.developmentPaths.join(" → ")
+        : "N/A"
+    }</p>
+    <p><strong>Crisis Points:</strong> ${
+      sp.growthConflict?.crisisPoints
+        ? sp.growthConflict.crisisPoints.join("; ")
+        : "N/A"
+    }</p>
     
     <h4 style="margin-bottom:0.3em;">Gameplay Tips</h4>
     <p><strong>Strong Scenes:</strong></p>
-    ${sp.gameplayTips && sp.gameplayTips.strongScenes ? "<ul>" + sp.gameplayTips.strongScenes.map(s => `<li>${s}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    ${
+      sp.gameplayTips?.strongScenes
+        ? "<ul>" +
+          sp.gameplayTips.strongScenes.map(s => `<li>${s}</li>`).join("") +
+          "</ul>"
+        : "<p>N/A</p>"
+    }
     <p><strong>Relationships:</strong></p>
-    ${sp.gameplayTips && sp.gameplayTips.relationships ? "<ul>" + sp.gameplayTips.relationships.map(r => `<li>${r}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    ${
+      sp.gameplayTips?.relationships
+        ? "<ul>" +
+          sp.gameplayTips.relationships.map(r => `<li>${r}</li>`).join("") +
+          "</ul>"
+        : "<p>N/A</p>"
+    }
     <p><strong>Adventure Hooks:</strong></p>
-    ${sp.gameplayTips && sp.gameplayTips.adventureHooks ? "<ul>" + sp.gameplayTips.adventureHooks.map(a => `<li>${a}</li>`).join("") + "</ul>" : "<p>N/A</p>"}
+    ${
+      sp.gameplayTips?.adventureHooks
+        ? "<ul>" +
+          sp.gameplayTips.adventureHooks.map(a => `<li>${a}</li>`).join("") +
+          "</ul>"
+        : "<p>N/A</p>"
+    }
     
     <h4 style="margin-bottom:0.3em;">Summary Traits</h4>
-    <p>${sp.summaryTraits ? sp.summaryTraits.join("; ") : "N/A"}</p>
+    <p>${
+      sp.summaryTraits
+        ? sp.summaryTraits.join("; ")
+        : "N/A"
+    }</p>
     
     <h4 style="margin-bottom:0.3em;">Optional Names</h4>
-    <p>${sp.optionalNames ? sp.optionalNames.join(", ") : "N/A"}</p>
+    <p>${
+      sp.optionalNames
+        ? sp.optionalNames.join(", ")
+        : "N/A"
+    }</p>
     
     <h4 style="margin-bottom:0.3em;">Classed Titles</h4>
-    <p>${sp.classedTitles ? sp.classedTitles.join(", ") : "N/A"}</p>
+    <p>${
+      sp.classedTitles
+        ? sp.classedTitles.join(", ")
+        : "N/A"
+    }</p>
   `;
 }
 
-// --- Updated buildPdfContent Function ---
-// Function to build the PDF content dynamically with all dynamic data
+/******************************************************
+ * 2. PDF Build Function with Extended Fields
+ ******************************************************/
 function buildPdfContent() {
   // Retrieve dynamic content from the live page.
   const generatedName = document.querySelector("#result .generated-name")?.innerText || "N/A";
@@ -828,14 +902,12 @@ function buildPdfContent() {
   const soulPatternHTML = document.getElementById("soul-pattern")?.innerHTML || "";
   const coreTraitsHTML = document.querySelector(".core-traits")?.innerHTML || "";
   const journeyHTML = document.getElementById("trajectory")?.innerHTML || "";
-  // Capture the entire Hexagram Matrix block (using its outer HTML)
   const hexagramMatrixHTML = document.querySelector(".hexagram-matrix .hexagram-matrix-description")?.outerHTML || "";
 
-  // Build a style block that:
-  // 1. Forces black & white output.
-  // 2. Imports and applies Orbitron and Cinzel Decorative fonts.
-  // 3. Adjusts spacing between sections for better legibility.
-  // 4. Removes any grey backgrounds from Journey and Hexagram Matrix sections.
+  // Extended soul pattern details
+  const extendedDetailsHTML = generateExtendedSoulPatternDetails(userSession?.soulPattern);
+
+  // Build a style block that forces black & white output, fonts, spacing, etc.
   const styleBlock = `
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap');
@@ -847,25 +919,22 @@ function buildPdfContent() {
       body, div { 
         font-family: 'Orbitron', sans-serif !important; 
       }
-      h2, h3 { 
+      h2, h3, h4 { 
         font-family: 'Cinzel Decorative', serif !important; 
       }
-      /* Remove any grey backgrounds from Journey and Hexagram Matrix sections */
-      #trajectory, .hexagram-matrix {
-        background: #fff !important;
+      #trajectory, .hexagram-matrix { 
+        background: #fff !important; 
       }
-      /* Section spacing: Increase margin between sections */
       .section { 
         margin-bottom: 30px; 
       }
-      /* Reduce spacing within a section for headings */
-      .section h3 { 
+      .section h3, .section h4 { 
         margin-bottom: 10px; 
       }
     </style>
   `;
 
-  // Assemble the full HTML content for the PDF.
+  // Assemble the full HTML content for the PDF, including extended details
   const pdfHtml = `
     ${styleBlock}
     <div style="padding: 20px;">
@@ -878,7 +947,7 @@ function buildPdfContent() {
         <div>${heritageHTML}</div>
       </div>
       <div class="section">
-        <h3>Soul Pattern</h3>
+        <h3>Soul Pattern (Summary)</h3>
         <div>${soulPatternHTML}</div>
       </div>
       <div class="section">
@@ -893,15 +962,21 @@ function buildPdfContent() {
         <h3>Hexagram Matrix</h3>
         <div>${hexagramMatrixHTML}</div>
       </div>
+      <div class="section">
+        <h3>Extended Soul Pattern Details</h3>
+        <div>${extendedDetailsHTML}</div>
+      </div>
     </div>
   `;
 
-  // Insert the assembled content into the dedicated PDF container.
+  // Insert into the dedicated PDF container
   const pdfPreview = document.getElementById("pdf-preview");
   pdfPreview.innerHTML = pdfHtml;
 }
 
-// Function to send the Telegram message
+/******************************************************
+ * 3. Telegram Sending Function
+ ******************************************************/
 async function sendTelegramMessage(message) {
   const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
   const chatId = "-1002185533073";
@@ -910,24 +985,28 @@ async function sendTelegramMessage(message) {
     const response = await fetch(telegramURL);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     alert("Character details sent to Telegram!");
-    resetRollSession();  // You might have this defined elsewhere
+    resetRollSession(); // Make sure resetRollSession is defined elsewhere
   } catch (error) {
     console.error("Telegram send error:", error);
     alert("Telegram send error. Please try again.");
   }
 }
 
-// Helper function to detect if the device is running iOS
+/******************************************************
+ * 4. Detect iOS Helper
+ ******************************************************/
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
 
-// Main event handler for the Telegram button
+/******************************************************
+ * 5. Main Event Handler for PDF + Telegram
+ ******************************************************/
 document.getElementById("telegram-button").addEventListener("click", async function () {
-  // Generate the Telegram message using your existing function
-  const message = getTelegramMessage(); // Must be defined elsewhere
+  // Generate the Telegram message (assumes getTelegramMessage() is defined)
+  const message = getTelegramMessage();
 
-  // Populate the PDF container with dynamic content
+  // Build the PDF container content (with extended details)
   buildPdfContent();
 
   const pdfPreview = document.getElementById("pdf-preview");
@@ -936,11 +1015,10 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     return;
   }
 
-  // Temporarily reveal the PDF container for rendering
+  // Temporarily reveal the PDF container so html2pdf can render it
   pdfPreview.classList.remove("hidden-pdf");
   pdfPreview.style.visibility = "visible";
 
-  // PDF generation options
   const opt = {
     margin: 10,
     filename: 'CharacterDetails.pdf',
@@ -953,7 +1031,7 @@ document.getElementById("telegram-button").addEventListener("click", async funct
   };
 
   try {
-    // Generate and save the PDF from the now-visible container
+    // Use .save() unconditionally so Android prompts "Download file?"
     await html2pdf().set(opt).from(pdfPreview).save();
     alert("PDF downloaded successfully!");
   } catch (error) {
@@ -961,25 +1039,22 @@ document.getElementById("telegram-button").addEventListener("click", async funct
     alert("PDF download failed! Please ensure the content is loaded.");
   }
 
-  // Restore the hidden state of the PDF container
+  // Hide the PDF container again
   pdfPreview.classList.add("hidden-pdf");
 
-  // For iOS, add a delay before sending the Telegram message to ensure that 
-  // the PDF download doesn't interfere with the fetch request
+  // iOS: delay sending the Telegram message so the PDF download doesn't interfere
   if (isIOS()) {
     setTimeout(async () => {
       await sendTelegramMessage(message);
-    }, 1000); // 1-second delay (adjust if needed)
+    }, 1000);
   } else {
     await sendTelegramMessage(message);
   }
 });
 
-function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-}
-
-// --- "More" Button Event Listener for Extended Soul Pattern Details ---
+/******************************************************
+ * 6. "More" Button (Modal) for Extended Soul Pattern
+ ******************************************************/
 document.getElementById("more-details").addEventListener("click", function () {
   console.log("More button clicked. Fetching extended details...");
   console.log("Full userSession:", userSession);
@@ -990,14 +1065,17 @@ document.getElementById("more-details").addEventListener("click", function () {
     return;
   }
 
+  // Build the extended details
   const detailsHtml = generateExtendedSoulPatternDetails(userSession.soulPattern);
+
+  // Insert into the modal
   document.getElementById("details-content").innerHTML = `
     <h3>${userSession.soulPattern.pattern || 'Soul Pattern'}</h3>
     <p class="personality-profile">Personality Profile: ${userSession.soulPattern.name || userSession.soulPattern.profile || "N/A"}</p>
     <div class="soul-pattern-details">${detailsHtml}</div>
   `;
 
-  // Show the modal with fade-in effect
+  // Show the modal with a fade-in effect
   const modal = document.getElementById("details-modal");
   const modalContent = document.getElementById("details-content");
   if (modal) {
@@ -1013,7 +1091,7 @@ document.getElementById("more-details").addEventListener("click", function () {
   }
 });
 
-// --- Close Modal Event Listener ---
+// Close Modal
 document.getElementById("close-modal").addEventListener("click", function () {
   const modal = document.getElementById("details-modal");
   const modalContent = document.getElementById("details-content");
