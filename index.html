@@ -1504,100 +1504,100 @@ function isCompatibleConsonantPair(c1, c2) {
 
 
 function generateName(hexagramOverride) {
-  const gender = document.querySelector('input[name="gender"]:checked')?.value || "ewe";
-  const hexagram = hexagramOverride || parseInt(randomElement(Object.keys(hexagramData)), 10);
-  
-  if (!hexagramData[hexagram]) {
-    document.getElementById("result").textContent = "Hexagram data not found";
-    return "";
-  } 
+  const gender = document.querySelector('input[name="gender"]:checked')?.value || "ewe";
+  const hexagram = hexagramOverride || parseInt(randomElement(Object.keys(hexagramData)), 10);
 
-  // Syllable mapping using quartile system
-  const quartile = Math.floor((hexagram - 1) / 16);
-  userSession.syllableCount = [2, 3, 4, 5][quartile]; 
+  if (!hexagramData[hexagram]) {
+    document.getElementById("result").textContent = "Hexagram data not found";
+    return "";
+  } 
 
-  const { consonants, vowels, diphthongs, name: hexName } = hexagramData[hexagram];
-  
-  // Phonetic syllable builder
-  const buildCoreSyllables = () => {
-    let syllables = [];
-    const vowelComponents = [...vowels, ...diphthongs.flatMap(d => d.split(''))]; 
+  // Syllable mapping using quartile system
+  const quartile = Math.floor((hexagram - 1) / 16);
+  userSession.syllableCount = [2, 3, 4, 5][quartile]; 
 
-    while(syllables.length < userSession.syllableCount) {
-      const pattern = randomElement([
-        () => randomElement(consonants) + randomElement(vowelComponents),
-        () => randomElement(vowelComponents) + randomElement(consonants),
-        () => randomElement(vowelComponents),
-        () => {
-          const start = randomElement(consonants);
-          const end = randomElement(consonants.filter(c => isCompatibleConsonantPair(start, c)));
-          return start + randomElement(vowelComponents) + end;
-        }
-      ]);
-      
-      const newSyllable = pattern();
-      const splitSyllable = newSyllable.split('').flatMap(c => 
-        diphthongs.some(d => d.includes(c)) ? [c] : [c]
-      ).join('-');
-      
-      syllables = [...syllables, ...splitSyllable.split('-')];
-    }
-    
-    return syllables.slice(0, userSession.syllableCount);
-  }; 
+  const { consonants, vowels, diphthongs, name: hexName } = hexagramData[hexagram];
 
-  let phoneticParts = buildCoreSyllables();
-  
-  // Suffix handling
-  const suffix = (() => {
-    const baseSuffix = randomElement(gender === "ewe" ? [
-      "ia", "elle", "ora", "yn", "ala", "ani", "isha", "esa", "zwe", "ata", 
-      "eth", "wen", "yra", "enna", "ith", "aela", "ina", "ara", "ielle", "aris"
-    ] : [
-      "on", "ath", "orn", "rak", "thos", "ilo", "ani", "uka", "oko", "ezi",
-      "aran", "oros", "eth", "ius", "andar", "ith", "en", "arios", "ir", "eon"
-    ]);
-    
-    return baseSuffix.split('').map((c, i, arr) => 
-      isVowel(c) && i < arr.length-1 && !isVowel(arr[i+1]) ? c + '-' : c
-    ).join('').split('-');
-  })(); 
+  // Phonetic syllable builder
+  const buildCoreSyllables = () => {
+    let syllables = [];
+    const vowelComponents = [...vowels, ...diphthongs.flatMap(d => d.split(''))]; 
 
-  phoneticParts.push(...suffix); 
+    while (syllables.length < userSession.syllableCount) {
+      const pattern = randomElement([
+        () => randomElement(consonants) + randomElement(vowelComponents),
+        () => randomElement(vowelComponents) + randomElement(consonants),
+        () => randomElement(vowelComponents),
+        () => {
+          const start = randomElement(consonants);
+          const end = randomElement(consonants.filter(c => isCompatibleConsonantPair(start, c)));
+          return start + randomElement(vowelComponents) + end;
+        }
+      ]);
 
-  // Combine and process phonemes
-  let rawName = phoneticParts.join('')
-    .replace(/([aeiou])([aeiou])/g, '$1-$2')
-    .replace(/([bcdfghjklmnpqrstvwxyz]{3})/gi, (match) => 
-      match.slice(0,2) + '-' + match.slice(2)
-    ); 
+      const newSyllable = pattern();
+      // Insert hyphens between letters if part of a diphthong (for later processing)
+      const splitSyllable = newSyllable
+        .split('')
+        .flatMap(c => diphthongs.some(d => d.includes(c)) ? [c] : [c])
+        .join('-');
 
-  // Apply final adjustments
-  const finalName = applyEuphonyRules(rawName, gender); 
+      syllables = [...syllables, ...splitSyllable.split('-')];
+    }
 
-  userSession.originalHexagram = hexagram;
-  userSession.name = finalName;
-  
-  document.getElementById("result").innerHTML = `
-    <div class="name-reveal">
-      <div class="hex-source">
-        <span class="hex">Hexagram ${hexagram}</span>
-        <span class="hex-name">${hexName}</span>
-      </div>
-      <div class="generated-name">${finalName}</div>
-    </div>`; 
+    return syllables.slice(0, userSession.syllableCount);
+  }; 
 
-  return finalName;
+  let phoneticParts = buildCoreSyllables();
+
+  // Suffix handling
+  const suffix = (() => {
+    const baseSuffix = randomElement(gender === "ewe" ? [
+      "ia", "elle", "ora", "yn", "ala", "ani", "isha", "esa", "zwe", "ata", 
+      "eth", "wen", "yra", "enna", "ith", "aela", "ina", "ara", "ielle", "aris"
+    ] : [
+      "on", "ath", "orn", "rak", "thos", "ilo", "ani", "uka", "oko", "ezi",
+      "aran", "oros", "eth", "ius", "andar", "ith", "en", "arios", "ir", "eon"
+    ]);
+
+    return baseSuffix
+      .split('')
+      .map((c, i, arr) =>
+        isVowel(c) && i < arr.length - 1 && !isVowel(arr[i + 1]) ? c + '-' : c
+      )
+      .join('')
+      .split('-');
+  })(); 
+
+  phoneticParts.push(...suffix); 
+
+  // Combine and process phonemes
+  let rawName = phoneticParts.join('')
+    .replace(/([aeiou])([aeiou])/g, '$1-$2')
+    .replace(/([bcdfghjklmnpqrstvwxyz]{3})/gi, (match) => match.slice(0, 2) + '-' + match.slice(2));
+
+  // Apply final adjustments
+  const finalName = applyEuphonyRules(rawName, gender); 
+
+  userSession.originalHexagram = hexagram;
+  userSession.name = finalName;
+
+  document.getElementById("result").innerHTML =
+    `<div class="name-reveal"><div class="hex-source"><span class="hex">Hexagram ${hexagram}</span><span class="hex-name">${hexName}</span></div><div class="generated-name">${finalName}</div></div>`;
+
+  return finalName;
 }
 
 function applyEuphonyRules(name, gender) {
   let processed = name
-    .split('-').map(part => {
+    .split('-')
+    .map(part => {
       if (part.length > 1 && isConsonant(part[0]) && isConsonant(part[1])) {
         return part[0] + '-' + part.slice(1);
       }
       return part;
-    }).join('-')
+    })
+    .join('-')
     .replace(/-([^-]*)$/, (match, lastSyllable) => {
       const lastChar = lastSyllable.slice(-1);
       if (gender === "ewe") {
@@ -1608,22 +1608,24 @@ function applyEuphonyRules(name, gender) {
       return match;
     });
 
-  return processed.replace(/-/g, '')
+  return processed
+    .replace(/-/g, '')
     .replace(/(\w)(\1{2,})/g, '$1$1')
-    .split(/(?=[A-Z])/).map(part => 
-      part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
-    ).join('');
+    .split(/(?=[A-Z])/)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join('');
 }
 
-// Helper functions
+// Helper functions (only one definition each)
 function isCompatibleConsonantPair(c1, c2) {
-  const compatible = ['th','sh','ch','rh','ph','bh','gh','kh','qw','tw','dw','nw','sw'];
+  const compatible = ['th', 'sh', 'ch', 'rh', 'ph', 'bh', 'gh', 'kh', 'qw', 'tw', 'dw', 'nw', 'sw'];
   return compatible.includes(c1.toLowerCase() + c2.toLowerCase());
 }
 
 function isVowel(char) {
   return 'aeiou'.includes(char.toLowerCase());
 }
+
 function randomElement(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
@@ -1632,9 +1634,6 @@ function isConsonant(char) {
   return !isVowel(char) && 'bcdfghjklmnpqrstvwxyz'.includes(char.toLowerCase());
 }
 
-
-
-// Rename function
 function renameCharacter() {
   if (!userSession.originalHexagram || userSession.renames <= 0) {
     alert(userSession.renames <= 0 ? "No more renames available" : "Generate a name first!");
@@ -1643,7 +1642,6 @@ function renameCharacter() {
   userSession.renames--;
   generateName(userSession.originalHexagram);
 }
-
 
 function manualPdfDownload(e) {
   // Prevent the default context menu
