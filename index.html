@@ -694,29 +694,27 @@
 
 
 function getTelegramMessage() {
-    // Ensure userSession and its properties exist
-    if (!userSession) return "Error: User session not found";
+  if (!userSession) return "Error: User session not found"; 
 
-    // Safely access attributes
-    const attributes = Object.entries(userSession.currentAttributes || {})
-        .map(([attr, val]) => `➤ ${attr}: ${val}`)
-        .join('\n');
+  // Attributes, core traits, etc. are handled as before.
+  const attributes = Object.entries(userSession.currentAttributes || {})
+    .map(([attr, val]) => `➤ ${attr}: ${val}`)
+    .join('\n'); 
 
-    // Safely access core traits
-    const coreTraits = userSession.coreTraits || [];
-    const consciousTrait = coreTraits[0]?.trait || 'N/A';
-    const consciousDesc = coreTraits[0]?.description || 'N/A';
-    const consciousHex = coreTraits[0]?.hexagram || 'N/A';
+  // For core traits (assuming these are already set in userSession.coreTraits)
+  const coreTraits = userSession.coreTraits || [];
+  const consciousTrait = coreTraits[0]?.trait || 'N/A';
+  const consciousDesc = coreTraits[0]?.description || 'N/A';
+  const consciousHex = coreTraits[0]?.hexagram || 'N/A';
+  const unconsciousTrait = coreTraits[1]?.trait || 'N/A';
+  const unconsciousDesc = coreTraits[1]?.description || 'N/A';
+  const unconsciousHex = coreTraits[1]?.hexagram || 'N/A'; 
 
-    const unconsciousTrait = coreTraits[1]?.trait || 'N/A';
-    const unconsciousDesc = coreTraits[1]?.description || 'N/A';
-    const unconsciousHex = coreTraits[1]?.hexagram || 'N/A';
-
-    // Safely get DOM elements
-    const getElementText = (id) => {
-        const element = document.getElementById(id);
-        return element ? element.textContent : 'N/A';
-    };
+  // For character journey, assume we already get that from #trajectory
+  const getElementText = (id) => {
+    const element = document.getElementById(id);
+    return element ? element.textContent : 'N/A';
+  };
 
     // Get trajectory information
     const trajectoryElement = document.getElementById('trajectory');
@@ -766,7 +764,8 @@ function getTelegramMessage() {
         lineageSkills = skills.join('\n➤ ');
     }
 
-    return `✨ *Identity Forge* ✨
+
+   return `✨ *Identity Forge* ✨
 
 ▫️▫️▫️▫️▫️▫️▫️▫️▫️
 
@@ -824,6 +823,7 @@ ${journeyDetails}
 
 #AuldEwe #FateCast`;
 }
+
 
 
 /******************************************************
@@ -1490,103 +1490,150 @@ document.getElementById("close-modal").addEventListener("click", function () {
 
       }
 
-      // Unified generateName function that returns the generated name.
+// Complete corrected generateName function
 
-      function generateName(hexagramOverride) {
 
-        const gender =
+function generateName(hexagramOverride) {
+  const gender = document.querySelector('input[name="gender"]:checked')?.value || "ewe";
+  const hexagram = hexagramOverride || parseInt(randomElement(Object.keys(hexagramData)), 10);
+  
+  if (!hexagramData[hexagram]) {
+    document.getElementById("result").textContent = "Hexagram data not found";
+    return "";
+  }
 
-          document.querySelector('input[name="gender"]:checked')?.value || "ewe";
+  // Syllable mapping using quartile system
+  const quartile = Math.floor((hexagram - 1) / 16);
+  userSession.syllableCount = [2, 3, 4, 5][quartile];
 
-        const hexagram =
+  const { consonants, vowels, diphthongs, name: hexName } = hexagramData[hexagram];
+  
+  // Phonetic syllable builder
+  const buildCoreSyllables = () => {
+    let syllables = [];
+    const vowelComponents = [...vowels, ...diphthongs.flatMap(d => d.split(''))];
 
-          hexagramOverride ||
-
-          parseInt(randomElement(Object.keys(hexagramData)), 10);
-
-        if (!hexagramData[hexagram]) {
-
-          document.getElementById("result").textContent = "Hexagram data not found";
-
-          return "";
-
+    while(syllables.length < userSession.syllableCount) {
+      const pattern = randomElement([
+        () => randomElement(consonants) + randomElement(vowelComponents),
+        () => randomElement(vowelComponents) + randomElement(consonants),
+        () => randomElement(vowelComponents),
+        () => {
+          const start = randomElement(consonants);
+          const end = randomElement(consonants.filter(c => isCompatibleConsonantPair(start, c)));
+          return start + randomElement(vowelComponents) + end;
         }
+      ]);
+      
+      const newSyllable = pattern();
+      const splitSyllable = newSyllable.split('').flatMap(c => 
+        diphthongs.some(d => d.includes(c)) ? [c] : [c]
+      ).join('-');
+      
+      syllables = [...syllables, ...splitSyllable.split('-')];
+    }
+    
+    return syllables.slice(0, userSession.syllableCount);
+  };
 
-        userSession.originalHexagram = hexagram;
+  let phoneticParts = buildCoreSyllables();
+  
+  // Suffix handling
+  const suffix = (() => {
+    const baseSuffix = randomElement(gender === "ewe" ? [
+      "ia", "elle", "ora", "yn", "ala", "ani", "isha", "esa", "zwe", "ata", 
+      "eth", "wen", "yra", "enna", "ith", "aela", "ina", "ara", "ielle", "aris"
+    ] : [
+      "on", "ath", "orn", "rak", "thos", "ilo", "ani", "uka", "oko", "ezi",
+      "aran", "oros", "eth", "ius", "andar", "ith", "en", "arios", "ir", "eon"
+    ]);
+    
+    return baseSuffix.split('').map((c, i, arr) => 
+      isVowel(c) && i < arr.length-1 && !isVowel(arr[i+1]) ? c + '-' : c
+    ).join('').split('-');
+  })();
 
-        userSession.renames = 5;
+  phoneticParts.push(...suffix);
 
-        userSession.syllableCount = hexagram < 9 ? 2 : hexagram < 33 ? 3 : 4;
+  // Combine and process phonemes
+  let rawName = phoneticParts.join('')
+    .replace(/([aeiou])([aeiou])/g, '$1-$2')
+    .replace(/([bcdfghjklmnpqrstvwxyz]{3})/gi, (match) => 
+      match.slice(0,2) + '-' + match.slice(2)
+    );
 
-        const { consonants, vowels, name: hexName } = hexagramData[hexagram];
+  // Apply final adjustments
+  const finalName = applyEuphonyRules(rawName, gender);
 
-        let nameParts = [];
+  userSession.originalHexagram = hexagram;
+  userSession.name = finalName;
+  
+  document.getElementById("result").innerHTML = `
+    <div class="name-reveal">
+      <div class="hex-source">
+        <span class="hex">Hexagram ${hexagram}</span>
+        <span class="hex-name">${hexName}</span>
+      </div>
+      <div class="generated-name">${finalName}</div>
+    </div>`;
 
-        for (let i = 0; i < userSession.syllableCount - 1; i++) {
+  return finalName;
+}
 
-          const con = consonants[Math.floor(Math.random() * consonants.length)];
-
-          const vow = vowels[Math.floor(Math.random() * vowels.length)];
-
-          nameParts.push(i === 0 ? con.toUpperCase() + vow : con + vow);
-
-        }
-
-        const suffixPool =
-      gender === "ewe"
-        ? ["ia", "elle", "ora", "yn", "ala", "ani", "isha", "esa", "zwe", "ata"]
-        : ["on", "ath", "orn", "rak", "thos", "ilo", "ani", "uka", "oko", "ezi"];
-    nameParts.push(suffixPool[Math.floor(Math.random() * suffixPool.length)]);
-    const fullName = nameParts.join("");
-    userSession.name = fullName;
-
-        // Update result area with new name (this may be overwritten by forgeIdentity later).
-
-        document.getElementById("result").innerHTML = `
-
-          <div class="name-reveal">
-
-            <div class="hex-source">
-
-              <span class="hex">Hexagram ${hexagram}</span>
-
-              <span class="hex-name">${hexName}</span>
-
-            </div>
-
-            <div class="generated-name">${fullName}</div>
-
-          </div>`;
-
-                return fullName;
-
+function applyEuphonyRules(name, gender) {
+  let processed = name
+    .split('-').map(part => {
+      if (part.length > 1 && isConsonant(part[0]) && isConsonant(part[1])) {
+        return part[0] + '-' + part.slice(1);
       }
-
-      // Rename function for the "Rename" button.
-
-      function renameCharacter() {
-
-        if (!userSession.originalHexagram || userSession.renames <= 0) {
-
-          alert(
-
-            userSession.renames <= 0
-
-              ? "No more renames available"
-
-              : "Generate a name first!"
-
-          );
-
-          return;
-
-        }
-
-        userSession.renames--;
-
-        generateName(userSession.originalHexagram);
-
+      return part;
+    }).join('-')
+    .replace(/-([^-]*)$/, (match, lastSyllable) => {
+      const lastChar = lastSyllable.slice(-1);
+      if (gender === "ewe") {
+        if (!isVowel(lastChar)) return '-' + lastSyllable + randomElement(['a', 'i', 'e']);
+      } else {
+        if (isVowel(lastChar)) return '-' + lastSyllable + randomElement(['n', 'r', 's']);
       }
+      return match;
+    });
+
+  return processed.replace(/-/g, '')
+    .replace(/(\w)(\1{2,})/g, '$1$1')
+    .split(/(?=[A-Z])/).map(part => 
+      part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+    ).join('');
+}
+
+// Helper functions
+function isCompatibleConsonantPair(c1, c2) {
+  const compatibleClusters = ['bl', 'br', 'cl', 'cr', 'dr', 'fl', 'fr', 'gl', 'gr', 
+    'pl', 'pr', 'sk', 'sl', 'sm', 'sn', 'sp', 'st', 'sw', 'tr', 'tw', 'dw', 'th', 
+    'ch', 'sh', 'zh'];
+  return compatibleClusters.includes(c1.toLowerCase() + c2.toLowerCase());
+}
+
+function randomElement(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
+function isVowel(char) {
+  return 'aeiou'.includes(char.toLowerCase());
+}
+
+function isConsonant(char) {
+  return !isVowel(char) && 'bcdfghjklmnpqrstvwxyz'.includes(char.toLowerCase());
+}
+
+// Rename function
+function renameCharacter() {
+  if (!userSession.originalHexagram || userSession.renames <= 0) {
+    alert(userSession.renames <= 0 ? "No more renames available" : "Generate a name first!");
+    return;
+  }
+  userSession.renames--;
+  generateName(userSession.originalHexagram);
+}
 
       // Session handling: updateRollSession.
 
@@ -1620,74 +1667,139 @@ document.getElementById("close-modal").addEventListener("click", function () {
 
       }
 
-// Data arrays (hexagramData, tribes, lineages, soulPatterns, coreTraits, trajectories)
-      // are included here as in the original file.
-      const hexagramData = {
-        1: { name: "Creative Force", consonants: ["K","g","t","d","p","b"], vowels: ["a","o","u"] },
-        2: { name: "Receptive Energy", consonants: ["l","r","m","n"], vowels: ["e","i","u"] },
-        3: { name: "Difficulty at the Beginning", consonants: ["s","k","g","t","d"], vowels: ["a","o","u"] },
-        4: { name: "Youthful Folly", consonants: ["l","r","m","n","v"], vowels: ["e","i","u"] },
-        5: { name: "Waiting", consonants: ["l","r","m","n","f"], vowels: ["a","o","u"] },
-        6: { name: "Conflict", consonants: ["k","g","t","d","s"], vowels: ["a","o","u"] },
-        7: { name: "Army/Discipline", consonants: ["k","g","t","j","v"], vowels: ["e","i","u"] },
-        8: { name: "Holding Together", consonants: ["l","r","m","n","f"], vowels: ["a","o","u"] },
-        9: { name: "Small Accumulation", consonants: ["k","g","p","t","s"], vowels: ["e","i","u"] },
-        10: { name: "Treading Carefully", consonants: ["k","g","v","d","b"], vowels: ["a","o","u"] },
-        11: { name: "Flourishing Peace", consonants: ["l","r","m","n","h"], vowels: ["e","i","u"] },
-        12: { name: "Standstill", consonants: ["k","g","t","d","p","b"], vowels: ["a","o","u"] },
-        13: { name: "Community", consonants: ["l","r","m","n","s"], vowels: ["e","i","u"] },
-        14: { name: "Great Possessing", consonants: ["k","g","t","d","p","b"], vowels: ["a","o","u"] },
-        15: { name: "Humility", consonants: ["l","r","m","n","v"], vowels: ["e","i","u"] },
-        16: { name: "Enthusiasm", consonants: ["k","g","t","d","p","b"], vowels: ["a","o","u"] },
-        17: { name: "Following", consonants: ["l","r","m","n","s"], vowels: ["e","i","u"] },
-        18: { name: "Work on What Has Been Spoiled", consonants: ["k","g","i","t"], vowels: ["a","o","u"] },
-        19: { name: "Approaching", consonants: ["l","r","m","n","h"], vowels: ["e","i","u"] },
-        20: { name: "Contemplation", consonants: ["k","g","s","t","d"], vowels: ["a","o","u"] },
-        21: { name: "Biting Through", consonants: ["k","g","p","t","b"], vowels: ["e","i","u"] },
-        22: { name: "Grace", consonants: ["l","r","m","n","j"], vowels: ["a","o","u"] },
-        23: { name: "Splitting Apart", consonants: ["k","g","t","d","s"], vowels: ["e","i","u"] },
-        24: { name: "Return", consonants: ["l","r","m","n","f"], vowels: ["a","o","u"] },
-        25: { name: "Innocence", consonants: ["k","g","t","h","j"], vowels: ["e","i","u"] },
-        26: { name: "Great Accumulation", consonants: ["k","g","t","d","p","b"], vowels: ["a","o","u"] },
-        27: { name: "Nourishing", consonants: ["l","r","m","n","s"], vowels: ["a","o","u"] },
-        28: { name: "Preponderance of the Great", consonants: ["k","g","t","d","j"], vowels: ["a","o","u"] },
-        29: { name: "The Abyss", consonants: ["k","g","t","d","s"], vowels: ["e","i","u"] },
-        30: { name: "Clarity", consonants: ["l","r","m","n","v"], vowels: ["a","o","u"] },
-        31: { name: "Influence/Wooing", consonants: ["r","m","n","h"], vowels: ["e","i","u"] },
-        32: { name: "Duration", consonants: ["k","g","t","d","p"], vowels: ["a","o","u"] },
-        33: { name: "Retreat", consonants: ["r","m","n","j"], vowels: ["e","i","u"] },
-        34: { name: "Great Power", consonants: ["k","g","t","d","s"], vowels: ["a","o","u"] },
-        35: { name: "Progress", consonants: ["k","g","p","t","b"], vowels: ["e","i","u"] },
-        36: { name: "Darkening of the Light", consonants: ["r","m","n","v"], vowels: ["a","o","u"] },
-        37: { name: "Family", consonants: ["r","m","n","f"], vowels: ["e","i","u"] },
-        38: { name: "Opposition", consonants: ["k","g","t","d","j"], vowels: ["a","o","u"] },
-        39: { name: "Obstruction", consonants: ["r","m","n","h"], vowels: ["e","i","u"] },
-        40: { name: "Deliverance", consonants: ["k","g","t","d","p"], vowels: ["a","o","u"] },
-        41: { name: "Decrease", consonants: ["r","m","n","s"], vowels: ["e","i","u"] },
-        42: { name: "Increase", consonants: ["k","g","t","d","b"], vowels: ["a","o","u"] },
-        43: { name: "Breakthrough", consonants: ["k","g","p","t","j"], vowels: ["e","i","u"] },
-        44: { name: "Coming to Meet", consonants: ["r","m","n","v"], vowels: ["a","o","u"] },
-        45: { name: "Gathering Together", consonants: ["k","g","t","d","p"], vowels: ["e","i","u"] },
-        46: { name: "Pushing Upward", consonants: ["r","m","n","h"], vowels: ["a","o","u"] },
-        47: { name: "Oppression/Exhaustion", consonants: ["k","g","t","d","s"], vowels: ["e","i","u"] },
-        48: { name: "The Well", consonants: ["r","m","n","j"], vowels: ["a","o","u"] },
-        49: { name: "Revolution", consonants: ["k","g","p","t","b"], vowels: ["e","i","u"] },
-        50: { name: "The Cauldron", consonants: ["r","m","n","f"], vowels: ["a","o","u"] },
-        51: { name: "Thunder", consonants: ["k","g","t","d","p"], vowels: ["e","i","u"] },
-        52: { name: "Keeping Still", consonants: ["r","m","n","v"], vowels: ["a","o","u"] },
-        53: { name: "Gradual Progress", consonants: ["r","m","n","s"], vowels: ["a","o","u"] },
-        54: { name: "Marrying Maiden", consonants: ["k","g","t","d","v"], vowels: ["e","i","u"] },
-        55: { name: "Abundance", consonants: ["r","m","n","f"], vowels: ["a","o","u"] },
-        56: { name: "The Wanderer", consonants: ["k","g","p","t","b"], vowels: ["e","i","u"] },
-        57: { name: "Gentle Penetration", consonants: ["r","m","n","h"], vowels: ["a","o","u"] },
-        58: { name: "Joy", consonants: ["k","g","t","d","s"], vowels: ["e","i","u"] },
-        59: { name: "Dispersion", consonants: ["r","m","n","j"], vowels: ["a","o","u"] },
-        60: { name: "Limitation", consonants: ["k","g","t","d","f"], vowels: ["e","i","u"] },
-        61: { name: "Inner Truth", consonants: ["r","m","n","v"], vowels: ["a","o","u"] },
-        62: { name: "Preponderance of the Small", consonants: ["k","g","p","t","s"], vowels: ["e","i","u"] },
-        63: { name: "After Completion", consonants: ["k","g","t","d","b"], vowels: ["e","i","u"] },
-        64: { name: "Before Completion", consonants: ["r","s","j","h"], vowels: ["a","o","u"] }
-      };
+const hexagramData = {
+
+    1: { name: "Creative Force", consonants: ["k","g","t","d","p","b","ch"], vowels: ["a","o","u"], diphthongs: ["ao", "au"] },
+
+    2: { name: "Receptive Energy", consonants: ["l","r","m","n","w","y"], vowels: ["e","i","u"], diphthongs: ["ei", "iu"] },
+
+    3: { name: "Difficulty at the Beginning", consonants: ["s","k","g","t","d","z","sh"], vowels: ["a","o","u"], diphthongs: ["ou"] },
+
+    4: { name: "Youthful Folly", consonants: ["l","r","m","n","v","w","y"], vowels: ["e","i","u"], diphthongs: ["eu", "ia"] },
+
+    5: { name: "Waiting", consonants: ["l","r","m","n","f","w","th"], vowels: ["a","o","u"], diphthongs: ["ua"] },
+
+    6: { name: "Conflict", consonants: ["k","g","t","d","s","z","x"], vowels: ["a","o","u"], diphthongs: ["ai"] },
+
+    7: { name: "Army/Discipline", consonants: ["k","g","t","j","v","q","sh"], vowels: ["e","i","u"], diphthongs: ["eo"] },
+
+    8: { name: "Holding Together", consonants: ["l","r","m","n","f","w","th"], vowels: ["a","o","u"], diphthongs: ["au"] },
+
+    9: { name: "Small Accumulation", consonants: ["k","g","p","t","s","c","z"], vowels: ["e","i","u"], diphthongs: ["ie"] },
+
+    10: { name: "Treading Carefully", consonants: ["k","g","v","d","b","w","ph"], vowels: ["a","o","u"], diphthongs: ["oa"] },
+
+    11: { name: "Flourishing Peace", consonants: ["l","r","m","n","h","y","zh"], vowels: ["e","i","u"], diphthongs: ["ui"] },
+
+    12: { name: "Standstill", consonants: ["k","g","t","d","p","b","st"], vowels: ["a","o","u"], diphthongs: ["aa"] },
+
+    13: { name: "Community", consonants: ["l","r","m","n","s","y","sh"], vowels: ["e","i","u"], diphthongs: ["ee"] },
+
+    14: { name: "Great Possessing", consonants: ["k","g","t","d","p","b","gr"], vowels: ["a","o","u"], diphthongs: ["au"] },
+
+    15: { name: "Humility", consonants: ["l","r","m","n","v","w","h"], vowels: ["e","i","u"], diphthongs: ["ea"] },
+
+    16: { name: "Enthusiasm", consonants: ["k","g","t","d","p","b","th"], vowels: ["a","o","u"], diphthongs: ["ui"] },
+
+    17: { name: "Following", consonants: ["l","r","m","n","s","f","ng"], vowels: ["e","i","u"], diphthongs: ["io"] },
+
+    18: { name: "Work on What Has Been Spoiled", consonants: ["k","g","t","w","z","ch"], vowels: ["a","o","u"], diphthongs: ["oe"] },
+
+    19: { name: "Approaching", consonants: ["l","r","m","n","h","y","pr"], vowels: ["e","i","u"], diphthongs: ["iu"] },
+
+    20: { name: "Contemplation", consonants: ["k","g","s","t","d","c","x"], vowels: ["a","o","u"], diphthongs: ["ae"] },
+
+    21: { name: "Biting Through", consonants: ["k","g","p","t","b","z","br"], vowels: ["e","i","u"], diphthongs: ["ea"] },
+
+    22: { name: "Grace", consonants: ["l","r","m","n","j","w","gl"], vowels: ["a","o","u"], diphthongs: ["ua"] },
+
+    23: { name: "Splitting Apart", consonants: ["k","g","t","d","s","pl","sp"], vowels: ["e","i","u"], diphthongs: ["ai"] },
+
+    24: { name: "Return", consonants: ["l","r","m","n","f","w","y"], vowels: ["a","o","u"], diphthongs: ["uo"] },
+
+    25: { name: "Innocence", consonants: ["k","g","t","h","j","n","sw"], vowels: ["e","i","u"], diphthongs: ["ie"] },
+
+    26: { name: "Great Accumulation", consonants: ["k","g","t","d","p","b","tr"], vowels: ["a","o","u"], diphthongs: ["ou"] },
+
+    27: { name: "Nourishing", consonants: ["l","r","m","n","s","v","sh"], vowels: ["a","o","u"], diphthongs: ["ea"] },
+
+    28: { name: "Preponderance of the Great", consonants: ["k","g","t","d","j","q","x"], vowels: ["a","o","u"], diphthongs: ["au"] },
+
+    29: { name: "The Abyss", consonants: ["k","g","t","d","s","dr","kr"], vowels: ["e","i","u"], diphthongs: ["eo"] },
+
+    30: { name: "Clarity", consonants: ["l","r","m","n","v","cl","fl"], vowels: ["a","o","u"], diphthongs: ["ai"] },
+
+    31: { name: "Influence/Wooing", consonants: ["r","m","n","h","w","y","zh"], vowels: ["e","i","u"], diphthongs: ["ia"] },
+
+    32: { name: "Duration", consonants: ["k","g","t","d","p","c","st"], vowels: ["a","o","u"], diphthongs: ["oa"] },
+
+    33: { name: "Retreat", consonants: ["r","m","n","j","z","tr","gl"], vowels: ["e","i","u"], diphthongs: ["ee"] },
+
+    34: { name: "Great Power", consonants: ["k","g","t","d","s","th","str"], vowels: ["a","o","u"], diphthongs: ["ao"] },
+
+    35: { name: "Progress", consonants: ["k","g","p","t","b","f","pr"], vowels: ["e","i","u"], diphthongs: ["ei"] },
+
+    36: { name: "Darkening of the Light", consonants: ["r","m","n","v","d","sh","th"], vowels: ["a","o","u"], diphthongs: ["oo"] },
+
+    37: { name: "Family", consonants: ["r","m","n","f","l","y","ph"], vowels: ["e","i","u"], diphthongs: ["ea"] },
+
+    38: { name: "Opposition", consonants: ["k","g","t","d","j","z","p"], vowels: ["a","o","u"], diphthongs: ["ai"] },
+
+    39: { name: "Obstruction", consonants: ["r","m","n","h","k","bl","gr"], vowels: ["e","i","u"], diphthongs: ["io"] },
+
+    40: { name: "Deliverance", consonants: ["k","g","t","d","p","l","v"], vowels: ["a","o","u"], diphthongs: ["ua"] },
+
+    41: { name: "Decrease", consonants: ["r","m","n","s","c","z","w"], vowels: ["e","i","u"], diphthongs: ["eu"] },
+
+    42: { name: "Increase", consonants: ["k","g","t","d","b","y","j"], vowels: ["a","o","u"], diphthongs: ["ao"] },
+
+    43: { name: "Breakthrough", consonants: ["k","g","p","t","j","br","fr"], vowels: ["e","i","u"], diphthongs: ["ea"] },
+
+    44: { name: "Coming to Meet", consonants: ["r","m","n","v","s","ch","th"], vowels: ["a","o","u"], diphthongs: ["oi"] },
+
+    45: { name: "Gathering Together", consonants: ["k","g","t","d","p","w","sh"], vowels: ["e","i","u"], diphthongs: ["ie"] },
+
+    46: { name: "Pushing Upward", consonants: ["r","m","n","h","p","sk","y"], vowels: ["a","o","u"], diphthongs: ["au"] },
+
+    47: { name: "Oppression/Exhaustion", consonants: ["k","g","t","d","s","pr","x"], vowels: ["e","i","u"], diphthongs: ["eo"] },
+
+    48: { name: "The Well", consonants: ["r","m","n","j","w","l","v"], vowels: ["a","o","u"], diphthongs: ["ae"] },
+
+    49: { name: "Revolution", consonants: ["k","g","p","t","b","r","ch"], vowels: ["e","i","u"], diphthongs: ["ue"] },
+
+    50: { name: "The Cauldron", consonants: ["r","m","n","f","d","k","th"], vowels: ["a","o","u"], diphthongs: ["aa"] },
+
+    51: { name: "Thunder", consonants: ["k","g","t","d","p","dr","th"], vowels: ["e","i","u"], diphthongs: ["un"] },
+
+    52: { name: "Keeping Still", consonants: ["r","m","n","v","s","t","w"], vowels: ["a","o","u"], diphthongs: ["ai"] },
+
+    53: { name: "Gradual Progress", consonants: ["r","m","n","s","g","j","y"], vowels: ["a","o","u"], diphthongs: ["ua"] },
+
+    54: { name: "Marrying Maiden", consonants: ["k","g","t","d","v","m","w"], vowels: ["e","i","u"], diphthongs: ["ei"] },
+
+    55: { name: "Abundance", consonants: ["r","m","n","f","b","l","z"], vowels: ["a","o","u"], diphthongs: ["ou"] },
+
+    56: { name: "The Wanderer", consonants: ["k","g","p","t","b","w","d"], vowels: ["e","i","u"], diphthongs: ["io"] },
+
+    57: { name: "Gentle Penetration", consonants: ["r","m","n","h","g","j","q"], vowels: ["a","o","u"], diphthongs: ["ea"] },
+
+    58: { name: "Joy", consonants: ["k","g","t","d","s","y","j"], vowels: ["e","i","u"], diphthongs: ["ui"] },
+
+    59: { name: "Dispersion", consonants: ["r","m","n","j","p","sh","f"], vowels: ["a","o","u"], diphthongs: ["oa"] },
+
+    60: { name: "Limitation", consonants: ["k","g","t","d","f","n","l"], vowels: ["e","i","u"], diphthongs: ["ee"] },
+
+    61: { name: "Inner Truth", consonants: ["r","m","n","v","t","h","y"], vowels: ["a","o","u"], diphthongs: ["ai"] },
+
+    62: { name: "Preponderance of the Small", consonants: ["k","g","p","t","s","w","z"], vowels: ["e","i","u"], diphthongs: ["iu"] },
+
+    63: { name: "After Completion", consonants: ["k","g","t","d","b","n","ch"], vowels: ["e","i","u"], diphthongs: ["ea"] },
+
+    64: { name: "Before Completion", consonants: ["r","s","j","h","w","l","z"], vowels: ["a","o","u"], diphthongs: ["yo"] }
+
+};
+
+
 const tribes = [
   { 
     name: "Tribe of Lightbearers", 
@@ -3830,9 +3942,10 @@ const trajectories = [
       };
 
       // Global user session object.
+
+    // Global user session object.
       let userSession = {};
       // Event listeners for buttons.
- 
  document.getElementById("howToPlayBtn").addEventListener("click", function(e) {
   e.preventDefault();
   var section = document.getElementById("howToPlay");
