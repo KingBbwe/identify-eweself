@@ -1588,6 +1588,45 @@ document.getElementById("close-modal").addEventListener("click", function () {
 
       }
 
+function manualPdfDownload(e) {
+  // Prevent the default context menu
+  e.preventDefault();
+
+  // Use the same options as your main PDF generation
+  const opt = {
+    margin: 10,
+    filename: 'CharacterDetails.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { 
+      scale: 2,
+      windowWidth: document.documentElement.offsetWidth
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  // Ensure the PDF container is visible for conversion
+  const pdfPreview = document.getElementById("pdf-preview");
+  if (!pdfPreview) {
+    alert("PDF preview element not found.");
+    return;
+  }
+  // (Optionally) reveal the container if hidden
+  pdfPreview.classList.remove("hidden-pdf");
+  pdfPreview.style.visibility = "visible";
+
+  html2pdf().set(opt).from(pdfPreview).outputPdf('blob').then(function(pdfBlob) {
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    // Create a temporary link and simulate a click to trigger the download
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = 'CharacterDetails.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }).catch(err => {
+    console.error("Manual PDF download failed:", err);
+  });
+}
       // Session handling: updateRollSession.
 
       function updateRollSession() {
@@ -3833,6 +3872,8 @@ const trajectories = [
       let userSession = {};
       // Event listeners for buttons.
  
+
+document.getElementById("pdf-preview").addEventListener("contextmenu", manualPdfDownload);
  document.getElementById("howToPlayBtn").addEventListener("click", function(e) {
   e.preventDefault();
   var section = document.getElementById("howToPlay");
