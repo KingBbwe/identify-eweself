@@ -354,6 +354,7 @@
   </head>
   <!-- Real bot token/chat ID live in config.local.js (gitignored, not committed). See config.example.js -->
   <script src="config.local.js"></script>
+  <script src="character.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <body>
@@ -384,6 +385,8 @@
         <label for="ewe">Ewe (♀ Female)</label>
       </div>
       <button id="forge-identity">Forge Identity</button>
+      <button id="download-character" disabled>Download Character (JSON)</button>
+      <button id="open-hexdie" style="display:none" disabled>Open in Hex-Die</button>
       <button id="rename-character">Rename</button>
       <div id="result"></div>
       <div id="heritage-result" class="heritage-container" style="display: none;"></div>
@@ -1201,6 +1204,9 @@ function forgeIdentity() {
   const penalty = rollCount > 2 ? rollCount - 2 : 0;
 
   // Generate character name
+  // A fresh forge is a fresh Character: new id, full rename allowance (the renames counter was never initialised).
+  userSession.renames = 5;
+  userSession.characterId = AuldEweCharacter.newId();
   let name = generateName();
   if (!name || name.trim() === "") {
     name = "Unnamed One";
@@ -1329,6 +1335,8 @@ function forgeIdentity() {
   const selectedAgeBand = Math.random() < 0.5 ? "0-50" : "50+";
   const availableTrajectories = trajectories.filter(t => t.ageBand === selectedAgeBand);
   const selectedTrajectory = randomElement(availableTrajectories);
+  userSession.trajectory = selectedTrajectory;   // kept as data, not only as text on the page
+  userSession.ageBand = selectedAgeBand;
   let trajectoryHTML = `<p><strong>Age Band:</strong> ${selectedTrajectory.ageBand}</p>`;
   if (selectedAgeBand === "0-50") {
     trajectoryHTML += `
@@ -1362,6 +1370,7 @@ function forgeIdentity() {
 
   // Display the inner world section
   document.getElementById("inner-world").style.display = "block";
+  persistCharacter();
 }
 
 document.getElementById("more-details").addEventListener("click", function () {
@@ -1477,6 +1486,7 @@ document.getElementById("close-modal").addEventListener("click", function () {
             // Update surplus display.
 
             document.getElementById("surplus-points").textContent = userSession.remainingSurplus;
+            persistCharacter();
 
           } else {
 
@@ -1583,6 +1593,7 @@ function generateName(hexagramOverride) {
 
   userSession.originalHexagram = hexagram;
   userSession.name = finalName;
+  userSession.gender = gender;
 
   document.getElementById("result").innerHTML =
     `<div class="name-reveal"><div class="hex-source"><span class="hex">Hexagram ${hexagram}</span><span class="hex-name">${hexName}</span></div><div class="generated-name">${finalName}</div></div>`;
@@ -1643,6 +1654,7 @@ function renameCharacter() {
   }
   userSession.renames--;
   generateName(userSession.originalHexagram);
+  persistCharacter();
 }
 
 function manualPdfDownload(e) {
@@ -4024,6 +4036,35 @@ document.getElementById("pdf-preview").addEventListener("contextmenu", manualPdf
           .then(response => response.json())
           .then(data => console.log("Telegram response:", data))
           .catch(error => console.error("Error sending to Telegram:", error));
+      }
+    </script>
+    <script>
+      // ---- Character export (Move 4): the Character object is the source of truth; PDF and Telegram are views of it ----
+      var CHARACTER_KEY = 'auldEweCharacter';
+      function currentCharacter() { return AuldEweCharacter.buildCharacter(userSession); }
+      function persistCharacter() {
+        try {
+          var c = currentCharacter();
+          try { localStorage.setItem(CHARACTER_KEY, AuldEweCharacter.toJSONText(c)); } catch (e) {}
+          document.getElementById('download-character').disabled = false;
+          document.getElementById('open-hexdie').disabled = false;
+        } catch (e) { console.warn('Character not exportable yet:', e.message); }
+      }
+      document.getElementById('download-character').addEventListener('click', function () {
+        var c;
+        try { c = currentCharacter(); } catch (e) { alert('Forge an identity first.\n\n' + e.message); return; }
+        var url = URL.createObjectURL(new Blob([AuldEweCharacter.toJSONText(c)], { type: 'application/json' }));
+        var a = document.createElement('a'); a.href = url; a.download = AuldEweCharacter.fileName(c);
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      });
+      // Handoff to Hex-Die by URL fragment (never sent to a server). Hidden unless HEXDIE_URL is set in config.local.js.
+      if (window.HEXDIE_URL && window.HEXDIE_URL !== 'YOUR_HEXDIE_URL') {
+        document.getElementById('open-hexdie').style.display = '';
+        document.getElementById('open-hexdie').addEventListener('click', function () {
+          var c; try { c = currentCharacter(); } catch (e) { alert('Forge an identity first.'); return; }
+          window.open(window.HEXDIE_URL + '#' + AuldEweCharacter.toFragment(c), '_blank');
+        });
       }
     </script>
   </body>

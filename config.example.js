@@ -8,3 +8,6 @@
 
 window.TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN";
 window.TELEGRAM_CHAT_ID = "YOUR_CHAT_ID";
+
+// Optional: where Hex-Die is hosted (enables the "Open in Hex-Die" button), e.g. "https://kingbbwe.github.io/Hex-Die/"
+window.HEXDIE_URL = "YOUR_HEXDIE_URL";
