@@ -358,6 +358,7 @@
   <!-- Real bot token/chat ID live in config.local.js (gitignored, not committed). See config.example.js -->
   <script src="config.local.js"></script>
   <script src="allocation.js"></script>
+  <script src="skills.js"></script>
   <script src="rolls.js"></script>
   <script src="character.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
@@ -1267,6 +1268,8 @@ function forgeIdentity() {
     <label class="alloc-controls"><input type="checkbox" id="free-build" ${userSession.allocation.mode === "free" ? "checked" : ""}> Free build (every attribute starts at 1)</label>
     <ul class="base-attributes" id="attr-list"></ul>
     <p id="alloc-status"></p>
+    <h3>Skills <small>(start at 0; all others −2)</small></h3>
+    <ul class="skill-list" id="skill-list"></ul>
   `;
 
   // Append tribal affiliation details
@@ -1342,6 +1345,10 @@ function forgeIdentity() {
     traitRolls: { conscious: consciousRoll.dice, unconscious: unconsciousRoll.dice },
     rollCount: rollCount, penalty: penalty
   };
+  const skillRoll = AuldEweSkills.rollAssigned(rng);
+  userSession.skills = skillRoll.skills;
+  userSession.creation.skillRoll = { picks: skillRoll.picks };
+  renderSkills();
   document.querySelector(".core-traits .conscious").innerHTML = `
     <h4 class="orbitron-bold-blue">Conscious</h4>
     <p><strong>${consciousTrait.trait}</strong>: ${consciousTrait.description} (Hexagram ${consciousTrait.hexagram}; 2d8: ${consciousRoll.dice[0]} and ${consciousRoll.dice[1]})</p>
@@ -1496,6 +1503,15 @@ document.getElementById("close-modal").addEventListener("click", function () {
         if (!al || !AuldEweAllocation.canRemove(al, attribute)) return;
         userSession.allocation = AuldEweAllocation.remove(al, attribute);
         renderAllocation();
+      }
+
+      // Lists the skills assigned at creation (modifier 0). Every other skill sits at the default -2.
+      function renderSkills() {
+        const el = document.getElementById("skill-list");
+        if (!el || !userSession.skills) return;
+        el.innerHTML = AuldEweSkills.CATALOGUE.filter(sk => Object.prototype.hasOwnProperty.call(userSession.skills, sk.name)).map(sk =>
+          `<li><strong>${sk.name}</strong> <small>(${[sk.domain, sk.group !== sk.name ? sk.group : null, sk.attribute].filter(Boolean).join(" · ")})</small>: ${userSession.skills[sk.name]}</li>`).join("");
+        persistCharacter();
       }
 
       // Redraws the attribute list and the points line from userSession.allocation, then snapshots the Character.

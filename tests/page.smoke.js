@@ -77,6 +77,15 @@ function load(pre) {
   for (let i = 0; i < 60; i++) { $('forge-identity').click(); seenBands.add(stored().trajectory.ageBand); }
   ok('Random picks both bands', seenBands.size === 2);
 
+  // ---- skills
+  w = await load(); $ = id => w.document.getElementById(id); $('forge-identity').click();
+  const sk = stored();
+  ok('three skills are assigned at modifier 0', Object.keys(sk.skills).length === 3 && Object.values(sk.skills).every(v => v === 0), JSON.stringify(sk.skills));
+  ok('skills are listed on the page', $('skill-list').querySelectorAll('li').length === 3);
+  ok('skill provenance matches the sheet and the Character validates', sk.creation.skillRoll.picks.slice().sort().join() === Object.keys(sk.skills).sort().join() && C.validateCharacter(sk).ok);
+  const seenSkills = new Set(); for (let i = 0; i < 40; i++) { $('forge-identity').click(); Object.keys(stored().skills).forEach(n => seenSkills.add(n)); }
+  ok('rerolling reassigns skills (more than 3 distinct seen over 40 forges)', seenSkills.size > 3, seenSkills.size);
+
   // ---- the dice are shown and recorded
   $('forge-identity').click(); const cr = stored();
   ok('the 2d6 soul roll is shown on the page', /Rolled 2d6/.test($('soul-pattern').textContent), $('soul-pattern').textContent.replace(/\s+/g, ' ').slice(0, 90));
