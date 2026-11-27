@@ -28,7 +28,7 @@
   },
   "trajectory": {
     "id": 1,
-    "ageBand": "0-50",
+    "ageBand": "18-36",
     "a": {
       "role": "from",
       "hexagram": 13,
@@ -84,28 +84,61 @@
   "attributes": {
     "Inspiration": 3,
     "Intellect": 4,
-    "Prowess": 3,
+    "Prowess": 4,
     "SelfAwareness": 3,
-    "Instinct": 2,
-    "Drive": 2,
+    "Instinct": 4,
+    "Drive": 3,
     "Energy": 2,
     "Emotion": 2,
-    "Will": 3
+    "Will": 4
   },
-  "baseAttributes": {
-    "Inspiration": 3,
-    "Intellect": 4,
-    "Prowess": 3,
-    "SelfAwareness": 3,
-    "Instinct": 2,
-    "Drive": 2,
-    "Energy": 2,
-    "Emotion": 2,
-    "Will": 3
+  "allocation": {
+    "rule": "32-point",
+    "mode": "seeded",
+    "budget": 32,
+    "spent": 29,
+    "remaining": 3,
+    "complete": false,
+    "rerollPenalty": 0,
+    "floors": {
+      "Inspiration": 3,
+      "Intellect": 4,
+      "Prowess": 3,
+      "SelfAwareness": 3,
+      "Instinct": 2,
+      "Drive": 2,
+      "Energy": 2,
+      "Emotion": 2,
+      "Will": 3
+    }
   },
-  "surplusRemaining": 10,
   "skills": {},
   "dieTier": 6,
   "skulduggery": 0,
-  "grace": 0
+  "grace": 0,
+  "creation": {
+    "soulRoll": {
+      "dice": [
+        1,
+        1
+      ],
+      "rerolls": [
+        2,
+        6,
+        3
+      ]
+    },
+    "traitRolls": {
+      "conscious": [
+        1,
+        5
+      ],
+      "unconscious": [
+        3,
+        4
+      ]
+    },
+    "rollCount": 1,
+    "penalty": 0
+  }
 }

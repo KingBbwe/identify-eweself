@@ -1,5 +1,5 @@
 const test = require('node:test'), assert = require('node:assert/strict');
-const C = require('../character.js'), T = require('./data.js');
+const C = require('../character.js'), T = require('./data.js'), A = require('../allocation.js');
 const NOW = '2026-11-27T10:00:00.000Z';
 
 // Mirrors forgeIdentity() in index.html: how the page derives the four DCs. If the page changes, this must too.
@@ -9,7 +9,7 @@ function session(over) {
   return Object.assign({
     name: 'Aralen', gender: 'ewe', originalHexagram: 17, renames: 5, characterId: 'abc123',
     soulPattern: sp, coreTraits: ct, trajectory: tj, ageBand: tj.ageBand,
-    lineage: T.lineages[0], currentAttributes: Object.assign({}, T.lineages[0].baseAttributes), remainingSurplus: T.lineages[0].surplus, tribe: T.tribes[0]
+    lineage: T.lineages[0], allocation: A.newAllocation(T.lineages[0].baseAttributes, {}), tribe: T.tribes[0]
   }, over || {});
 }
 
@@ -17,7 +17,7 @@ test('data tables ship the shapes the contract relies on', () => {
   assert.equal(T.coreTraits.length, 64); assert.equal(T.trajectories.length, 64);
   for (const t of T.coreTraits) assert.ok(t.hexagram >= 1 && t.hexagram <= 64, t.trait);
   for (const t of T.trajectories) {
-    const [a, b] = t.ageBand === '0-50' ? [t.fromHex, t.toHex] : [t.currentHex, t.reflectingHex];
+    const [a, b] = t.ageBand === '18-36' ? [t.fromHex, t.toHex] : [t.currentHex, t.reflectingHex];
     assert.ok(a >= 1 && a <= 64 && b >= 1 && b <= 64, 'trajectory ' + t.id);
   }
 });
@@ -39,7 +39,7 @@ test('mode follows the DC band at every boundary', () => {
 test('four-DC derivation is canon: conscious, unconscious, trajectory A, trajectory B', () => {
   for (const tj of T.trajectories) {
     const c = C.buildCharacter(session({ trajectory: tj, ageBand: tj.ageBand }), { now: NOW });
-    const young = tj.ageBand === '0-50';
+    const young = tj.ageBand === '18-36';
     assert.equal(c.dc.intellectual.value, T.coreTraits[0].hexagram);
     assert.equal(c.dc.physical.value, T.coreTraits[1].hexagram);
     assert.equal(c.dc.emotional.value, young ? tj.fromHex : tj.currentHex);
@@ -57,11 +57,12 @@ test('every core-trait pair x every trajectory builds a valid Character (exhaust
   assert.equal(n, 64 * 64 * 64);
 });
 
-test('every lineage x tribe x soul profile builds and validates; attributes within 0-5', () => {
-  for (const l of T.lineages) for (const tr of T.tribes) for (const sp of T.soulProfiles) {
-    const c = C.buildCharacter(session({ lineage: l, tribe: tr, soulPattern: sp, currentAttributes: Object.assign({}, l.baseAttributes), remainingSurplus: l.surplus }), { now: NOW });
+test('every lineage x tribe x soul profile x allocation mode builds and validates; attributes 1-5', () => {
+  for (const l of T.lineages) for (const tr of T.tribes) for (const sp of T.soulProfiles) for (const mode of ['seeded', 'free']) {
+    const c = C.buildCharacter(session({ lineage: l, tribe: tr, soulPattern: sp, allocation: A.newAllocation(l.baseAttributes, { mode }) }), { now: NOW });
     assert.deepEqual(c.soul.profile, C.parseProfile(sp.profileId));
-    for (const v of Object.values(c.attributes)) assert.ok(v >= 0 && v <= 5, l.name);
+    for (const v of Object.values(c.attributes)) assert.ok(v >= 1 && v <= 5, l.name);
+    assert.equal(c.allocation.complete, false);
   }
 });
 
@@ -71,16 +72,46 @@ test('soulPatterns fallback (no extended profile) still yields a valid pair and 
 });
 
 test('the Character is a snapshot of allocations and renames, not of the forge moment', () => {
-  const s = session(); s.currentAttributes.Intellect = 5; s.remainingSurplus = 3; s.renames = 2;
-  const c = C.buildCharacter(s, { now: NOW });
-  assert.equal(c.attributes.Intellect, 5); assert.equal(c.surplusRemaining, 3); assert.equal(c.renamesRemaining, 2);
-  assert.equal(c.baseAttributes.Intellect, T.lineages[0].baseAttributes.Intellect);
+  const l = T.lineages[0]; let al = A.newAllocation(l.baseAttributes, { penalty: 2 });
+  al = A.add(al, 'Instinct'); al = A.add(al, 'Instinct');
+  const c = C.buildCharacter(session({ allocation: al, renames: 2 }), { now: NOW });
+  assert.equal(c.attributes.Instinct, l.baseAttributes.Instinct + 2); assert.equal(c.renamesRemaining, 2);
+  assert.deepEqual(c.allocation, { rule: '32-point', mode: 'seeded', budget: 30, spent: 26, remaining: 4, complete: false, rerollPenalty: 2, floors: c.allocation.floors });
+  assert.equal(c.allocation.floors.Instinct, l.baseAttributes.Instinct);
+});
+
+test('a fully spent allocation is complete at exactly 32 (or the budget after rerolls)', () => {
+  let al = A.newAllocation(T.lineages[0].baseAttributes, {});
+  while (A.remaining(al) > 0) for (const a of A.ATTRIBUTES) al = A.add(al, a);
+  const c = C.buildCharacter(session({ allocation: al }), { now: NOW });
+  assert.equal(c.allocation.spent, 32); assert.ok(c.allocation.complete); assert.equal(c.allocation.remaining, 0);
+});
+
+test('the age bands are the ruled ones, and the old labels are refused', () => {
+  assert.deepEqual(C.AGE_BANDS, ['18-36', '36-50+']);
+  const c = C.buildCharacter(session(), { now: NOW }); assert.equal(c.trajectory.ageBand, '18-36'); assert.equal(c.trajectory.a.role, 'from');
+  const old = JSON.parse(JSON.stringify(c)); old.trajectory.ageBand = '0-50'; assert.match(C.validateCharacter(old).errors.join('|'), /ageBand/);
+  assert.throws(() => C.buildCharacter(session({ ageBand: '0-50' })), /trajectory/);
+  const tj = T.trajectories.find(t => t.ageBand === '36-50+');
+  const o = C.buildCharacter(session({ trajectory: tj, ageBand: '36-50+' }), { now: NOW });
+  assert.equal(o.trajectory.a.role, 'current'); assert.equal(o.dc.emotional.value, tj.currentHex); assert.equal(o.dc.spiritual.value, tj.reflectingHex);
+});
+
+test('creation provenance is carried and checked: dice must reproduce the profile and the traits', () => {
+  const creation = { soulRoll: { dice: [1, 1], rerolls: [2, 6, 3] }, traitRolls: { conscious: [1, 5], unconscious: [3, 4] }, rollCount: 1 };
+  const s = session({ coreTraits: [T.coreTraits.find(t => t.hexagram === 5), T.coreTraits.find(t => t.hexagram === 20)], creation, soulPattern: T.soulProfiles[0] });
+  const c = C.buildCharacter(s, { now: NOW }); assert.ok(C.validateCharacter(c).ok); assert.deepEqual(c.creation.soulRoll.rerolls, [2, 6, 3]);
+  const bad = (mut, re) => { const x = JSON.parse(JSON.stringify(c)); mut(x); const v = C.validateCharacter(x); assert.ok(!v.ok, re); assert.match(v.errors.join('|'), re); };
+  bad(x => { x.creation.soulRoll.dice[0] = 2; }, /first die must be kept/);
+  bad(x => { x.creation.soulRoll.rerolls = []; }, /rerolls must happen exactly when/);
+  bad(x => { x.creation.soulRoll.rerolls = [2, 3, 6]; }, /stated profile|rolling should have stopped/);
+  bad(x => { x.creation.traitRolls.conscious = [2, 5]; }, /traitRolls\.conscious/);
 });
 
 test('missing pieces throw one error naming everything absent', () => {
-  assert.throws(() => C.buildCharacter({}), /name.*conscious core trait.*unconscious core trait.*trajectory.*soul pattern.*lineage.*tribe/);
+  assert.throws(() => C.buildCharacter({}), /name.*conscious core trait.*unconscious core trait.*trajectory.*soul pattern.*attribute allocation.*lineage.*tribe/);
   assert.throws(() => C.buildCharacter(session({ ageBand: undefined })), /trajectory/);
-  assert.throws(() => C.buildCharacter(session({ trajectory: { id: 1, ageBand: '50+' }, ageBand: '50+' })), /no valid hexagrams/);
+  assert.throws(() => C.buildCharacter(session({ trajectory: { id: 1, ageBand: '36-50+' }, ageBand: '36-50+' })), /no valid hexagrams/);
 });
 
 test('VACUITY: the validator rejects each kind of tampering', () => {
@@ -92,7 +123,9 @@ test('VACUITY: the validator rejects each kind of tampering', () => {
   bad(c => { c.dc.intellectual.value = (c.dc.intellectual.value % 64) + 1; c.dc.intellectual.mode = C.modeForDC(c.dc.intellectual.value); }, /intellectual must equal/);
   bad(c => { c.soul.profile = [3, 4]; }, /valid pairs/);
   bad(c => { c.dieTier = 100; }, /dieTier/);
-  bad(c => { c.attributes.Will = 6; }, /attribute Will/);
+  bad(c => { c.attributes.Will = 6; }, /attribute Will must be an integer 1-5/);
+  bad(c => { c.allocation.spent += 1; }, /does not equal/);
+  bad(c => { c.allocation.complete = true; }, /complete must be true/);
   bad(c => { c.version = 2; }, /version/);
   bad(c => { c.gender = 'x'; }, /gender/);
 });

@@ -5,7 +5,7 @@ const errors = [], checks = [];
 const ok = (name, cond, extra) => checks.push([cond ? 'PASS' : 'FAIL', name, extra === undefined ? '' : extra]);
 function load(pre) {
   const vc = new VirtualConsole();
-  vc.on('jsdomError', e => { if (!/Could not load (script|link)|config\.local\.js|navigation to another Document/.test(String(e.message))) errors.push('jsdomError: ' + e.message); });
+  vc.on('jsdomError', e => { if (!/Could not load (script|link|style)|config\.local\.js|navigation to another Document/.test(String(e.message))) errors.push('jsdomError: ' + e.message); });
   return JSDOM.fromFile(path.join(__dirname, '..', 'index.html'), { runScripts: 'dangerously', resources: 'usable', pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(w) {
       w.alert = m => (w.__alerts = w.__alerts || []).push(String(m)); w.confirm = () => true;
@@ -33,16 +33,59 @@ function load(pre) {
   ok('both modes and all four bands occur across forges', modes.size === 2 && bands.size === 4, [...bands].join(','));
   ok('download enabled after forging', $('download-character').disabled === false);
 
-  // allocation + rename are captured (fresh page, single forge: no reroll penalty yet)
+  // ---- allocation: fresh page, single forge (no reroll penalty yet)
   w = await load(); $ = id => w.document.getElementById(id);
   $('forge-identity').click();
-  const before = JSON.parse(w.localStorage.getItem('auldEweCharacter'));
-  const pill = [...w.document.querySelectorAll('.plus-pill')].find(b => { const a = b.dataset.attr; return before.attributes[a] < 5; });
-  if (before.surplusRemaining > 0 && pill) pill.click();
-  const after = JSON.parse(w.localStorage.getItem('auldEweCharacter'));
-  ok('first forge has no reroll penalty and surplus is positive', before.surplusRemaining > 0, before.surplusRemaining);
-  ok('spending a surplus point is captured', after.surplusRemaining === before.surplusRemaining - 1 && after.attributes[pill.dataset.attr] === before.attributes[pill.dataset.attr] + 1, `${before.surplusRemaining}->${after.surplusRemaining}`);
-  ok('a new forge starts with 5 renames', before.renamesRemaining === 5, before.renamesRemaining);
+  const stored = () => JSON.parse(w.localStorage.getItem('auldEweCharacter'));
+  const before = stored();
+  ok('first forge: seeded allocation with a budget of exactly 32', before.allocation.mode === 'seeded' && before.allocation.budget === 32 && before.allocation.rerollPenalty === 0, JSON.stringify({ b: before.allocation.budget, r: before.allocation.remaining }));
+  ok('points to spend = 32 minus the lineage seed total', before.allocation.remaining === 32 - Object.values(before.allocation.floors).reduce((t, v) => t + v, 0));
+  ok('status line shows the points', new RegExp('Points to spend:\\s*' + before.allocation.remaining).test($('alloc-status').textContent), $('alloc-status').textContent);
+  let guard = 0;
+  while (stored().allocation.remaining > 0 && guard++ < 80) { const b = [...w.document.querySelectorAll('.plus-pill')].find(x => !x.disabled); if (!b) break; b.click(); }
+  const full = stored();
+  ok('spending every point reaches exactly 32 and the allocation is complete', full.allocation.spent === 32 && full.allocation.complete === true && full.allocation.remaining === 0, String(full.allocation.spent));
+  ok('every attribute stays within 1-5 and above its floor', Object.keys(full.attributes).every(k => full.attributes[k] >= full.allocation.floors[k] && full.attributes[k] <= 5));
+  ok('when nothing is left every + button is disabled', [...w.document.querySelectorAll('.plus-pill')].every(b => b.disabled));
+  const up = Object.keys(full.attributes).find(k => full.attributes[k] > full.allocation.floors[k]);
+  w.document.querySelector(`.minus-pill[data-attr="${up}"]`).click();
+  ok('the minus button refunds a point', stored().attributes[up] === full.attributes[up] - 1 && stored().allocation.remaining === 1);
+  ok('floor attributes have a disabled minus', [...w.document.querySelectorAll('.minus-pill')].some(b => b.disabled));
+  $('free-build').checked = true; $('free-build').dispatchEvent(new w.Event('change', { bubbles: true }));
+  const fr = stored();
+  ok('free build resets to all 1s with 23 to spend', fr.allocation.mode === 'free' && fr.allocation.remaining === 23 && Object.values(fr.attributes).every(v => v === 1), fr.allocation.remaining);
+  ok('PDF content carries no allocation buttons', (w.buildPdfContent(), !/<button/.test($('pdf-preview').innerHTML)));
+
+  // ---- the zero floor: many rerolls in one session
+  w = await load(); $ = id => w.document.getElementById(id);
+  let neg = false, lowest = 99, lastBudget = 0;
+  for (let i = 0; i < 80; i++) { $('forge-identity').click(); const c = stored(); if (c.allocation.remaining < 0) neg = true; lowest = Math.min(lowest, c.allocation.remaining); lastBudget = c.allocation.budget; }
+  ok('after 80 forges the points to spend never went negative', !neg && lowest >= 0, 'lowest ' + lowest + ', last budget ' + lastBudget);
+  ok('the budget bottoms out at the floors (rerolls cost points up to the floor)', lastBudget < 32);
+
+  // ---- age bands
+  const bandRoles = {};
+  for (const want of ['18-36', '36-50+']) {
+    w = await load(); $ = id => w.document.getElementById(id); $('age-band').value = want;
+    let okBand = true, roles = new Set();
+    for (let i = 0; i < 30; i++) { $('forge-identity').click(); const c = stored(); if (c.trajectory.ageBand !== want) okBand = false; roles.add(c.trajectory.a.role + '/' + c.trajectory.b.role); if (!new RegExp('Age Band:\\s*' + want.replace('+', '\\+')).test($('trajectory').textContent)) okBand = false; }
+    ok('age band ' + want + ' is honoured on 30 forges', okBand, [...roles].join(','));
+    bandRoles[want] = [...roles][0];
+  }
+  ok("18-36 reads from/to and 36-50+ reads current/reflecting", bandRoles["18-36"] === "from/to" && bandRoles["36-50+"] === "current/reflecting", JSON.stringify(bandRoles));
+  w = await load(); $ = id => w.document.getElementById(id); const seenBands = new Set();
+  for (let i = 0; i < 60; i++) { $('forge-identity').click(); seenBands.add(stored().trajectory.ageBand); }
+  ok('Random picks both bands', seenBands.size === 2);
+
+  // ---- the dice are shown and recorded
+  $('forge-identity').click(); const cr = stored();
+  ok('the 2d6 soul roll is shown on the page', /Rolled 2d6/.test($('soul-pattern').textContent), $('soul-pattern').textContent.replace(/\s+/g, ' ').slice(0, 90));
+  ok('the 2d8 trait rolls are shown on the page', (($('inner-world').textContent.match(/2d8: \d and \d/g)) || []).length === 2);
+  ok('creation provenance is stored and consistent with the sheet', cr.creation && cr.creation.soulRoll.dice[0] === cr.soul.profile[0] && C.validateCharacter(cr).ok);
+  w = await load(); $ = id => w.document.getElementById(id);
+  $('forge-identity').click();
+  const before2 = stored();
+
   const names = [];
   for (let i = 0; i < 7; i++) { $('rename-character').click(); names.push(JSON.parse(w.localStorage.getItem('auldEweCharacter')).renamesRemaining); }
   ok('renames count down 4,3,2,1,0 then stop', names.slice(0, 5).join() === '4,3,2,1,0' && names[6] === 0 && (w.__alerts || []).some(a => /No more renames/.test(a)), names.join());

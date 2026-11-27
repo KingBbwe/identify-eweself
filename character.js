@@ -8,6 +8,10 @@
 (function (root) {
   'use strict';
 
+  // allocation.js supplies the 32-point rule: required alongside this file (require() in Node, window.AuldEweAllocation in a page).
+  var Alloc = typeof require === 'function' && typeof module !== 'undefined' ? require('./allocation.js') : root.AuldEweAllocation;
+  if (!Alloc) throw new Error('character.js needs allocation.js loaded first');
+
   var SCHEMA = 'auld-ewe.character', VERSION = 1;
   var DOMAINS = ['intellectual', 'physical', 'emotional', 'spiritual'];
 
@@ -22,7 +26,8 @@
   // The twelve soul-pattern profile pairs. Identical to SentientHub's `validProfiles`.
   var VALID_PROFILES = [[1,3],[1,4],[2,4],[2,5],[3,5],[3,6],[4,6],[4,1],[5,1],[5,2],[6,2],[6,3]];
 
-  var ATTRIBUTES = ['Inspiration', 'Intellect', 'Prowess', 'SelfAwareness', 'Instinct', 'Drive', 'Energy', 'Emotion', 'Will'];
+  var ATTRIBUTES = Alloc.ATTRIBUTES;
+  var AGE_BANDS = ['18-36', '36-50+'];          // ruled 2026-11-27; the first covers 18-35, the second 36 and over
   var START_DIE = 6;          // every new character starts on a d6 (levels: 6 -> 8 -> 12 -> 20)
 
   function isHex(n) { return typeof n === 'number' && n % 1 === 0 && n >= 1 && n <= 64; }
@@ -70,13 +75,14 @@
     if (!session.name) miss.push('name');
     if (!conscious || !isHex(conscious.hexagram)) miss.push('conscious core trait');
     if (!unconscious || !isHex(unconscious.hexagram)) miss.push('unconscious core trait');
-    if (!tj || (band !== '0-50' && band !== '50+')) miss.push('trajectory / age band');
+    if (!tj || AGE_BANDS.indexOf(band) === -1) miss.push('trajectory / age band');
     if (!session.soulPattern) miss.push('soul pattern');
+    if (!session.allocation) miss.push('attribute allocation');
     if (!session.lineage) miss.push('lineage');
     if (!session.tribe) miss.push('tribe');
     if (miss.length) throw new Error('Cannot build Character, missing: ' + miss.join(', '));
 
-    var young = band === '0-50';
+    var young = band === AGE_BANDS[0];
     var emo = young ? tj.fromHex : tj.currentHex, spi = young ? tj.toHex : tj.reflectingHex;
     if (!isHex(emo) || !isHex(spi)) throw new Error('Cannot build Character, trajectory has no valid hexagrams for age band ' + band);
 
@@ -85,14 +91,10 @@
     var spName = sp.soulPattern || String(sp.pattern || '').split(' - ')[0].trim();
 
     var when = opts.now == null ? new Date() : new Date(opts.now);
-    var attrs = {}, base = {};
-    ATTRIBUTES.forEach(function (a) {
-      var cur = (session.currentAttributes || {})[a], b = ((session.lineage.baseAttributes) || {})[a];
-      if (cur !== undefined) attrs[a] = cur;
-      if (b !== undefined) base[a] = b;
-    });
-    // Any attribute names beyond the canonical nine are kept rather than silently dropped.
-    Object.keys(session.currentAttributes || {}).forEach(function (a) { if (!(a in attrs)) attrs[a] = session.currentAttributes[a]; });
+    var al = session.allocation, sp2 = Alloc.summary(al);
+    var attrs = {}, floors = {};
+    ATTRIBUTES.forEach(function (a) { attrs[a] = al.values[a]; floors[a] = al.floors[a]; });
+    var cr = session.creation || null;
 
     var c = {
       schema: SCHEMA, version: VERSION,
@@ -119,13 +121,16 @@
       },
       lineage: { name: session.lineage.name, type: session.lineage.type, role: session.lineage.role, traits: (session.lineage.traits || []).slice() },
       tribe: { name: session.tribe.name, tongue: session.tribe.tongue, resonance: session.tribe.resonance },
-      attributes: attrs, baseAttributes: base,
-      surplusRemaining: typeof session.remainingSurplus === 'number' ? session.remainingSurplus : null,
+      // The 32-point rule: nine attributes, each 1-5. `floors` is the lineage seed ("seeded") or all 1s ("free").
+      attributes: attrs,
+      allocation: { rule: '32-point', mode: al.mode, budget: al.budget, spent: sp2.spent, remaining: sp2.remaining, complete: sp2.complete,
+                    rerollPenalty: al.penalty, floors: floors },
       skills: {},                                   // not built yet: awaits the commander's skill ruling
       dieTier: START_DIE,
       skulduggery: session.skulduggery || 0,
       grace: session.grace || 0
     };
+    if (cr) c.creation = JSON.parse(JSON.stringify(cr));     // how the dice fell: an audit trail for the GM
     var v = validateCharacter(c);
     if (!v.ok) throw new Error('Built an invalid Character: ' + v.errors.join('; '));
     return c;
@@ -155,9 +160,30 @@
       if (c.dc.spiritual && c.trajectory.b && c.dc.spiritual.value !== c.trajectory.b.hexagram) e.push('dc.spiritual must equal trajectory.b');
     } else e.push('trajectory missing');
     if ([6, 8, 12, 20].indexOf(c.dieTier) === -1) e.push('dieTier must be 6, 8, 12 or 20');
-    if (c.attributes) Object.keys(c.attributes).forEach(function (k) {
-      var n = c.attributes[k]; if (typeof n !== 'number' || n < 0 || n > 5 || n % 1) e.push('attribute ' + k + ' must be an integer 0-5');
-    });
+    if (!c.trajectory || AGE_BANDS.indexOf(c.trajectory.ageBand) === -1) e.push('trajectory.ageBand must be one of ' + AGE_BANDS.join(', '));
+    if (!c.allocation || !c.attributes) e.push('allocation / attributes missing');
+    else {
+      Alloc.problems({ mode: c.allocation.mode, floors: c.allocation.floors, values: c.attributes, budget: c.allocation.budget,
+                       spent: c.allocation.spent, remaining: c.allocation.remaining, complete: c.allocation.complete }).forEach(function (m) { e.push(m); });
+      if (c.allocation.rule !== '32-point') e.push('allocation.rule must be "32-point"');
+    }
+    if (c.creation) {
+      var cr = c.creation, sr = cr.soulRoll, tr = cr.traitRolls;
+      if (sr) {
+        var d = sr.dice, rr = sr.rerolls || [], p = c.soul && c.soul.profile;
+        if (!Array.isArray(d) || d.length !== 2 || !p) e.push('creation.soulRoll malformed');
+        else {
+          if (d[0] !== p[0]) e.push('creation.soulRoll: the first die must be kept (' + d[0] + ' vs profile ' + p[0] + ')');
+          if (rr.length === 0 ? d[1] !== p[1] : rr[rr.length - 1] !== p[1]) e.push('creation.soulRoll does not end on the stated profile');
+          if ((rr.length === 0) !== isValidProfile([d[0], d[1]])) e.push('creation.soulRoll: rerolls must happen exactly when the first pair is invalid');
+          rr.slice(0, -1).forEach(function (b) { if (isValidProfile([d[0], b])) e.push('creation.soulRoll: rolling should have stopped at ' + d[0] + '/' + b); });
+        }
+      }
+      if (tr && c.coreTraits) ['conscious', 'unconscious'].forEach(function (k) {
+        var x = tr[k]; if (!x) return;
+        if (!Array.isArray(x) || x.length !== 2 || (x[0] - 1) * 8 + x[1] !== c.coreTraits[k].hexagram) e.push('creation.traitRolls.' + k + ' does not give hexagram ' + c.coreTraits[k].hexagram);
+      });
+    }
     return { ok: e.length === 0, errors: e };
   }
 
@@ -180,7 +206,7 @@
   function fileName(c) { return 'character-' + String(c.name).replace(/[^A-Za-z0-9_-]+/g, '_') + '.json'; }
 
   var api = {
-    SCHEMA: SCHEMA, VERSION: VERSION, DOMAINS: DOMAINS, BANDS: BANDS, VALID_PROFILES: VALID_PROFILES, ATTRIBUTES: ATTRIBUTES,
+    SCHEMA: SCHEMA, VERSION: VERSION, AGE_BANDS: AGE_BANDS, DOMAINS: DOMAINS, BANDS: BANDS, VALID_PROFILES: VALID_PROFILES, ATTRIBUTES: ATTRIBUTES,
     modeForDC: modeForDC, parseProfile: parseProfile, isValidProfile: isValidProfile,
     buildCharacter: buildCharacter, validateCharacter: validateCharacter,
     newId: newId, toFragment: toFragment, fromFragment: fromFragment, toJSONText: toJSONText, fileName: fileName

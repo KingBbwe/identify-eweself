@@ -117,7 +117,7 @@
         margin-left: 0.5rem;
         font-weight: bold;
       }
-      .plus-pill {
+      .plus-pill, .minus-pill {
         display: flex;
         justify-content: center;
         align-items: center;
@@ -131,7 +131,10 @@
         transition: 0.3s ease;
         margin-left: 1rem;
       }
-      .plus-pill:hover {
+      .plus-pill[disabled], .minus-pill[disabled] { opacity: 0.35; cursor: not-allowed; }
+      .roll-note { font-size: 0.8rem; opacity: 0.8; }
+      .age-select { margin: 0.5rem 0; }
+      .plus-pill:hover, .minus-pill:hover {
         background: var(--primary-hover);
         transform: scale(1.1);
       }
@@ -354,6 +357,8 @@
   </head>
   <!-- Real bot token/chat ID live in config.local.js (gitignored, not committed). See config.example.js -->
   <script src="config.local.js"></script>
+  <script src="allocation.js"></script>
+  <script src="rolls.js"></script>
   <script src="character.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -383,6 +388,14 @@
         <label for="ram">Ram (♂ Male)</label>
         <input type="radio" id="ewe" name="gender" value="ewe" />
         <label for="ewe">Ewe (♀ Female)</label>
+      </div>
+      <div class="age-select">
+        <label for="age-band">Age:</label>
+        <select id="age-band">
+          <option value="random" selected>Random</option>
+          <option value="18-36">18&ndash;36</option>
+          <option value="36-50+">36&ndash;50+</option>
+        </select>
       </div>
       <button id="forge-identity">Forge Identity</button>
       <button id="download-character" disabled>Download Character (JSON)</button>
@@ -730,8 +743,8 @@ function getTelegramMessage() {
         const ageBandMatch = trajectoryElement.innerHTML.match(/<strong>Age Band:<\/strong>\s*([^<]+)/);
         if (ageBandMatch) ageBand = ageBandMatch[1].trim();
 
-        if (ageBand.includes('0-50')) {
-            // For 0-50 age band
+        if (ageBand.includes('18-36')) {
+            // For 18-36 age band
             const fromMatch = trajectoryElement.innerHTML.match(/<strong>From:<\/strong>\s*([^<]+)\s*<strong>To:<\/strong>\s*([^<]+)/);
             const fromTo = fromMatch ? `🔄 *From:* ${fromMatch[1].trim()} *To:* ${fromMatch[2].trim()}` : '';
 
@@ -743,7 +756,7 @@ function getTelegramMessage() {
 
             journeyDetails = `${fromTo}\n${process}\n${perspective}`;
         } else {
-            // For 50+ age band
+            // For 36-50+ age band
             const currentMatch = trajectoryElement.innerHTML.match(/<strong>Current:<\/strong>\s*([^<]+)/);
             const current = currentMatch ? `🔄 *Current:* ${currentMatch[1].trim()}` : '';
 
@@ -787,7 +800,7 @@ function getTelegramMessage() {
 📊 *Attributes:*
 ${attributes}
 
-💫 *Surplus:* ${userSession.remainingSurplus || 'N/A'}
+💫 *Points to spend:* ${userSession.allocation ? AuldEweAllocation.remaining(userSession.allocation) : 'N/A'}
 
 🏛️ *Tribe:* ${userSession.tribe?.name || 'N/A'}
 🗣️ *Tongue:* ${userSession.tribe?.tongue || 'N/A'}
@@ -970,7 +983,9 @@ function generateExtendedSoulPatternDetails(sp) {
 function buildPdfContent() {
   // Retrieve dynamic content from the live page.
   const generatedName = document.querySelector("#result .generated-name")?.innerText || "N/A";
-  const heritageHTML = document.getElementById("heritage-result")?.innerHTML || "";
+  const heritageClone = document.getElementById("heritage-result")?.cloneNode(true);
+  if (heritageClone) heritageClone.querySelectorAll("button, .alloc-controls").forEach(n => n.remove());   // controls are not part of the sheet
+  const heritageHTML = heritageClone ? heritageClone.innerHTML : "";
   const soulPatternHTML = document.getElementById("soul-pattern")?.innerHTML || "";
   const coreTraitsHTML = document.querySelector(".core-traits")?.innerHTML || "";
   const journeyHTML = document.getElementById("trajectory")?.innerHTML || "";
@@ -1197,11 +1212,18 @@ function resetRollSession() {
       // Unified forgeIdentity function – used by both shake and button streams.
 
 // --- Forge Identity Function with Extended Soul Pattern Integration ---
+// Creation dice use the browser's crypto source where it exists.
+function cryptoRng() {
+  if (window.crypto && window.crypto.getRandomValues) { const a = new Uint32Array(1); window.crypto.getRandomValues(a); return a[0] / 4294967296; }
+  return Math.random();
+}
+
 function forgeIdentity() {
   console.log("Forging new identity...");
   // (Assume userSession is defined globally.)
   const rollCount = updateRollSession();
   const penalty = rollCount > 2 ? rollCount - 2 : 0;
+  const rng = cryptoRng;
 
   // Generate character name
   // A fresh forge is a fresh Character: new id, full rename allowance (the renames counter was never initialised).
@@ -1223,12 +1245,14 @@ function forgeIdentity() {
     </div>
   `;
 
-  // Select a random lineage and apply surplus penalty
+  // Select a random lineage. Its base spread seeds the 32-point allocation; rerolls cost points (never below the floor).
   const lineage = randomElement(lineages);
-  const effectiveSurplus = lineage.surplus - penalty;
   userSession.lineage = lineage;
-  userSession.currentAttributes = Object.assign({}, lineage.baseAttributes);
-  userSession.remainingSurplus = effectiveSurplus;
+  userSession.allocation = AuldEweAllocation.newAllocation(lineage.baseAttributes, {
+    mode: document.getElementById("free-build") && document.getElementById("free-build").checked ? "free" : "seeded",
+    penalty: penalty
+  });
+  userSession.currentAttributes = Object.assign({}, userSession.allocation.values);
 
   // Build the heritage HTML for display
   let heritageHTML = `
@@ -1239,17 +1263,10 @@ function forgeIdentity() {
       ${lineage.traits.map(t => `<li class="trait-pill">${t}</li>`).join("")}
     </ul>
     <p><strong>Role:</strong> ${lineage.role}</p>
-    <h3>Base Attributes</h3>
-    <ul class="base-attributes">
-      ${Object.keys(userSession.currentAttributes).map(attr => `
-        <li>
-          <strong>${attr}:</strong>
-          <span class="attr-value" data-attr="${attr}">${userSession.currentAttributes[attr]}</span>
-          <button class="plus-pill" data-attr="${attr}">+</button>
-        </li>
-      `).join("")}
-    </ul>
-    <p><strong>Surplus:</strong> <span id="surplus-points">${userSession.remainingSurplus}</span></p>
+    <h3>Attributes <small>(32-point allocation)</small></h3>
+    <label class="alloc-controls"><input type="checkbox" id="free-build" ${userSession.allocation.mode === "free" ? "checked" : ""}> Free build (every attribute starts at 1)</label>
+    <ul class="base-attributes" id="attr-list"></ul>
+    <p id="alloc-status"></p>
   `;
 
   // Append tribal affiliation details
@@ -1270,14 +1287,7 @@ function forgeIdentity() {
   `;
   document.getElementById("heritage-result").innerHTML = heritageHTML;
   document.getElementById("heritage-result").style.display = "block";
-
-  // Attach event listeners to plus-pill buttons for attribute allocation
-  document.querySelectorAll(".plus-pill").forEach(button => {
-    button.addEventListener("click", function () {
-      const attr = this.getAttribute("data-attr");
-      allocatePoint(attr);
-    });
-  });
+  renderAllocation();   // clicks are handled by one delegated listener (see the Character export script)
 
   // ----- Soul Pattern Integration -----
   // Ensure that soulPatterns exists
@@ -1285,9 +1295,10 @@ function forgeIdentity() {
     console.error("Error: soulPatterns dataset is missing or empty");
     return;
   }
-  // Generate a soul pattern from the local array
-  const generatedSoulPattern = randomElement(soulPatterns);
-  console.log("Generated soul pattern:", generatedSoulPattern);
+  // Documented rule: roll 2d6 as a fraction; if it is not one of the twelve profiles keep the first die and reroll the second.
+  const profileRoll = AuldEweRolls.rollProfile(rng);
+  const generatedSoulPattern = soulPatterns.find(sp => sp.profile.indexOf("(" + profileRoll.profileId + ")") !== -1);
+  if (!generatedSoulPattern) { console.error("No soul pattern for profile", profileRoll.profileId); return; }
 
   // Extract the base pattern before any dash (if present)
   const basePattern = generatedSoulPattern.pattern.split(" - ")[0].trim();
@@ -1298,9 +1309,7 @@ function forgeIdentity() {
   }
   // Find a matching extended profile using case-insensitive comparison on the base pattern
   const matchingProfile = (soulProfiles && soulProfiles.length > 0) ?
-    soulProfiles.find(profile =>
-      profile.soulPattern.toLowerCase() === basePattern.toLowerCase()
-    ) : null;
+    soulProfiles.find(profile => profile.profileId === profileRoll.profileId) : null;
 
   if (matchingProfile) {
     console.log("Matched soul profile:", matchingProfile);
@@ -1311,34 +1320,46 @@ function forgeIdentity() {
   }
 
   // Display basic soul pattern information in the visible area
+  const soulRollText = profileRoll.rerolls.length
+    ? `Rolled 2d6: ${profileRoll.dice[0]} and ${profileRoll.dice[1]} (not a profile). Second die rerolled: ${profileRoll.rerolls.join(", ")} → ${profileRoll.profileId}`
+    : `Rolled 2d6: ${profileRoll.dice[0]} and ${profileRoll.dice[1]} → ${profileRoll.profileId}`;
   document.getElementById("soul-pattern").innerHTML = `
     <div style="color: var(--near-white);">
       ${userSession.soulPattern.soulPattern || userSession.soulPattern.pattern}
     </div>
+    <p class="roll-note">${soulRollText}</p>
     <p class="orbitron-bold-blue">Personality Profile: ${userSession.soulPattern.name || userSession.soulPattern.profile || "N/A"}</p>
   `;
 
   // ----- Core Traits Generation -----
-  const consciousTrait = randomElement(coreTraits);
-  const unconsciousTrait = randomElement(coreTraits);
+  // Each trait is 2d8 read as (first - 1) * 8 + second: uniform over the 64 hexagrams. The two rolls are independent.
+  const consciousRoll = AuldEweRolls.rollCoreTrait(rng), unconsciousRoll = AuldEweRolls.rollCoreTrait(rng);
+  const consciousTrait = coreTraits.find(t => t.hexagram === consciousRoll.hexagram);
+  const unconsciousTrait = coreTraits.find(t => t.hexagram === unconsciousRoll.hexagram);
   userSession.coreTraits = [consciousTrait, unconsciousTrait];
+  userSession.creation = {
+    soulRoll: { dice: profileRoll.dice, rerolls: profileRoll.rerolls },
+    traitRolls: { conscious: consciousRoll.dice, unconscious: unconsciousRoll.dice },
+    rollCount: rollCount, penalty: penalty
+  };
   document.querySelector(".core-traits .conscious").innerHTML = `
     <h4 class="orbitron-bold-blue">Conscious</h4>
-    <p><strong>${consciousTrait.trait}</strong>: ${consciousTrait.description} (Hexagram ${consciousTrait.hexagram})</p>
+    <p><strong>${consciousTrait.trait}</strong>: ${consciousTrait.description} (Hexagram ${consciousTrait.hexagram}; 2d8: ${consciousRoll.dice[0]} and ${consciousRoll.dice[1]})</p>
   `;
   document.querySelector(".core-traits .unconscious").innerHTML = `
     <h4 class="orbitron-bold-blue">Unconscious</h4>
-    <p><strong>${unconsciousTrait.trait}</strong>: ${unconsciousTrait.description} (Hexagram ${unconsciousTrait.hexagram})</p>
+    <p><strong>${unconsciousTrait.trait}</strong>: ${unconsciousTrait.description} (Hexagram ${unconsciousTrait.hexagram}; 2d8: ${unconsciousRoll.dice[0]} and ${unconsciousRoll.dice[1]})</p>
   `;
 
   // ----- Character Journey and Hexagram Matrix Population -----
-  const selectedAgeBand = Math.random() < 0.5 ? "0-50" : "50+";
-  const availableTrajectories = trajectories.filter(t => t.ageBand === selectedAgeBand);
-  const selectedTrajectory = randomElement(availableTrajectories);
+  // Age bands (ruled): "18-36" and "36-50+". The player may choose one; Random picks a band at even odds, as before.
+  const chosenBand = (document.getElementById("age-band") || {}).value || "random";
+  const selectedAgeBand = AuldEweRolls.AGE_BANDS.indexOf(chosenBand) !== -1 ? chosenBand : AuldEweRolls.AGE_BANDS[Math.floor(rng() * 2)];
+  const selectedTrajectory = AuldEweRolls.rollTrajectory(rng, trajectories, selectedAgeBand).entry;
   userSession.trajectory = selectedTrajectory;   // kept as data, not only as text on the page
   userSession.ageBand = selectedAgeBand;
   let trajectoryHTML = `<p><strong>Age Band:</strong> ${selectedTrajectory.ageBand}</p>`;
-  if (selectedAgeBand === "0-50") {
+  if (selectedAgeBand === "18-36") {
     trajectoryHTML += `
       <p><strong>From:</strong> ${selectedTrajectory.fromName} <strong>To:</strong> ${selectedTrajectory.toName}</p>
       <p><strong>Process:</strong> ${selectedTrajectory.process}</p>
@@ -1357,8 +1378,8 @@ function forgeIdentity() {
   // Set the DC values based on core traits and trajectory details
   const intellectualDC = consciousTrait.hexagram;
   const physicalDC = unconsciousTrait.hexagram;
-  const emotionalDC = selectedAgeBand === "0-50" ? selectedTrajectory.fromHex : selectedTrajectory.currentHex;
-  const spiritualDC = selectedAgeBand === "0-50" ? selectedTrajectory.toHex : selectedTrajectory.reflectingHex;
+  const emotionalDC = selectedAgeBand === "18-36" ? selectedTrajectory.fromHex : selectedTrajectory.currentHex;
+  const spiritualDC = selectedAgeBand === "18-36" ? selectedTrajectory.toHex : selectedTrajectory.reflectingHex;
   document.getElementById("intellectual-dc").textContent = intellectualDC;
   document.getElementById("physical-dc").textContent = physicalDC;
   document.getElementById("emotional-dc").textContent = emotionalDC;
@@ -1462,44 +1483,36 @@ document.getElementById("close-modal").addEventListener("click", function () {
       // allocatePoint: Called when a plus-pill is clicked.
 
       function allocatePoint(attribute) {
+        const al = userSession.allocation;
+        if (!al) return;
+        if (al.values[attribute] >= AuldEweAllocation.MAX) { alert("Maximum points for this attribute reached (" + AuldEweAllocation.MAX + ")"); return; }
+        if (AuldEweAllocation.remaining(al) <= 0) { alert("No points remaining"); return; }
+        userSession.allocation = AuldEweAllocation.add(al, attribute);
+        renderAllocation();
+      }
 
-        // Enforce an upper limit of 5 for any attribute.
+      function refundPoint(attribute) {
+        const al = userSession.allocation;
+        if (!al || !AuldEweAllocation.canRemove(al, attribute)) return;
+        userSession.allocation = AuldEweAllocation.remove(al, attribute);
+        renderAllocation();
+      }
 
-        if (userSession.currentAttributes[attribute] < 5) {
-
-          if (userSession.remainingSurplus > 0) {
-
-            userSession.currentAttributes[attribute]++;
-
-            userSession.remainingSurplus--;
-
-            // Update the attribute display.
-
-            const span = document.querySelector(`.attr-value[data-attr="${attribute}"]`);
-
-            if (span) {
-
-              span.textContent = userSession.currentAttributes[attribute];
-
-            }
-
-            // Update surplus display.
-
-            document.getElementById("surplus-points").textContent = userSession.remainingSurplus;
-            persistCharacter();
-
-          } else {
-
-            alert("No surplus points remaining");
-
-          }
-
-        } else {
-
-          alert("Maximum points for this attribute reached (5)");
-
-        }
-
+      // Redraws the attribute list and the points line from userSession.allocation, then snapshots the Character.
+      function renderAllocation() {
+        const al = userSession.allocation, A = AuldEweAllocation, s = A.summary(al);
+        document.getElementById("attr-list").innerHTML = A.ATTRIBUTES.map(a => `
+          <li>
+            <strong>${a}:</strong>
+            <span class="attr-value" data-attr="${a}">${al.values[a]}</span>
+            <button class="minus-pill" data-attr="${a}" ${A.canRemove(al, a) ? "" : "disabled"} aria-label="Remove a point from ${a}">&minus;</button>
+            <button class="plus-pill" data-attr="${a}" ${A.canAdd(al, a) ? "" : "disabled"} aria-label="Add a point to ${a}">+</button>
+          </li>`).join("");
+        const cost = al.penalty && al.budget < A.TOTAL ? ` &mdash; rerolls have cost ${A.TOTAL - al.budget} point${A.TOTAL - al.budget === 1 ? "" : "s"}` : "";
+        document.getElementById("alloc-status").innerHTML =
+          `<strong>Points to spend:</strong> <span id="surplus-points">${s.remaining}</span> &middot; ${s.spent} of ${s.budget} used${cost}${s.complete ? " &middot; <strong>Complete</strong>" : ""}`;
+        userSession.currentAttributes = Object.assign({}, al.values);
+        persistCharacter();
       }
 
 
@@ -2597,70 +2610,70 @@ const coreTraits = [
   }
 ];
 const trajectories = [
-  { id: 1, ageBand: "0-50", fromHex: 13, fromName: "The Listener (Hex 13)", toHex: 7, toName: "The Leader (Hex 7)", process: "Developing leadership while retaining empathy", perspective: "Learning when to guide vs. listen" },
-  { id: 2, ageBand: "0-50", fromHex: 49, fromName: "The Revolutionist (Hex 49)", toHex: 4, toName: "The Systemizer (Hex 4)", process: "Channeling rebellion into structural change", perspective: "Balancing idealism with practicality" },
-  { id: 3, ageBand: "0-50", fromHex: 30, fromName: "The Visionary (Hex 30)", toHex: 29, toName: "The Committed (Hex 29)", process: "Grounding ideas in sustained action", perspective: "Discovering patience through passion" },
-  { id: 4, ageBand: "0-50", fromHex: 55, fromName: "The Abundant (Hex 55)", toHex: 59, toName: "The Harmonizer (Hex 59)", process: "Transforming resources into unity", perspective: "Learning true wealth is collective" },
-  { id: 5, ageBand: "0-50", fromHex: 37, fromName: "The Familial (Hex 37)", toHex: 40, toName: "The Liberator (Hex 40)", process: "Evolving community bonds into autonomy", perspective: "Exploring freedom within relationships" },
-  { id: 6, ageBand: "0-50", fromHex: 63, fromName: "The Doubter (Hex 63)", toHex: 64, toName: "The Clarifier (Hex 64)", process: "Refining skepticism into discernment", perspective: "Developing critical thinking" },
-  { id: 7, ageBand: "0-50", fromHex: 22, fromName: "The Charismatic (Hex 22)", toHex: 47, toName: "The Insightful (Hex 47)", process: "Deepening charm into wisdom", perspective: "Moving beyond superficiality" },
-  { id: 8, ageBand: "0-50", fromHex: 36, fromName: "The Crisis Manager (Hex 36)", toHex: 6, toName: "The Mediator (Hex 6)", process: "Evolving reaction into prevention", perspective: "Learning proactive peacemaking" },
-  { id: 9, ageBand: "0-50", fromHex: 25, fromName: "The Innocent (Hex 25)", toHex: 46, toName: "The Determined (Hex 46)", process: "Maturing naivety into resilience", perspective: "Building strength through experience" },
-  { id: 10, ageBand: "0-50", fromHex: 17, fromName: "The Follower (Hex 17)", toHex: 18, toName: "The Reformer (Hex 18)", process: "Growing loyalty into constructive change", perspective: "Learning when to support vs. challenge" },
-  { id: 11, ageBand: "0-50", fromHex: 21, fromName: "The Controller (Hex 21)", toHex: 48, toName: "The Deep Thinker (Hex 48)", process: "Transforming authority into contemplation", perspective: "Discovering power in reflection" },
-  { id: 12, ageBand: "0-50", fromHex: 51, fromName: "The Shocking (Hex 51)", toHex: 57, toName: "The Gentle Penetrator (Hex 57)", process: "Channeling disruption into subtle influence", perspective: "Learning lasting change requires patience" },
-  { id: 13, ageBand: "0-50", fromHex: 42, fromName: "The Completer (Hex 42)", toHex: 32, toName: "The Consistent (Hex 32)", process: "Evolving finalization into maintenance", perspective: "Understanding completion is cyclical" },
-  { id: 14, ageBand: "0-50", fromHex: 50, fromName: "The Responsible (Hex 50)", toHex: 3, toName: "The Innovative (Hex 3)", process: "Balancing duty with creativity", perspective: "Discovering tradition can fuel progress" },
-  { id: 15, ageBand: "0-50", fromHex: 27, fromName: "The Nurturer (Hex 27)", toHex: 28, toName: "The Visionary Risk-Taker (Hex 28)", process: "Transforming care into bold action", perspective: "Learning to balance caution with courage" },
-  { id: 16, ageBand: "0-50", fromHex: 24, fromName: "The Returner (Hex 24)", toHex: 44, toName: "The Alert (Hex 44)", process: "Evolving reflection into preparedness", perspective: "Using history to anticipate futures" },
-  { id: 17, ageBand: "0-50", fromHex: 1, fromName: "The Creative (Hex 1)", toHex: 2, toName: "The Receptive (Hex 2)", process: "Balancing initiation with adaptation", perspective: "Learning creation requires flexibility" },
-  { id: 18, ageBand: "0-50", fromHex: 23, fromName: "The Transformer (Hex 23)", toHex: 43, toName: "The Insightful Decider (Hex 43)", process: "Channeling chaos into decisive action", perspective: "Finding clarity amidst upheaval" },
-  { id: 19, ageBand: "0-50", fromHex: 14, fromName: "The Prosperous (Hex 14)", toHex: 8, toName: "The Unifier (Hex 8)", process: "Transforming wealth into community", perspective: "Learning prosperity is collective" },
-  { id: 20, ageBand: "0-50", fromHex: 20, fromName: "The Contemplative (Hex 20)", toHex: 34, toName: "The Powerful (Hex 34)", process: "Grounding thought into action", perspective: "Discovering reflection enables influence" },
-  { id: 21, ageBand: "0-50", fromHex: 16, fromName: "The Enthusiastic (Hex 16)", toHex: 9, toName: "The Detail-Oriented (Hex 9)", process: "Focusing energy into precision", perspective: "Learning big visions need small steps" },
-  { id: 22, ageBand: "0-50", fromHex: 35, fromName: "The Progressive (Hex 35)", toHex: 5, toName: "The Patient (Hex 5)", process: "Balancing speed with timing", perspective: "Discovering progress requires pauses" },
-  { id: 23, ageBand: "0-50", fromHex: 45, fromName: "The Gatherer (Hex 45)", toHex: 26, toName: "The Tamer (Hex 26)", process: "Transforming collection into focus", perspective: "Learning abundance needs direction" },
-  { id: 24, ageBand: "0-50", fromHex: 12, fromName: "The Stagnant (Hex 12)", toHex: 11, toName: "The Harmonious (Hex 11)", process: "Breaking paralysis through balance", perspective: "Discovering flow overcomes obstacles" },
-  { id: 25, ageBand: "0-50", fromHex: 15, fromName: "The Modest (Hex 15)", toHex: 10, toName: "The Confident (Hex 10)", process: "Building self-assurance from humility", perspective: "Learning quiet strength becomes visible" },
-  { id: 26, ageBand: "0-50", fromHex: 52, fromName: "The Still (Hex 52)", toHex: 58, toName: "The Joyous (Hex 58)", process: "Transforming meditation into engagement", perspective: "Discovering inner peace fuels action" },
-  { id: 27, ageBand: "0-50", fromHex: 38, fromName: "The Challenger (Hex 38)", toHex: 39, toName: "The Instigator (Hex 39)", process: "Channeling opposition into provocation", perspective: "Learning to spark needed change" },
-  { id: 28, ageBand: "0-50", fromHex: 53, fromName: "The Pioneer (Hex 53)", toHex: 54, toName: "The Achiever (Hex 54)", process: "Grounding exploration into results", perspective: "Balancing novelty with completion" },
-  { id: 29, ageBand: "0-50", fromHex: 61, fromName: "The Enigma (Hex 61)", toHex: 62, toName: "The Meticulous (Hex 62)", process: "Transforming mystery into analysis", perspective: "Discovering clarity in complexity" },
-  { id: 30, ageBand: "0-50", fromHex: 56, fromName: "The Excited (Hex 56)", toHex: 60, toName: "The Restrained (Hex 60)", process: "Channeling energy into discipline", perspective: "Learning focus amplifies impact" },
-  { id: 31, ageBand: "0-50", fromHex: 31, fromName: "The Guide (Hex 31)", toHex: 41, toName: "The Dreamer (Hex 41)", process: "Balancing leadership with imagination", perspective: "Discovering vision informs direction" },
-  { id: 32, ageBand: "0-50", fromHex: 33, fromName: "The Reserved (Hex 33)", toHex: 19, toName: "The Seeker (Hex 19)", process: "Transforming introspection into exploration", perspective: "Learning internal wisdom drives action" },
-  { id: 33, ageBand: "50+", currentHex: 7, currentName: "The Leader (Hex 7)", reflectingHex: 13, reflectingName: "The Listener (Hex 13)", perspective: "Guiding through earned authority", reflection: "My listening phase taught me true leadership serves" },
-  { id: 34, ageBand: "50+", currentHex: 4, currentName: "The Systemizer (Hex 4)", reflectingHex: 49, reflectingName: "The Revolutionist (Hex 49)", perspective: "Maintaining humane systems", reflection: "My rebellious youth ensures these structures stay ethical" },
-  { id: 35, ageBand: "50+", currentHex: 29, currentName: "The Committed (Hex 29)", reflectingHex: 30, reflectingName: "The Visionary (Hex 30)", perspective: "Sustaining effort through purpose", reflection: "My early passion still fuels this work" },
-  { id: 36, ageBand: "50+", currentHex: 59, currentName: "The Harmonizer (Hex 59)", reflectingHex: 55, reflectingName: "The Abundant (Hex 55)", perspective: "Resolving conflicts through understanding", reflection: "My experience with wealth taught true value" },
-  { id: 37, ageBand: "50+", currentHex: 40, currentName: "The Liberator (Hex 40)", reflectingHex: 37, reflectingName: "The Familial (Hex 37)", perspective: "Championing freedom with compassion", reflection: "My family roots ground my advocacy" },
-  { id: 38, ageBand: "50+", currentHex: 64, currentName: "The Clarifier (Hex 64)", reflectingHex: 63, reflectingName: "The Doubter (Hex 63)", perspective: "Resolving complexity systematically", reflection: "My skepticism trained my discernment" },
-  { id: 39, ageBand: "50+", currentHex: 47, currentName: "The Insightful (Hex 47)", reflectingHex: 22, reflectingName: "The Charismatic (Hex 22)", perspective: "Sharing wisdom authentically", reflection: "My charm evolved into meaningful presence" },
-  { id: 40, ageBand: "50+", currentHex: 6, currentName: "The Mediator (Hex 6)", reflectingHex: 36, reflectingName: "The Crisis Manager (Hex 36)", perspective: "Preventing conflicts proactively", reflection: "My crisis experience taught prevention's value" },
-  { id: 41, ageBand: "50+", currentHex: 46, currentName: "The Determined (Hex 46)", reflectingHex: 25, reflectingName: "The Innocent (Hex 25)", perspective: "Persisting with childlike wonder", reflection: "My naivety became resilient optimism" },
-  { id: 42, ageBand: "50+", currentHex: 18, currentName: "The Reformer (Hex 18)", reflectingHex: 17, reflectingName: "The Follower (Hex 17)", perspective: "Improving systems respectfully", reflection: "My loyalty taught me how to change carefully" },
-  { id: 43, ageBand: "50+", currentHex: 48, currentName: "The Deep Thinker (Hex 48)", reflectingHex: 21, reflectingName: "The Controller (Hex 21)", perspective: "Understanding through contemplation", reflection: "My need for control revealed deeper truths" },
-  { id: 44, ageBand: "50+", currentHex: 57, currentName: "The Gentle Penetrator (Hex 57)", reflectingHex: 51, reflectingName: "The Shocking (Hex 51)", perspective: "Effecting change through subtlety", reflection: "My disruptive past taught patience" },
-  { id: 45, ageBand: "50+", currentHex: 32, currentName: "The Consistent (Hex 32)", reflectingHex: 42, reflectingName: "The Completer (Hex 42)", perspective: "Maintaining through cycles", reflection: "My completions taught me about renewal" },
-  { id: 46, ageBand: "50+", currentHex: 3, currentName: "The Innovative (Hex 3)", reflectingHex: 50, reflectingName: "The Responsible (Hex 50)", perspective: "Creating within boundaries", reflection: "My sense of duty fuels creative solutions" },
-  { id: 47, ageBand: "50+", currentHex: 28, currentName: "The Visionary Risk-Taker (Hex 28)", reflectingHex: 27, reflectingName: "The Nurturer (Hex 27)", perspective: "Bold action informed by care", reflection: "My nurturing past grounds my daring" },
-  { id: 48, ageBand: "50+", currentHex: 44, currentName: "The Alert (Hex 44)", reflectingHex: 24, reflectingName: "The Returner (Hex 24)", perspective: "Vigilance informed by history", reflection: "My reflections taught me anticipation" },
-  { id: 49, ageBand: "50+", currentHex: 2, currentName: "The Receptive (Hex 2)", reflectingHex: 1, reflectingName: "The Creative (Hex 1)", perspective: "Adapting through foundational wisdom", reflection: "My creative spark lives in my flexibility" },
-  { id: 50, ageBand: "50+", currentHex: 43, currentName: "The Insightful Decider (Hex 43)", reflectingHex: 23, reflectingName: "The Transformer (Hex 23)", perspective: "Decisiveness born from chaos", reflection: "My turbulent past sharpened my clarity" },
-  { id: 51, ageBand: "50+", currentHex: 8, currentName: "The Unifier (Hex 8)", reflectingHex: 14, reflectingName: "The Prosperous (Hex 14)", perspective: "Building community through resources", reflection: "My wealth became a tool for connection" },
-  { id: 52, ageBand: "50+", currentHex: 34, currentName: "The Powerful (Hex 34)", reflectingHex: 20, reflectingName: "The Contemplative (Hex 20)", perspective: "Strength informed by reflection", reflection: "My quiet years empower my actions" },
-  { id: 53, ageBand: "50+", currentHex: 9, currentName: "The Detail-Oriented (Hex 9)", reflectingHex: 16, reflectingName: "The Enthusiastic (Hex 16)", perspective: "Precision fueled by passion", reflection: "My boundless energy found focus" },
-  { id: 54, ageBand: "50+", currentHex: 5, currentName: "The Patient (Hex 5)", reflectingHex: 35, reflectingName: "The Progressive (Hex 35)", perspective: "Strategic waiting through experience", reflection: "My urgency taught me timing's value" },
-  { id: 55, ageBand: "50+", currentHex: 26, currentName: "The Tamer (Hex 26)", reflectingHex: 45, reflectingName: "The Gatherer (Hex 45)", perspective: "Focusing collected resources", reflection: "My accumulation phase taught discernment" },
-  { id: 56, ageBand: "50+", currentHex: 11, currentName: "The Harmonious (Hex 11)", reflectingHex: 12, reflectingName: "The Stagnant (Hex 12)", perspective: "Creating flow through past obstacles", reflection: "My paralysis became my teacher" },
-  { id: 57, ageBand: "50+", currentHex: 10, currentName: "The Confident (Hex 10)", reflectingHex: 15, reflectingName: "The Modest (Hex 15)", perspective: "Assurance rooted in humility", reflection: "My quiet beginnings anchor my presence" },
-  { id: 58, ageBand: "50+", currentHex: 58, currentName: "The Joyous (Hex 58)", reflectingHex: 52, reflectingName: "The Still (Hex 52)", perspective: "Engagement fueled by inner peace", reflection: "My meditation practice feeds my vitality" },
-  { id: 59, ageBand: "50+", currentHex: 39, currentName: "The Instigator (Hex 39)", reflectingHex: 38, reflectingName: "The Challenger (Hex 38)", perspective: "Provoking thoughtful change", reflection: "My opposition taught me constructive disruption" },
-  { id: 60, ageBand: "50+", currentHex: 54, currentName: "The Achiever (Hex 54)", reflectingHex: 53, reflectingName: "The Pioneer (Hex 53)", perspective: "Completion honors exploration", reflection: "My wandering youth informs my results" },
-  { id: 61, ageBand: "50+", currentHex: 62, currentName: "The Meticulous (Hex 62)", reflectingHex: 61, reflectingName: "The Enigma (Hex 61)", perspective: "Analysis preserving mystery", reflection: "My fascination with secrets taught precision" },
-  { id: 62, ageBand: "50+", currentHex: 60, currentName: "The Restrained (Hex 60)", reflectingHex: 56, reflectingName: "The Excited (Hex 56)", perspective: "Discipline informed by energy", reflection: "My restless past taught me focus" },
-  { id: 63, ageBand: "50+", currentHex: 41, currentName: "The Dreamer (Hex 41)", reflectingHex: 31, reflectingName: "The Guide (Hex 31)", perspective: "Imagination grounded in reality", reflection: "My leadership experience fuels visions" },
-  { id: 64, ageBand: "50+", currentHex: 19, currentName: "The Seeker (Hex 19)", reflectingHex: 33, reflectingName: "The Reserved (Hex 33)", perspective: "Exploration rooted in inner wisdom", reflection: "My solitude became my compass" }
+  { id: 1, ageBand: "18-36", fromHex: 13, fromName: "The Listener (Hex 13)", toHex: 7, toName: "The Leader (Hex 7)", process: "Developing leadership while retaining empathy", perspective: "Learning when to guide vs. listen" },
+  { id: 2, ageBand: "18-36", fromHex: 49, fromName: "The Revolutionist (Hex 49)", toHex: 4, toName: "The Systemizer (Hex 4)", process: "Channeling rebellion into structural change", perspective: "Balancing idealism with practicality" },
+  { id: 3, ageBand: "18-36", fromHex: 30, fromName: "The Visionary (Hex 30)", toHex: 29, toName: "The Committed (Hex 29)", process: "Grounding ideas in sustained action", perspective: "Discovering patience through passion" },
+  { id: 4, ageBand: "18-36", fromHex: 55, fromName: "The Abundant (Hex 55)", toHex: 59, toName: "The Harmonizer (Hex 59)", process: "Transforming resources into unity", perspective: "Learning true wealth is collective" },
+  { id: 5, ageBand: "18-36", fromHex: 37, fromName: "The Familial (Hex 37)", toHex: 40, toName: "The Liberator (Hex 40)", process: "Evolving community bonds into autonomy", perspective: "Exploring freedom within relationships" },
+  { id: 6, ageBand: "18-36", fromHex: 63, fromName: "The Doubter (Hex 63)", toHex: 64, toName: "The Clarifier (Hex 64)", process: "Refining skepticism into discernment", perspective: "Developing critical thinking" },
+  { id: 7, ageBand: "18-36", fromHex: 22, fromName: "The Charismatic (Hex 22)", toHex: 47, toName: "The Insightful (Hex 47)", process: "Deepening charm into wisdom", perspective: "Moving beyond superficiality" },
+  { id: 8, ageBand: "18-36", fromHex: 36, fromName: "The Crisis Manager (Hex 36)", toHex: 6, toName: "The Mediator (Hex 6)", process: "Evolving reaction into prevention", perspective: "Learning proactive peacemaking" },
+  { id: 9, ageBand: "18-36", fromHex: 25, fromName: "The Innocent (Hex 25)", toHex: 46, toName: "The Determined (Hex 46)", process: "Maturing naivety into resilience", perspective: "Building strength through experience" },
+  { id: 10, ageBand: "18-36", fromHex: 17, fromName: "The Follower (Hex 17)", toHex: 18, toName: "The Reformer (Hex 18)", process: "Growing loyalty into constructive change", perspective: "Learning when to support vs. challenge" },
+  { id: 11, ageBand: "18-36", fromHex: 21, fromName: "The Controller (Hex 21)", toHex: 48, toName: "The Deep Thinker (Hex 48)", process: "Transforming authority into contemplation", perspective: "Discovering power in reflection" },
+  { id: 12, ageBand: "18-36", fromHex: 51, fromName: "The Shocking (Hex 51)", toHex: 57, toName: "The Gentle Penetrator (Hex 57)", process: "Channeling disruption into subtle influence", perspective: "Learning lasting change requires patience" },
+  { id: 13, ageBand: "18-36", fromHex: 42, fromName: "The Completer (Hex 42)", toHex: 32, toName: "The Consistent (Hex 32)", process: "Evolving finalization into maintenance", perspective: "Understanding completion is cyclical" },
+  { id: 14, ageBand: "18-36", fromHex: 50, fromName: "The Responsible (Hex 50)", toHex: 3, toName: "The Innovative (Hex 3)", process: "Balancing duty with creativity", perspective: "Discovering tradition can fuel progress" },
+  { id: 15, ageBand: "18-36", fromHex: 27, fromName: "The Nurturer (Hex 27)", toHex: 28, toName: "The Visionary Risk-Taker (Hex 28)", process: "Transforming care into bold action", perspective: "Learning to balance caution with courage" },
+  { id: 16, ageBand: "18-36", fromHex: 24, fromName: "The Returner (Hex 24)", toHex: 44, toName: "The Alert (Hex 44)", process: "Evolving reflection into preparedness", perspective: "Using history to anticipate futures" },
+  { id: 17, ageBand: "18-36", fromHex: 1, fromName: "The Creative (Hex 1)", toHex: 2, toName: "The Receptive (Hex 2)", process: "Balancing initiation with adaptation", perspective: "Learning creation requires flexibility" },
+  { id: 18, ageBand: "18-36", fromHex: 23, fromName: "The Transformer (Hex 23)", toHex: 43, toName: "The Insightful Decider (Hex 43)", process: "Channeling chaos into decisive action", perspective: "Finding clarity amidst upheaval" },
+  { id: 19, ageBand: "18-36", fromHex: 14, fromName: "The Prosperous (Hex 14)", toHex: 8, toName: "The Unifier (Hex 8)", process: "Transforming wealth into community", perspective: "Learning prosperity is collective" },
+  { id: 20, ageBand: "18-36", fromHex: 20, fromName: "The Contemplative (Hex 20)", toHex: 34, toName: "The Powerful (Hex 34)", process: "Grounding thought into action", perspective: "Discovering reflection enables influence" },
+  { id: 21, ageBand: "18-36", fromHex: 16, fromName: "The Enthusiastic (Hex 16)", toHex: 9, toName: "The Detail-Oriented (Hex 9)", process: "Focusing energy into precision", perspective: "Learning big visions need small steps" },
+  { id: 22, ageBand: "18-36", fromHex: 35, fromName: "The Progressive (Hex 35)", toHex: 5, toName: "The Patient (Hex 5)", process: "Balancing speed with timing", perspective: "Discovering progress requires pauses" },
+  { id: 23, ageBand: "18-36", fromHex: 45, fromName: "The Gatherer (Hex 45)", toHex: 26, toName: "The Tamer (Hex 26)", process: "Transforming collection into focus", perspective: "Learning abundance needs direction" },
+  { id: 24, ageBand: "18-36", fromHex: 12, fromName: "The Stagnant (Hex 12)", toHex: 11, toName: "The Harmonious (Hex 11)", process: "Breaking paralysis through balance", perspective: "Discovering flow overcomes obstacles" },
+  { id: 25, ageBand: "18-36", fromHex: 15, fromName: "The Modest (Hex 15)", toHex: 10, toName: "The Confident (Hex 10)", process: "Building self-assurance from humility", perspective: "Learning quiet strength becomes visible" },
+  { id: 26, ageBand: "18-36", fromHex: 52, fromName: "The Still (Hex 52)", toHex: 58, toName: "The Joyous (Hex 58)", process: "Transforming meditation into engagement", perspective: "Discovering inner peace fuels action" },
+  { id: 27, ageBand: "18-36", fromHex: 38, fromName: "The Challenger (Hex 38)", toHex: 39, toName: "The Instigator (Hex 39)", process: "Channeling opposition into provocation", perspective: "Learning to spark needed change" },
+  { id: 28, ageBand: "18-36", fromHex: 53, fromName: "The Pioneer (Hex 53)", toHex: 54, toName: "The Achiever (Hex 54)", process: "Grounding exploration into results", perspective: "Balancing novelty with completion" },
+  { id: 29, ageBand: "18-36", fromHex: 61, fromName: "The Enigma (Hex 61)", toHex: 62, toName: "The Meticulous (Hex 62)", process: "Transforming mystery into analysis", perspective: "Discovering clarity in complexity" },
+  { id: 30, ageBand: "18-36", fromHex: 56, fromName: "The Excited (Hex 56)", toHex: 60, toName: "The Restrained (Hex 60)", process: "Channeling energy into discipline", perspective: "Learning focus amplifies impact" },
+  { id: 31, ageBand: "18-36", fromHex: 31, fromName: "The Guide (Hex 31)", toHex: 41, toName: "The Dreamer (Hex 41)", process: "Balancing leadership with imagination", perspective: "Discovering vision informs direction" },
+  { id: 32, ageBand: "18-36", fromHex: 33, fromName: "The Reserved (Hex 33)", toHex: 19, toName: "The Seeker (Hex 19)", process: "Transforming introspection into exploration", perspective: "Learning internal wisdom drives action" },
+  { id: 33, ageBand: "36-50+", currentHex: 7, currentName: "The Leader (Hex 7)", reflectingHex: 13, reflectingName: "The Listener (Hex 13)", perspective: "Guiding through earned authority", reflection: "My listening phase taught me true leadership serves" },
+  { id: 34, ageBand: "36-50+", currentHex: 4, currentName: "The Systemizer (Hex 4)", reflectingHex: 49, reflectingName: "The Revolutionist (Hex 49)", perspective: "Maintaining humane systems", reflection: "My rebellious youth ensures these structures stay ethical" },
+  { id: 35, ageBand: "36-50+", currentHex: 29, currentName: "The Committed (Hex 29)", reflectingHex: 30, reflectingName: "The Visionary (Hex 30)", perspective: "Sustaining effort through purpose", reflection: "My early passion still fuels this work" },
+  { id: 36, ageBand: "36-50+", currentHex: 59, currentName: "The Harmonizer (Hex 59)", reflectingHex: 55, reflectingName: "The Abundant (Hex 55)", perspective: "Resolving conflicts through understanding", reflection: "My experience with wealth taught true value" },
+  { id: 37, ageBand: "36-50+", currentHex: 40, currentName: "The Liberator (Hex 40)", reflectingHex: 37, reflectingName: "The Familial (Hex 37)", perspective: "Championing freedom with compassion", reflection: "My family roots ground my advocacy" },
+  { id: 38, ageBand: "36-50+", currentHex: 64, currentName: "The Clarifier (Hex 64)", reflectingHex: 63, reflectingName: "The Doubter (Hex 63)", perspective: "Resolving complexity systematically", reflection: "My skepticism trained my discernment" },
+  { id: 39, ageBand: "36-50+", currentHex: 47, currentName: "The Insightful (Hex 47)", reflectingHex: 22, reflectingName: "The Charismatic (Hex 22)", perspective: "Sharing wisdom authentically", reflection: "My charm evolved into meaningful presence" },
+  { id: 40, ageBand: "36-50+", currentHex: 6, currentName: "The Mediator (Hex 6)", reflectingHex: 36, reflectingName: "The Crisis Manager (Hex 36)", perspective: "Preventing conflicts proactively", reflection: "My crisis experience taught prevention's value" },
+  { id: 41, ageBand: "36-50+", currentHex: 46, currentName: "The Determined (Hex 46)", reflectingHex: 25, reflectingName: "The Innocent (Hex 25)", perspective: "Persisting with childlike wonder", reflection: "My naivety became resilient optimism" },
+  { id: 42, ageBand: "36-50+", currentHex: 18, currentName: "The Reformer (Hex 18)", reflectingHex: 17, reflectingName: "The Follower (Hex 17)", perspective: "Improving systems respectfully", reflection: "My loyalty taught me how to change carefully" },
+  { id: 43, ageBand: "36-50+", currentHex: 48, currentName: "The Deep Thinker (Hex 48)", reflectingHex: 21, reflectingName: "The Controller (Hex 21)", perspective: "Understanding through contemplation", reflection: "My need for control revealed deeper truths" },
+  { id: 44, ageBand: "36-50+", currentHex: 57, currentName: "The Gentle Penetrator (Hex 57)", reflectingHex: 51, reflectingName: "The Shocking (Hex 51)", perspective: "Effecting change through subtlety", reflection: "My disruptive past taught patience" },
+  { id: 45, ageBand: "36-50+", currentHex: 32, currentName: "The Consistent (Hex 32)", reflectingHex: 42, reflectingName: "The Completer (Hex 42)", perspective: "Maintaining through cycles", reflection: "My completions taught me about renewal" },
+  { id: 46, ageBand: "36-50+", currentHex: 3, currentName: "The Innovative (Hex 3)", reflectingHex: 50, reflectingName: "The Responsible (Hex 50)", perspective: "Creating within boundaries", reflection: "My sense of duty fuels creative solutions" },
+  { id: 47, ageBand: "36-50+", currentHex: 28, currentName: "The Visionary Risk-Taker (Hex 28)", reflectingHex: 27, reflectingName: "The Nurturer (Hex 27)", perspective: "Bold action informed by care", reflection: "My nurturing past grounds my daring" },
+  { id: 48, ageBand: "36-50+", currentHex: 44, currentName: "The Alert (Hex 44)", reflectingHex: 24, reflectingName: "The Returner (Hex 24)", perspective: "Vigilance informed by history", reflection: "My reflections taught me anticipation" },
+  { id: 49, ageBand: "36-50+", currentHex: 2, currentName: "The Receptive (Hex 2)", reflectingHex: 1, reflectingName: "The Creative (Hex 1)", perspective: "Adapting through foundational wisdom", reflection: "My creative spark lives in my flexibility" },
+  { id: 50, ageBand: "36-50+", currentHex: 43, currentName: "The Insightful Decider (Hex 43)", reflectingHex: 23, reflectingName: "The Transformer (Hex 23)", perspective: "Decisiveness born from chaos", reflection: "My turbulent past sharpened my clarity" },
+  { id: 51, ageBand: "36-50+", currentHex: 8, currentName: "The Unifier (Hex 8)", reflectingHex: 14, reflectingName: "The Prosperous (Hex 14)", perspective: "Building community through resources", reflection: "My wealth became a tool for connection" },
+  { id: 52, ageBand: "36-50+", currentHex: 34, currentName: "The Powerful (Hex 34)", reflectingHex: 20, reflectingName: "The Contemplative (Hex 20)", perspective: "Strength informed by reflection", reflection: "My quiet years empower my actions" },
+  { id: 53, ageBand: "36-50+", currentHex: 9, currentName: "The Detail-Oriented (Hex 9)", reflectingHex: 16, reflectingName: "The Enthusiastic (Hex 16)", perspective: "Precision fueled by passion", reflection: "My boundless energy found focus" },
+  { id: 54, ageBand: "36-50+", currentHex: 5, currentName: "The Patient (Hex 5)", reflectingHex: 35, reflectingName: "The Progressive (Hex 35)", perspective: "Strategic waiting through experience", reflection: "My urgency taught me timing's value" },
+  { id: 55, ageBand: "36-50+", currentHex: 26, currentName: "The Tamer (Hex 26)", reflectingHex: 45, reflectingName: "The Gatherer (Hex 45)", perspective: "Focusing collected resources", reflection: "My accumulation phase taught discernment" },
+  { id: 56, ageBand: "36-50+", currentHex: 11, currentName: "The Harmonious (Hex 11)", reflectingHex: 12, reflectingName: "The Stagnant (Hex 12)", perspective: "Creating flow through past obstacles", reflection: "My paralysis became my teacher" },
+  { id: 57, ageBand: "36-50+", currentHex: 10, currentName: "The Confident (Hex 10)", reflectingHex: 15, reflectingName: "The Modest (Hex 15)", perspective: "Assurance rooted in humility", reflection: "My quiet beginnings anchor my presence" },
+  { id: 58, ageBand: "36-50+", currentHex: 58, currentName: "The Joyous (Hex 58)", reflectingHex: 52, reflectingName: "The Still (Hex 52)", perspective: "Engagement fueled by inner peace", reflection: "My meditation practice feeds my vitality" },
+  { id: 59, ageBand: "36-50+", currentHex: 39, currentName: "The Instigator (Hex 39)", reflectingHex: 38, reflectingName: "The Challenger (Hex 38)", perspective: "Provoking thoughtful change", reflection: "My opposition taught me constructive disruption" },
+  { id: 60, ageBand: "36-50+", currentHex: 54, currentName: "The Achiever (Hex 54)", reflectingHex: 53, reflectingName: "The Pioneer (Hex 53)", perspective: "Completion honors exploration", reflection: "My wandering youth informs my results" },
+  { id: 61, ageBand: "36-50+", currentHex: 62, currentName: "The Meticulous (Hex 62)", reflectingHex: 61, reflectingName: "The Enigma (Hex 61)", perspective: "Analysis preserving mystery", reflection: "My fascination with secrets taught precision" },
+  { id: 62, ageBand: "36-50+", currentHex: 60, currentName: "The Restrained (Hex 60)", reflectingHex: 56, reflectingName: "The Excited (Hex 56)", perspective: "Discipline informed by energy", reflection: "My restless past taught me focus" },
+  { id: 63, ageBand: "36-50+", currentHex: 41, currentName: "The Dreamer (Hex 41)", reflectingHex: 31, reflectingName: "The Guide (Hex 31)", perspective: "Imagination grounded in reality", reflection: "My leadership experience fuels visions" },
+  { id: 64, ageBand: "36-50+", currentHex: 19, currentName: "The Seeker (Hex 19)", reflectingHex: 33, reflectingName: "The Reserved (Hex 33)", perspective: "Exploration rooted in inner wisdom", reflection: "My solitude became my compass" }
 ];
 // The full dataset for additional soul pattern details.
       const soulProfiles = [
@@ -4050,6 +4063,19 @@ document.getElementById("pdf-preview").addEventListener("contextmenu", manualPdf
           document.getElementById('open-hexdie').disabled = false;
         } catch (e) { console.warn('Character not exportable yet:', e.message); }
       }
+      // Allocation controls: one delegated listener, so redrawing the list never loses its handlers.
+      document.getElementById('heritage-result').addEventListener('click', function (e) {
+        var b = e.target.closest && e.target.closest('.plus-pill, .minus-pill');
+        if (!b || b.disabled) return;
+        if (b.classList.contains('plus-pill')) allocatePoint(b.getAttribute('data-attr')); else refundPoint(b.getAttribute('data-attr'));
+      });
+      document.getElementById('heritage-result').addEventListener('change', function (e) {
+        if (!e.target || e.target.id !== 'free-build') return;
+        var al = userSession.allocation, spentAny = AuldEweAllocation.spent(al) > AuldEweAllocation.spent({ values: al.floors });
+        if (spentAny && !confirm('Switching allocation mode resets the points you have spent. Continue?')) { e.target.checked = al.mode === 'free'; return; }
+        userSession.allocation = AuldEweAllocation.newAllocation(userSession.lineage.baseAttributes, { mode: e.target.checked ? 'free' : 'seeded', penalty: al.penalty });
+        renderAllocation();
+      });
       document.getElementById('download-character').addEventListener('click', function () {
         var c;
         try { c = currentCharacter(); } catch (e) { alert('Forge an identity first.\n\n' + e.message); return; }
