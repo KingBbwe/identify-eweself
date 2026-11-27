@@ -6,6 +6,7 @@ set -eu
 rm -rf dist && mkdir dist
 cp -R index.html *.js *.css dist/ 2>/dev/null || true
 [ -d engine ] && cp -R engine dist/engine
+[ -d assets ] && cp -R assets dist/assets
 rm -f dist/config.example.js
 cat > dist/config.local.js <<CFG
 window.TELEGRAM_BOT_TOKEN = window.TELEGRAM_BOT_TOKEN || "";
