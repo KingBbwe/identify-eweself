@@ -13,3 +13,10 @@ npm i -D jsdom && npm run smoke   # end-to-end page test
 ```
 
 Telegram (optional): copy `config.example.js` to `config.local.js` and fill in your values. Never commit it.
+
+## Deploy on Render
+
+`render.yaml` defines a static site. In Render choose **New > Blueprint**, pick this repo and branch, and apply.
+The build (`scripts/render-build.sh`) copies the app into `dist/` and writes a public `config.local.js` containing **no secrets**:
+Telegram sending is off on the hosted copy because anything in a static site is readable by visitors. Run locally with your own
+`config.local.js` for Telegram. Optional `HEXDIE_URL` (identify-eweself only): set it to the deployed Hex-Die URL, with a trailing slash, to enable "Open in Hex-Die".

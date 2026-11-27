@@ -4,13 +4,18 @@ const S = require('../skills.js'), C = require('../character.js'), A = require('
 function seq(vals) { let i = 0; return () => vals[i++ % vals.length]; }
 function lcg(seed) { let s = seed >>> 0; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); }
 
-test('catalogue matches the commander\'s document: 111 canon skills + 2 rules-text, unique names, domains and groups', () => {
-  assert.equal(S.CATALOGUE.length, 113); assert.equal(new Set(S.NAMES).size, 113);
+test('catalogue matches the commander\'s document: 111 canon skills + 2 rules-text + 21 codex additions, unique names, domains and groups', () => {
+  assert.equal(S.CATALOGUE.length, 134); assert.equal(new Set(S.NAMES).size, 134);
   const canon = S.CATALOGUE.filter(s => s.source === 'canon-list');
   assert.equal(canon.length, 111);
   assert.deepEqual([...new Set(canon.map(s => s.domain))].sort(), ['Combat Skills', 'Etiquette', 'Haggling', 'Magics', 'Social Skills', 'Technologies']);
   assert.equal(new Set(canon.map(s => s.group)).size, 34);
   assert.deepEqual(S.CATALOGUE.filter(s => s.source === 'rules-text').map(s => s.name).sort(), ['Artistry', 'Command']);
+  const codex = S.CATALOGUE.filter(s => s.source === 'codex');
+  assert.equal(codex.length, 21); assert.equal(codex.filter(s => s.attribute === 'Will').length, 16); assert.ok(codex.every(s => s.link === 'proposed'));
+  assert.deepEqual([...new Set(S.CATALOGUE.map(s => s.domain).filter(Boolean))].sort(), ['Combat Skills', 'Discipline', 'Etiquette', 'Haggling', 'Magics', 'Social Skills', 'Technologies']);
+  assert.equal(new Set(S.CATALOGUE.filter(s => s.domain).map(s => s.group)).size, 39);
+  assert.equal(S.CATALOGUE.filter(s => s.attribute === 'Will').length, 24);
 });
 
 test('every skill now has an attribute; the document\'s 36 links are untouched and tagged canon', () => {
@@ -30,7 +35,7 @@ test('every skill now has an attribute; the document\'s 36 links are untouched a
     assert.deepEqual(got, table[a].slice().sort(), a);
   });
   assert.equal(S.CATALOGUE.filter(s => s.link === 'canon').length, 36);
-  S.CATALOGUE.forEach(s => { assert.ok(A.ATTRIBUTES.includes(s.attribute), s.name + ' has no valid attribute'); assert.ok(['canon', 'assigned', 'rules-text'].includes(s.link), s.name); });
+  S.CATALOGUE.forEach(s => { assert.ok(A.ATTRIBUTES.includes(s.attribute), s.name + ' has no valid attribute'); assert.ok(['canon', 'assigned', 'rules-text', 'proposed'].includes(s.link), s.name); });
   assert.equal(S.CATALOGUE.filter(s => s.link === 'assigned').length, 76);   // 75 unlinked canon skills + Command
   assert.equal(S.find('Artistry').attribute, 'Inspiration'); assert.equal(S.find('Artistry').link, 'rules-text');
   assert.equal(S.find('Swordsmanship').attribute, 'Prowess'); assert.equal(S.find('Swordsmanship').link, 'assigned');
