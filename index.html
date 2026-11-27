@@ -352,6 +352,7 @@
   <script src="skills.js"></script>
   <script src="rolls.js"></script>
   <script src="character.js"></script>
+  <script src="haptics.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <body>
@@ -553,14 +554,10 @@
     <script>
 
       // Haptic feedback function
-        function vibrate(duration) {
-
-        if ("vibrate" in navigator) {
-
-          navigator.vibrate(duration);
-
-        }
-
+      // Android: Vibration API. iPhone (iOS 18+): the system haptic tick, via haptics.js.
+      function vibrate(duration) {
+        if (window.AuldEweHaptic) window.AuldEweHaptic(duration);
+        else if ("vibrate" in navigator) navigator.vibrate(duration);
       }
 
       let shakeToRollEnabled = false;
