@@ -143,6 +143,15 @@ function load(pre) {
     ok('choosing an age after a forge reforges with that band: 3 overrides + the 3rd forge = 4 points', c.id !== id2 && c.trajectory.ageBand === '36-50+' && c.creation.chosen.age && c.allocation.budget === 28, c.allocation.budget + ' ' + c.trajectory.ageBand);
     ok('every Character built through overrides validates', C.validateCharacter(c).ok, C.validateCharacter(c).errors.join('|'));
   }
+
+  // ---- haptics: iPhone has no Vibration API, so the iOS 18+ switch tick is used; Android vibrates
+  {
+    let w = await load(); w.vibrate(200);
+    const sw = w.document.querySelector('#hapticTap input[type=checkbox][switch]');
+    ok('no Vibration API: shake haptics fall back to the hidden iOS switch', !!sw);
+    w = await load(x => { x.navigator.vibrate = p => { (x.__vib = x.__vib || []).push(p); return true; }; }); w.vibrate(200);
+    ok('with a Vibration API the phone vibrates instead', (w.__vib || [])[0] === 200 && !w.document.getElementById('hapticTap'));
+  }
   console.log(checks.map(c => c.join('  ')).join('\n')); console.log('JS errors:', errors.length ? errors : 'none');
   process.exit(checks.some(c => c[0] === 'FAIL') || errors.length ? 1 : 0);
 })();
