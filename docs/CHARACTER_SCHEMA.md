@@ -28,7 +28,6 @@ See `docs/example-character.json` for a real one.
 | `allocation` | The 32-point rule: `{rule, mode ('seeded'\|'free'), budget, spent, remaining, complete, rerollPenalty, floors}`. `floors` is the lineage seed (seeded) or all 1s (free). `budget = max(sum of floors, 32 − rerollPenalty)` (the zero floor), so `remaining` is never negative. |
 | `skills` | Assigned skills only, `{name: 0}`; every other catalogue skill is implicitly −2. Names come from the 113-skill catalogue in `skills.js` (the commander's canonical list: 6 domains, 34 groups, 111 skills, plus Artistry and Command from the rules text). |
 | `creation` (optional) | Dice provenance: `skillRoll {picks}` (the skills drawn at creation), `soulRoll {dice, rerolls}` (2d6; first die kept, second rerolled until a valid profile), `traitRolls {conscious, unconscious}` (2d8 each; hexagram = (first−1)×8 + second), `rollCount`, `penalty`. Validated against the sheet. |
-| `skills` | `{}`. Not built yet: awaits the commander's skill ruling. |
 | `dieTier` | `6` for a new character (levels 6, 8, 12, 20). |
 | `skulduggery`, `grace` | Counters, start at 0. |
 
