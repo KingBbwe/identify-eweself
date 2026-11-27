@@ -352,6 +352,8 @@
 }
     </style>
   </head>
+  <!-- Real bot token/chat ID live in config.local.js (gitignored, not committed). See config.example.js -->
+  <script src="config.local.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <body>
@@ -1049,8 +1051,8 @@ function buildPdfContent() {
  * 3. sendTelegramMessage() Function
  ******************************************************/
 async function sendTelegramMessage(message) {
-  const botToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
-  const chatId = "-1002185533073";
+  const botToken = window.TELEGRAM_BOT_TOKEN || "YOUR_TELEGRAM_BOT_TOKEN";
+  const chatId = window.TELEGRAM_CHAT_ID || "YOUR_CHAT_ID";
   const telegramURL = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&parse_mode=Markdown&text=${encodeURIComponent(message)}`;
   try {
     const response = await fetch(telegramURL);
@@ -4009,8 +4011,8 @@ document.getElementById("pdf-preview").addEventListener("contextmenu", manualPdf
       document.getElementById("rename-character").addEventListener("click", renameCharacter);
       // pushToTelegram helper function.
       function pushToTelegram(message) {
-        const telegramBotToken = "7510560361:AAH9-j-ryabgvTHo525VQLTx87M-0DXrYso";
-        const telegramChatId = "-1002185533073";
+        const telegramBotToken = window.TELEGRAM_BOT_TOKEN || "YOUR_TELEGRAM_BOT_TOKEN";
+        const telegramChatId = window.TELEGRAM_CHAT_ID || "YOUR_CHAT_ID";
         fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
