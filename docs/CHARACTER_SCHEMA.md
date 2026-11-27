@@ -26,7 +26,8 @@ See `docs/example-character.json` for a real one.
 | `lineage`, `tribe` | Name, type, role, traits; tribe name, tongue, resonance. |
 | `attributes` | Nine attributes (1–5 each) as allocated now. |
 | `allocation` | The 32-point rule: `{rule, mode ('seeded'\|'free'), budget, spent, remaining, complete, rerollPenalty, floors}`. `floors` is the lineage seed (seeded) or all 1s (free). `budget = max(sum of floors, 32 − rerollPenalty)` (the zero floor), so `remaining` is never negative. |
-| `creation` (optional) | Dice provenance: `soulRoll {dice, rerolls}` (2d6; first die kept, second rerolled until a valid profile), `traitRolls {conscious, unconscious}` (2d8 each; hexagram = (first−1)×8 + second), `rollCount`, `penalty`. Validated against the sheet. |
+| `skills` | Assigned skills only, `{name: 0}`; every other catalogue skill is implicitly −2. Names come from the 113-skill catalogue in `skills.js` (the commander's canonical list: 6 domains, 34 groups, 111 skills, plus Artistry and Command from the rules text). |
+| `creation` (optional) | Dice provenance: `skillRoll {picks}` (the skills drawn at creation), `soulRoll {dice, rerolls}` (2d6; first die kept, second rerolled until a valid profile), `traitRolls {conscious, unconscious}` (2d8 each; hexagram = (first−1)×8 + second), `rollCount`, `penalty`. Validated against the sheet. |
 | `skills` | `{}`. Not built yet: awaits the commander's skill ruling. |
 | `dieTier` | `6` for a new character (levels 6, 8, 12, 20). |
 | `skulduggery`, `grace` | Counters, start at 0. |
@@ -50,7 +51,7 @@ that each DC is 1–64 and its `mode` matches its value, that the DCs equal the 
 
 ## Known gaps (flagged, not silently filled)
 
-- `skills` is empty: the skills layer is unbuilt and awaits a ruling.
+- Skills: 3 are randomly assigned at creation (the count is not stated in canon). Only 36 of the 111 canonical skills are linked to an attribute by the document; the rest carry no attribute. The integration table's parentheticals (Reason, Charisma, Strength...) conflict with the skills listed and are ignored. Acquired Skillsets are unbuilt.
 - Core traits are rolled as 2d8 (method not documented in the source corpus); the two traits are independent, so duplicates are possible. Awaiting ratification.
 - Allocation is lineage-seeded by default (seed = floor, spend up to 32 total); free build starts at all 1s with 23 to spend. Awaiting ratification.
 - SentientHub's age bands (`18-35` / `36-50`) must adopt `18-36` / `36-50+` (Move 5).

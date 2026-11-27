@@ -11,6 +11,8 @@
   // allocation.js supplies the 32-point rule: required alongside this file (require() in Node, window.AuldEweAllocation in a page).
   var Alloc = typeof require === 'function' && typeof module !== 'undefined' ? require('./allocation.js') : root.AuldEweAllocation;
   if (!Alloc) throw new Error('character.js needs allocation.js loaded first');
+  var Skills = typeof require === 'function' && typeof module !== 'undefined' ? require('./skills.js') : root.AuldEweSkills;
+  if (!Skills) throw new Error('character.js needs skills.js loaded first');
 
   var SCHEMA = 'auld-ewe.character', VERSION = 1;
   var DOMAINS = ['intellectual', 'physical', 'emotional', 'spiritual'];
@@ -125,7 +127,7 @@
       attributes: attrs,
       allocation: { rule: '32-point', mode: al.mode, budget: al.budget, spent: sp2.spent, remaining: sp2.remaining, complete: sp2.complete,
                     rerollPenalty: al.penalty, floors: floors },
-      skills: {},                                   // not built yet: awaits the commander's skill ruling
+      skills: JSON.parse(JSON.stringify(session.skills || {})),   // assigned skills only ({name: 0}); every other skill is implicitly -2
       dieTier: START_DIE,
       skulduggery: session.skulduggery || 0,
       grace: session.grace || 0
@@ -167,8 +169,14 @@
                        spent: c.allocation.spent, remaining: c.allocation.remaining, complete: c.allocation.complete }).forEach(function (m) { e.push(m); });
       if (c.allocation.rule !== '32-point') e.push('allocation.rule must be "32-point"');
     }
+    Skills.problems(c.skills).forEach(function (m) { e.push(m); });
     if (c.creation) {
       var cr = c.creation, sr = cr.soulRoll, tr = cr.traitRolls;
+      if (cr.skillRoll) {
+        var pk = cr.skillRoll.picks;
+        if (!Array.isArray(pk) || new Set(pk).size !== pk.length) e.push('creation.skillRoll.picks must be distinct skill names');
+        else pk.forEach(function (n) { if (!Object.prototype.hasOwnProperty.call(c.skills, n)) e.push('creation.skillRoll: ' + n + ' is not on the sheet'); });
+      }
       if (sr) {
         var d = sr.dice, rr = sr.rerolls || [], p = c.soul && c.soul.profile;
         if (!Array.isArray(d) || d.length !== 2 || !p) e.push('creation.soulRoll malformed');

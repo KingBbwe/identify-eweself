@@ -4,7 +4,7 @@
   "private": true,
   "description": "Character creation for The Chronicles of Auld Ewe",
   "scripts": {
-    "test": "node --test tests/character.test.js tests/rolls.test.js tests/allocation.test.js",
+    "test": "node --test tests/character.test.js tests/rolls.test.js tests/allocation.test.js tests/skills.test.js",
     "smoke": "node tests/page.smoke.js"
   },
   "license": "MIT"

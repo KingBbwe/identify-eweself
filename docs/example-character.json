@@ -112,7 +112,11 @@
       "Will": 3
     }
   },
-  "skills": {},
+  "skills": {
+    "Swordsmanship": 0,
+    "Herb Lore": 0,
+    "Leadership": 0
+  },
   "dieTier": 6,
   "skulduggery": 0,
   "grace": 0,
@@ -136,6 +140,13 @@
       "unconscious": [
         3,
         4
+      ]
+    },
+    "skillRoll": {
+      "picks": [
+        "Swordsmanship",
+        "Herb Lore",
+        "Leadership"
       ]
     },
     "rollCount": 1,
