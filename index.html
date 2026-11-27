@@ -368,9 +368,9 @@
       </div>
       <div id="telegram-preview" style="display: none;"></div>
       <div class="card">
-        <p class="card-title">Who will be forged</p>
+        <p class="card-title">Left to fate</p>
         <div class="toggle-group segmented">
-          <input type="radio" id="ram" name="gender" value="ram" checked />
+          <input type="radio" id="ram" name="gender" value="ram" />
           <label for="ram">♂ Ram</label>
           <input type="radio" id="ewe" name="gender" value="ewe" />
           <label for="ewe">♀ Ewe</label>
@@ -379,7 +379,7 @@
           <div class="age-select">
             <label for="age-band">Age</label>
             <select id="age-band">
-              <option value="random" selected>Random</option>
+              <option value="random" selected>By fate</option>
               <option value="18-36">18&ndash;36</option>
               <option value="36-50+">36&ndash;50+</option>
             </select>
@@ -391,6 +391,7 @@
             <span id="shake-status">Disabled</span>
           </div>
         </div>
+        <p id="fate-note" class="fate-note" role="status">The forge chooses. Overriding fate costs 1 attribute point.</p>
       </div>
       <button id="forge-identity">Forge Identity</button>
       <div class="action-row">
@@ -537,6 +538,7 @@
   <p>Welcome to the Nomenclatorium! This app allows you to create a unique character for your adventures in the world of The Chronicles of Auld Ewe.</p>
   <ol>
     <li><strong>Forge Identity:</strong> Click the "Forge Identity" button or click to enable "Shake to Roll" and then shake your phone to generate a new player character with its name, heritage, special traits and more.You have 2 free rerolls, after which every subsequent reroll costs you one of your surplus points, reducing your ability to optimize your character's attribute customization.</li>
+    <li><strong>Left to fate:</strong> Ram or Ewe and the age band are chosen by the forge. You may override fate by picking one, before or after forging; each override costs 1 attribute point, and picking after a forge reforges the character (which also counts as a reroll).</li>
     <li><strong>Rename (Optional):</strong> Use the "Rename" button if you wish to try for a different character name.</li>
     <li><strong>Send to Telegram:</strong> Click "Send to Telegram" to download a PDF of your character details and have them sent to your designated Telegram channel.</li>
     <li><strong>Telegram Group & Chat:</strong> Use the "Game Master Settings" section to create or join a Telegram group for additional game interactions and chat.</li>
@@ -1212,7 +1214,14 @@ function forgeIdentity() {
   console.log("Forging new identity...");
   // (Assume userSession is defined globally.)
   const rollCount = updateRollSession();
-  const penalty = rollCount > 2 ? rollCount - 2 : 0;
+  // Rerolls beyond 2 free ones cost a point each; so does every override of fate (choosing Ram/Ewe or the age band).
+  const overrides = typeof fateOverrides === "function" ? fateOverrides() : 0;
+  const penalty = (rollCount > 2 ? rollCount - 2 : 0) + overrides;
+  const chosen = {
+    gender: !!document.querySelector('input[name="gender"]:checked'),
+    age: ((document.getElementById("age-band") || {}).value || "random") !== "random"
+  };
+  if (typeof clearPendingOverrides === "function") clearPendingOverrides();
   const rng = cryptoRng;
 
   // Generate character name
@@ -1332,7 +1341,7 @@ function forgeIdentity() {
   userSession.creation = {
     soulRoll: { dice: profileRoll.dice, rerolls: profileRoll.rerolls },
     traitRolls: { conscious: consciousRoll.dice, unconscious: unconsciousRoll.dice },
-    rollCount: rollCount, penalty: penalty
+    rollCount: rollCount, penalty: penalty, fateOverrides: overrides, chosen: chosen
   };
   const skillRoll = AuldEweSkills.rollAssigned(rng);
   userSession.skills = skillRoll.skills;
@@ -1513,7 +1522,7 @@ document.getElementById("close-modal").addEventListener("click", function () {
             <button class="minus-pill" data-attr="${a}" ${A.canRemove(al, a) ? "" : "disabled"} aria-label="Remove a point from ${a}">&minus;</button>
             <button class="plus-pill" data-attr="${a}" ${A.canAdd(al, a) ? "" : "disabled"} aria-label="Add a point to ${a}">+</button>
           </li>`).join("");
-        const cost = al.penalty && al.budget < A.TOTAL ? ` &mdash; rerolls have cost ${A.TOTAL - al.budget} point${A.TOTAL - al.budget === 1 ? "" : "s"}` : "";
+        const cost = al.penalty && al.budget < A.TOTAL ? ` &mdash; rerolls and fate overrides have cost ${A.TOTAL - al.budget} point${A.TOTAL - al.budget === 1 ? "" : "s"}` : "";
         document.getElementById("alloc-status").innerHTML =
           `<strong>Points to spend:</strong> <span id="surplus-points">${s.remaining}</span> &middot; ${s.spent} of ${s.budget} used${cost}${s.complete ? " &middot; <strong>Complete</strong>" : ""}`;
         userSession.currentAttributes = Object.assign({}, al.values);
@@ -1534,7 +1543,8 @@ function isCompatibleConsonantPair(c1, c2) {
 
 
 function generateName(hexagramOverride) {
-  const gender = document.querySelector('input[name="gender"]:checked')?.value || "ewe";
+  // Neither chosen: fate decides, at even odds.
+  const gender = document.querySelector('input[name="gender"]:checked')?.value || (cryptoRng() < 0.5 ? "ewe" : "ram");
   const hexagram = hexagramOverride || parseInt(randomElement(Object.keys(hexagramData)), 10);
 
   if (!hexagramData[hexagram]) {
@@ -4099,6 +4109,43 @@ document.getElementById("pdf-preview").addEventListener("contextmenu", manualPdf
       }
     </script>
       <script>
+      // Fate overrides. Ram/Ewe and the age band start unchosen: the forge decides. Choosing one overrides fate and costs
+      // 1 attribute point, counted in the same 24-hour session as rerolls. Chosen before forging, it sets the player's preference
+      // (changing your mind before the forge is free); chosen after a forge, it reforges at once, which is also a reroll.
+      (function () {
+        var KEY = "idForgeSession", DAY = 86400000, charged = {}, chosenGender = null;
+        function load() {
+          var s = null; try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+          if (!s || Date.now() - s.firstRollTime > DAY) s = { firstRollTime: Date.now(), rollCount: 0 };
+          return s;
+        }
+        function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+        function note(text, warn) { var n = document.getElementById("fate-note"); if (n) { n.textContent = text; n.classList.toggle("overridden", !!warn); } }
+        function forged() { return typeof userSession !== "undefined" && !!userSession.characterId; }
+        window.fateOverrides = function () { return load().overrides || 0; };
+        window.clearPendingOverrides = function () { charged = {}; };
+        function override(kind, label) {
+          var reforge = forged();
+          if (!reforge && charged[kind]) { note("Preference: " + label + " (already paid for).", true); return; }
+          var s = load(); s.overrides = (s.overrides || 0) + 1; save(s); charged[kind] = true;
+          note("Fate overridden: " + label + ". −1 attribute point" + (reforge ? ". Reforging…" : " on the next forge."), true);
+          if (reforge) forgeIdentity();
+        }
+        ["ram", "ewe"].forEach(function (id) {
+          var el = document.getElementById(id); if (!el) return;
+          el.addEventListener("click", function () {
+            if (chosenGender === el.value) { el.checked = false; chosenGender = null; note("Back to fate: the forge decides Ram or Ewe."); return; }
+            chosenGender = el.value; override("gender", el.value === "ram" ? "Ram" : "Ewe");
+          });
+        });
+        var age = document.getElementById("age-band");
+        if (age) age.addEventListener("change", function () {
+          if (age.value === "random") { note("Back to fate: the forge decides the age band."); return; }
+          override("age", "age " + age.options[age.selectedIndex].text);
+        });
+      })();
+    </script>
+    <script>
       // Hosted copies carry no bot token (a static site is readable by everyone), so hide the Telegram button there.
       (function () {
         var t = window.TELEGRAM_BOT_TOKEN, b = document.getElementById("telegram-button");

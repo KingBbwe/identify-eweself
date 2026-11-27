@@ -117,6 +117,32 @@ function load(pre) {
   w = await load(); $ = id => w.document.getElementById(id); $('download-character').disabled = false; $('download-character').click();
   ok('download before forging is refused politely', (w.__alerts || []).some(a => /Forge an identity first/.test(a)));
 
+
+  // ---- fate overrides: Ram/Ewe and age start unchosen; choosing costs 1 point (before forging) or reforges (after)
+  {
+    let w = await load(); const $ = id => w.document.getElementById(id), st = () => JSON.parse(w.localStorage.getItem('auldEweCharacter'));
+    ok('Ram and Ewe both start unchosen', !$('ram').checked && !$('ewe').checked);
+    ok('age starts at By fate', $('age-band').value === 'random');
+    $('forge-identity').click();
+    let c = st();
+    ok('a forge with no choices costs nothing', c.allocation.budget === 32 && c.creation.fateOverrides === 0 && !c.creation.chosen.gender && !c.creation.chosen.age, c.allocation.budget);
+    const genders = new Set(); for (let i = 0; i < 40; i++) { w.localStorage.removeItem('idForgeSession'); $('forge-identity').click(); genders.add(st().gender); }
+    ok('fate picks both Ram and Ewe', genders.size === 2, [...genders].join(','));
+
+    w = await load();
+    $('ram').click(); $('ewe').click();                                   // changing your mind before the forge is charged once
+    ok('choosing before the forge warns of the cost', /Fate overridden|already paid/.test($('fate-note').textContent), $('fate-note').textContent);
+    $('forge-identity').click(); c = st();
+    ok('a pre-forge choice is honoured and costs exactly 1 point', c.gender === 'ewe' && c.allocation.budget === 31 && c.creation.fateOverrides === 1 && c.creation.chosen.gender, c.allocation.budget + ' ' + c.gender);
+    const id1 = c.id;
+    $('ram').click(); c = st();
+    ok('choosing after a forge reforges at once and costs another point', c.id !== id1 && c.gender === 'ram' && c.allocation.budget === 30 && c.creation.fateOverrides === 2, c.allocation.budget);
+    $('ram').click();
+    ok('tapping the chosen option again returns it to fate, free', !$('ram').checked && w.localStorage.getItem('idForgeSession').indexOf('"overrides":2') !== -1);
+    const id2 = st().id; $('age-band').value = '36-50+'; $('age-band').dispatchEvent(new w.Event('change')); c = st();
+    ok('choosing an age after a forge reforges with that band: 3 overrides + the 3rd forge = 4 points', c.id !== id2 && c.trajectory.ageBand === '36-50+' && c.creation.chosen.age && c.allocation.budget === 28, c.allocation.budget + ' ' + c.trajectory.ageBand);
+    ok('every Character built through overrides validates', C.validateCharacter(c).ok, C.validateCharacter(c).errors.join('|'));
+  }
   console.log(checks.map(c => c.join('  ')).join('\n')); console.log('JS errors:', errors.length ? errors : 'none');
   process.exit(checks.some(c => c[0] === 'FAIL') || errors.length ? 1 : 0);
 })();
