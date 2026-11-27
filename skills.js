@@ -4,9 +4,10 @@
  * Canon: a skill's modifier starts at -2, or at 0 if it was randomly assigned to the character at creation (character-creation
  * rules, section 5). The check formula adds the attribute modifier; this layer supplies the skill's.
  * The catalogue is the commander's canonical list (TCoAE_Character_Creation_Skills.docx, "Basic Skills List" and "Integration
- * with Attributes"): six domains, 34 groups, 111 skills. Every skill has an `attribute`. link 'canon' (36) is
+ * with Attributes"): six domains, 34 groups, 111 skills (plus 2 rules-text and 21 'codex' additions: 134 in all, seven domains, 39 groups). Every skill has an `attribute`. link 'canon' (36) is
  * the document's integration table (4 per attribute); link 'assigned' (75, plus Command) was filled in by the build on
  * 2026-11-27 at the commander's request, by the skill's plain meaning and its group. Reassigning one is a one-word change here.
+ * link 'proposed' (21) marks the skills added from the Aetherix, Action Economy and Tongues documents (16 Will, 5 supporting); source 'codex'.
  * source 'rules-text' marks two skills named in the creation rules (Artistry -> Inspiration, Command) but absent from the list.
  *
  * FLAGGED INTERPRETATIONS:
@@ -140,7 +141,30 @@
     { name: 'Invention', domain: 'Technologies', group: 'Invention', attribute: 'Will', source: 'canon-list', link: 'canon' },
     { name: 'Bartering', domain: 'Haggling', group: 'Bartering', attribute: 'Will', source: 'canon-list', link: 'canon' },
     { name: 'Artistry', domain: null, group: null, attribute: 'Inspiration', source: 'rules-text', link: 'rules-text' },
-    { name: 'Command', domain: null, group: null, attribute: 'Drive', source: 'rules-text', link: 'assigned' }
+    { name: 'Command', domain: null, group: null, attribute: 'Drive', source: 'rules-text', link: 'assigned' },
+    // Added 2026-11-27 from the Aetherix / Action Economy / Tongues documents, at the commander's instruction. link 'proposed': the
+    // attribute choice is the build's, pending the commander's review. Will is the Volitional pole of the Ovine/Volitional duality.
+    { name: 'Steadfastness', domain: 'Discipline', group: 'Resolve', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Composure', domain: 'Discipline', group: 'Resolve', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Mental Fortitude', domain: 'Discipline', group: 'Resolve', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Fudwave Defense', domain: 'Discipline', group: 'Resolve', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Ovine Restraint', domain: 'Discipline', group: 'Restraint', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Honorable Conduct', domain: 'Discipline', group: 'Restraint', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Oathkeeping', domain: 'Discipline', group: 'Restraint', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Meditation', domain: 'Discipline', group: 'Attunement', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Consciousness Calibration', domain: 'Discipline', group: 'Attunement', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Tongue Discipline', domain: 'Discipline', group: 'Attunement', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Counterspelling', domain: 'Magics', group: 'Defensive Magic', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Purification', domain: 'Magics', group: 'Defensive Magic', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Spell Discipline', domain: 'Magics', group: 'High Magic', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Stalwart Stance', domain: 'Combat Skills', group: 'Defensive Techniques', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Endurance', domain: 'Combat Skills', group: 'Defensive Techniques', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Aetherite Rites', domain: 'Etiquette', group: 'Vimana Etiquette', attribute: 'Will', source: 'codex', link: 'proposed' },
+    { name: 'Hexagram Reading', domain: 'Technologies', group: 'Aetherix Interface', attribute: 'SelfAwareness', source: 'codex', link: 'proposed' },
+    { name: 'Key Rotation', domain: 'Technologies', group: 'Aetherix Interface', attribute: 'Prowess', source: 'codex', link: 'proposed' },
+    { name: 'Polarity Alteration', domain: 'Technologies', group: 'Aetherix Interface', attribute: 'Intellect', source: 'codex', link: 'proposed' },
+    { name: 'Chain Weaving', domain: 'Magics', group: 'High Magic', attribute: 'Intellect', source: 'codex', link: 'proposed' },
+    { name: 'Head Combat', domain: 'Combat Skills', group: 'Combat Phases', attribute: 'Instinct', source: 'codex', link: 'proposed' }
   ];
   var ACQUIRED = [
     { name: 'Emotional Reading', attribute: 'Emotion', linkedSkill: null, source: 'rules-text' },
