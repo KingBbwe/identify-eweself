@@ -127,6 +127,7 @@
       attributes: attrs,
       allocation: { rule: '32-point', mode: al.mode, budget: al.budget, spent: sp2.spent, remaining: sp2.remaining, complete: sp2.complete,
                     rerollPenalty: al.penalty, floors: floors },
+      acquired: JSON.parse(JSON.stringify(session.acquired || {})),   // Acquired Skillsets held (earned in play); none at creation
       skills: JSON.parse(JSON.stringify(session.skills || {})),   // assigned skills only ({name: 0}); every other skill is implicitly -2
       dieTier: START_DIE,
       skulduggery: session.skulduggery || 0,
@@ -170,6 +171,7 @@
       if (c.allocation.rule !== '32-point') e.push('allocation.rule must be "32-point"');
     }
     Skills.problems(c.skills).forEach(function (m) { e.push(m); });
+    if (c.acquired !== undefined) Skills.acquiredProblems(c.acquired).forEach(function (m) { e.push(m); });   // optional: older files omit it
     if (c.creation) {
       var cr = c.creation, sr = cr.soulRoll, tr = cr.traitRolls;
       if (cr.skillRoll) {

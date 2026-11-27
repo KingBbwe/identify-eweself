@@ -13,7 +13,7 @@ test('catalogue matches the commander\'s document: 111 canon skills + 2 rules-te
   assert.deepEqual(S.CATALOGUE.filter(s => s.source === 'rules-text').map(s => s.name).sort(), ['Artistry', 'Command']);
 });
 
-test('attribute links are exactly the document\'s integration table: 4 per attribute, nothing else but Artistry', () => {
+test('every skill now has an attribute; the document\'s 36 links are untouched and tagged canon', () => {
   const table = {
     Inspiration: ['Arcane Knowledge', 'Protocol', 'Public Works', 'Sacred Geometry Application'],
     Intellect: ['Herb Lore', 'Energy Harnessing', 'Negotiation', 'Runic Circuit Design'],
@@ -26,12 +26,30 @@ test('attribute links are exactly the document\'s integration table: 4 per attri
     Will: ['Defensive Magic', 'Invention', 'Bartering', 'Tantric Energy Channeling']
   };
   A.ATTRIBUTES.forEach(a => {
-    const got = S.CATALOGUE.filter(s => s.attribute === a && s.source === 'canon-list').map(s => s.name).sort();
+    const got = S.CATALOGUE.filter(s => s.attribute === a && s.link === 'canon').map(s => s.name).sort();
     assert.deepEqual(got, table[a].slice().sort(), a);
   });
-  assert.equal(S.CATALOGUE.filter(s => s.attribute && s.source === 'canon-list').length, 36);
-  assert.equal(S.find('Artistry').attribute, 'Inspiration'); assert.equal(S.find('Command').attribute, null);
-  assert.equal(S.find('Swordsmanship').attribute, null);   // canonical, but the document links it to no attribute
+  assert.equal(S.CATALOGUE.filter(s => s.link === 'canon').length, 36);
+  S.CATALOGUE.forEach(s => { assert.ok(A.ATTRIBUTES.includes(s.attribute), s.name + ' has no valid attribute'); assert.ok(['canon', 'assigned', 'rules-text'].includes(s.link), s.name); });
+  assert.equal(S.CATALOGUE.filter(s => s.link === 'assigned').length, 76);   // 75 unlinked canon skills + Command
+  assert.equal(S.find('Artistry').attribute, 'Inspiration'); assert.equal(S.find('Artistry').link, 'rules-text');
+  assert.equal(S.find('Swordsmanship').attribute, 'Prowess'); assert.equal(S.find('Swordsmanship').link, 'assigned');
+  A.ATTRIBUTES.forEach(a => assert.ok(S.CATALOGUE.filter(s => s.attribute === a).length >= 6, a + ' is thin'));   // no attribute left starved
+});
+
+test('Acquired Skillsets: the two named in the rules, on Emotion; granted at 0; unheld ones cannot be used', () => {
+  assert.deepEqual(S.ACQUIRED_NAMES, ['Emotional Reading', 'Rapport Building']);
+  S.ACQUIRED.forEach(a => assert.equal(a.attribute, 'Emotion'));
+  assert.equal(S.acquiredModifier({}, 'Emotional Reading'), null);
+  const h = S.acquire({}, 'Emotional Reading');
+  assert.deepEqual(h, { 'Emotional Reading': 0 }); assert.equal(S.acquiredModifier(h, 'Emotional Reading'), 0);
+  const before = JSON.stringify(h); assert.deepEqual(S.acquire(h, 'Emotional Reading'), h); assert.equal(JSON.stringify(h), before);   // immutable, idempotent
+  assert.deepEqual(Object.keys(S.acquire(h, 'Rapport Building')).sort(), ['Emotional Reading', 'Rapport Building']);
+  assert.throws(() => S.acquire({}, 'Command'), /unknown acquired/);
+  assert.throws(() => S.acquiredModifier({}, 'Command'), /unknown acquired/);
+  assert.deepEqual(S.acquiredProblems({ 'Emotional Reading': 0 }), []);
+  assert.ok(S.acquiredProblems({ Bogus: 0 }).length && S.acquiredProblems({ 'Rapport Building': -1 }).length && S.acquiredProblems([]).length);
+  S.ACQUIRED_NAMES.forEach(n => assert.ok(!S.NAMES.includes(n), n + ' must not also be a core skill'));
 });
 
 test('assigned skills start at 0, everything else at -2', () => {
@@ -73,5 +91,9 @@ test('Character: skills ride along and validate; bad skills are refused', () => 
   bad(x => { delete x.skills[r.picks[0]]; }, /not on the sheet/);
   bad(x => { x.creation.skillRoll.picks.push(x.creation.skillRoll.picks[0]); }, /distinct/);
   bad(x => { x.skills = []; }, /skills must be an object/);
-  assert.deepEqual(mk(undefined, null).skills, {});   // no skills given: empty, still valid shape
+  assert.deepEqual(mk(undefined, null).skills, {});
+  const withAcq = JSON.parse(JSON.stringify(c)); withAcq.acquired = { 'Rapport Building': 0 }; assert.ok(C.validateCharacter(withAcq).ok);
+  withAcq.acquired = { Nope: 0 }; assert.match(JSON.stringify(C.validateCharacter(withAcq)), /unknown acquired/);
+  assert.deepEqual(c.acquired, {});
+  const legacy = JSON.parse(JSON.stringify(c)); delete legacy.acquired; assert.ok(C.validateCharacter(legacy).ok);   // older files without the field still load   // no skills given: empty, still valid shape
 });
