@@ -1,21 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>The Chronicles of Auld Ewe - Identity Forge</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
+    <title>Identity Forge · The Chronicles of Auld Ewe</title>
+    <meta name="theme-color" content="#0b0d1a" />
+    <link href="assets/vendor/pico.min.css" rel="stylesheet" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -354,6 +344,7 @@
   padding: 20px;
 }
     </style>
+    <link rel="stylesheet" href="theme.css" />
   </head>
   <!-- Real bot token/chat ID live in config.local.js (gitignored, not committed). See config.example.js -->
   <script src="config.local.js"></script>
@@ -366,42 +357,49 @@
   <body>
     <nav>
   <ul>
-    <li><strong style="color: #fff;">NOMENCLATORIUM</strong></li>
+    <li><strong>Nomenclatorium</strong></li>
     <li><a href="#" id="howToPlayBtn" style="color: var(--text-light);">How to Play</a></li>
   </ul>
 </nav>
     <main class="container">
-      <h1>The Chronicles of Auld Ewe</h1>
-      <h3>Identity Forge</h3>
-      <!-- Shake to Roll Feature -->
-      <div class="shake-to-roll">
-        <label for="shake-toggle">Shake to Roll:</label>
-        <input type="checkbox" id="shake-toggle" />
-        <span id="shake-status">Disabled</span>
+      <div class="title-block">
+        <h1>The Chronicles of Auld Ewe</h1>
+        <p class="subtitle">Identity Forge</p>
       </div>
-<div id="telegram-preview" style="display: none;"></div>
-      <!-- Telegram Button -->
-      <button id="telegram-button">
-        <i class="fab fa-telegram"></i> Send to Telegram
-      </button>
-      <div class="toggle-group">
-        <input type="radio" id="ram" name="gender" value="ram" checked />
-        <label for="ram">Ram (♂ Male)</label>
-        <input type="radio" id="ewe" name="gender" value="ewe" />
-        <label for="ewe">Ewe (♀ Female)</label>
-      </div>
-      <div class="age-select">
-        <label for="age-band">Age:</label>
-        <select id="age-band">
-          <option value="random" selected>Random</option>
-          <option value="18-36">18&ndash;36</option>
-          <option value="36-50+">36&ndash;50+</option>
-        </select>
+      <div id="telegram-preview" style="display: none;"></div>
+      <div class="card">
+        <p class="card-title">Who will be forged</p>
+        <div class="toggle-group segmented">
+          <input type="radio" id="ram" name="gender" value="ram" checked />
+          <label for="ram">♂ Ram</label>
+          <input type="radio" id="ewe" name="gender" value="ewe" />
+          <label for="ewe">♀ Ewe</label>
+        </div>
+        <div class="forge-row">
+          <div class="age-select">
+            <label for="age-band">Age</label>
+            <select id="age-band">
+              <option value="random" selected>Random</option>
+              <option value="18-36">18&ndash;36</option>
+              <option value="36-50+">36&ndash;50+</option>
+            </select>
+          </div>
+          <!-- Shake to Roll Feature -->
+          <div class="shake-to-roll">
+            <label for="shake-toggle">Shake</label>
+            <input type="checkbox" id="shake-toggle" />
+            <span id="shake-status">Disabled</span>
+          </div>
+        </div>
       </div>
       <button id="forge-identity">Forge Identity</button>
-      <button id="download-character" disabled>Download Character (JSON)</button>
-      <button id="open-hexdie" style="display:none" disabled>Open in Hex-Die</button>
-      <button id="rename-character">Rename</button>
+      <div class="action-row">
+        <button id="download-character" disabled>Download JSON</button>
+        <button id="rename-character">Rename</button>
+        <button id="open-hexdie" style="display:none" disabled>Open in Hex-Die</button>
+        <!-- Telegram Button: hidden on hosted copies with no bot token -->
+        <button id="telegram-button"><i class="fab fa-telegram"></i> Telegram</button>
+      </div>
       <div id="result"></div>
       <div id="heritage-result" class="heritage-container" style="display: none;"></div>
       <div id="inner-world" class="inner-world" style="display: none;">
@@ -473,19 +471,19 @@
               Your Hexagram Matrix reflects your innate magical potential and defines your Personal DC.
             </p>
             <strong>Personal</strong>
-            <p>
-              Intellectual DC: <span id="intellectual-dc"></span><br />
-              Physical DC: <span id="physical-dc"></span><br />
-              Emotional DC: <span id="emotional-dc"></span><br />
-              Spiritual DC: <span id="spiritual-dc"></span>
-            </p>
+            <div class="dc-tiles">
+              <div class="dc-tile"><span class="k">Intellectual</span> <span class="v" id="intellectual-dc"></span></div>
+              <div class="dc-tile"><span class="k">Physical</span> <span class="v" id="physical-dc"></span></div>
+              <div class="dc-tile"><span class="k">Emotional</span> <span class="v" id="emotional-dc"></span></div>
+              <div class="dc-tile"><span class="k">Spiritual</span> <span class="v" id="spiritual-dc"></span></div>
+            </div>
             <strong>Magical</strong>
-            <p>
-              Prime: <span id="prime-dc"></span><br />
-              Second: <span id="second-dc"></span><br />
-              Third: <span id="third-dc"></span><br />
-              Fourth: <span id="fourth-dc"></span>
-            </p>
+            <div class="dc-tiles magical">
+              <div class="dc-tile"><span class="k">Prime</span> <span class="v" id="prime-dc"></span></div>
+              <div class="dc-tile"><span class="k">Second</span> <span class="v" id="second-dc"></span></div>
+              <div class="dc-tile"><span class="k">Third</span> <span class="v" id="third-dc"></span></div>
+              <div class="dc-tile"><span class="k">Fourth</span> <span class="v" id="fourth-dc"></span></div>
+            </div>
           </div>
         </div>
       </div>
@@ -493,50 +491,40 @@
 <!-- Telegram Group & Chat (Initially Collapsed) -->
 <section id="telegram-group-section" class="container" style="margin-top:2rem;">
   <details class="chat-manager-details">
-    <summary style="
-      cursor: pointer;
-      font-size: 0.9em;
-      font-weight: bold;
-      padding: 5px 10px;
-      background: #ccc;           /* Medium grey */
-      color: #000;                /* Black text for legibility */
-      border-radius: 15px;
-      display: inline-block;
-      border: 1px solid #aaa;
-      transition: background 0.2s;">
+    <summary>
       Game Master Settings
     </summary>
     
-    <div style="padding: 10px; background: #fff; border: 1px solid var(--primary); border-radius: 8px; margin-top: 5px;">
-      <p style="margin: 0 0 10px 0;">
+    <div class="gm-panel">
+      <p>
         Use the options below to create a new Telegram group for your game or join an existing one.
       </p>
       
-      <h3 style="margin: 10px 0 5px 0;">Create New Game Group</h3>
+      <h3>Create New Game Group</h3>
       
-      <div class="input-group" style="margin-bottom: 5px;">
-        <label for="groupName" style="margin-bottom: 2px;">Group Name:</label>
-        <input type="text" id="groupName" placeholder="Enter your group name" style="margin-bottom: 5px;">
+      <div class="input-group">
+        <label for="groupName">Group Name:</label>
+        <input type="text" id="groupName" placeholder="Enter your group name">
       </div>
       
-      <div class="input-group" style="margin-bottom: 5px;">
-        <label for="chatId" style="margin-bottom: 2px;">Telegram Chat ID:</label>
-        <input type="text" id="chatId" placeholder="Enter your Telegram chat ID" style="margin-bottom: 5px;">
-        <button onclick="showChatIdInstructions()" style="margin-bottom: 5px;">How to get Chat ID?</button>
+      <div class="input-group">
+        <label for="chatId">Telegram Chat ID:</label>
+        <input type="text" id="chatId" placeholder="Enter your Telegram chat ID">
+        <button onclick="showChatIdInstructions()">How to get Chat ID?</button>
       </div>
       
-      <button onclick="setupNewGameGroup()" style="margin-bottom: 10px;">Create Game Group</button>
+      <button onclick="setupNewGameGroup()">Create Game Group</button>
       
-      <h3 style="margin: 15px 0 5px 0;">Player Settings</h3>
+      <h3>Player Settings</h3>
       
-      <div class="input-group" style="margin-bottom: 5px;">
-        <label for="gmCodeInput" style="margin-bottom: 2px;">GM Code:</label>
-        <input type="text" id="gmCodeInput" placeholder="Enter your GM's code" style="margin-bottom: 5px;">
+      <div class="input-group">
+        <label for="gmCodeInput">GM Code:</label>
+        <input type="text" id="gmCodeInput" placeholder="Enter your GM's code">
       </div>
       
-      <div class="input-group" style="margin-bottom: 5px;">
-        <label for="playerName" style="margin-bottom: 2px;">Your Name:</label>
-        <input type="text" id="playerName" placeholder="Enter your name" style="margin-bottom: 5px;">
+      <div class="input-group">
+        <label for="playerName">Your Name:</label>
+        <input type="text" id="playerName" placeholder="Enter your name">
       </div>
       
       <button onclick="joinGameGroup()">Join Game Group</button>
@@ -1000,6 +988,7 @@ function buildPdfContent() {
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap');
       @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+      .dc-tiles { margin: 4px 0; } .dc-tile { display: inline-block; margin: 2px 14px 2px 0; } .dc-tile .k::after { content: ':'; } .dc-tile .v { font-weight: bold; }
       @page { margin: 10mm; }
       * { 
         color: #000 !important; 
@@ -4109,4 +4098,11 @@ document.getElementById("pdf-preview").addEventListener("contextmenu", manualPdf
         });
       }
     </script>
-  </body>
+      <script>
+      // Hosted copies carry no bot token (a static site is readable by everyone), so hide the Telegram button there.
+      (function () {
+        var t = window.TELEGRAM_BOT_TOKEN, b = document.getElementById("telegram-button");
+        if (b && (!t || t === "YOUR_TELEGRAM_BOT_TOKEN")) b.style.display = "none";
+      })();
+    </script>
+</body>
