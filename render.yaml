@@ -1,0 +1,9 @@
+services:
+  - type: web
+    runtime: static
+    name: identify-eweself
+    buildCommand: sh scripts/render-build.sh
+    staticPublishPath: dist
+    envVars:
+      - key: HEXDIE_URL          # set to the Hex-Die site URL (with trailing slash) to enable "Open in Hex-Die"
+        sync: false
