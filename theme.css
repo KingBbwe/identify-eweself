@@ -244,3 +244,8 @@ ul.skill-list { padding: 0 !important; margin: 0 !important; display: grid; gap:
 main #telegram-group-section { margin: 1.2rem 0 0 !important; padding: 0 !important; background: none !important; border: none !important; box-shadow: none !important; clip-path: none; }
 details { border-bottom: none !important; margin-bottom: 0 !important; padding-bottom: 0 !important; }
 hr { border-color: rgba(139, 92, 246, 0.25); }
+
+/* fate note under the neutral choices */
+.fate-note { margin: 0.7rem 0 0 !important; font-size: 0.82rem; color: var(--muted); }
+.fate-note.overridden { color: var(--gold); }
+.fate-note.overridden::before { content: '⚠ '; }
