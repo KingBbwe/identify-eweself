@@ -1,0 +1,11 @@
+{
+  "name": "identify-eweself",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Character creation for The Chronicles of Auld Ewe",
+  "scripts": {
+    "test": "node --test tests/character.test.js tests/rolls.test.js tests/allocation.test.js",
+    "smoke": "node tests/page.smoke.js"
+  },
+  "license": "MIT"
+}
